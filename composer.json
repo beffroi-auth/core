@@ -1,0 +1,33 @@
+{
+    "name": "heidi/core",
+    "description": "Identity core of the IdP: tenants, users, credentials, linked identities, groups, authentication sessions, signing keys. Pure PHP.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "identity",
+        "identity-provider"
+    ],
+    "authors": [
+        {
+            "name": "All contributors"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "psr/clock": "^1.0",
+        "psr/event-dispatcher": "^1.0",
+        "psr/log": "^3.0",
+        "symfony/key-management": "8.2.*",
+        "symfony/uid": "8.2.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Heidi\\Core\\": "src/"
+        }
+    },
+    "extra": {
+        "thanks": {
+            "name": "heidi/framework"
+        }
+    }
+}
