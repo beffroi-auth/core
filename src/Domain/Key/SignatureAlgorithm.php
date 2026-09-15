@@ -29,4 +29,15 @@ enum SignatureAlgorithm: string
             self::RS256 => 2048,
         };
     }
+
+    /**
+     * The digest the algorithm signs with (RFC 7518 §3.3: RS256 is RSASSA-PKCS1-v1_5 using SHA-256), as
+     * hash() names it. OIDC Core §3.1.3.6 computes "at_hash" with that same function.
+     */
+    public function digestAlgorithm(): string
+    {
+        return match ($this) {
+            self::RS256 => 'sha256',
+        };
+    }
 }
