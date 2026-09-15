@@ -20,7 +20,7 @@ final readonly class UserAuthenticated implements DomainEventInterface
     public function __construct(
         public AuthenticationSession $session,
     ) {
-        $this->occurredAt = $session->authenticatedAt;
+        $this->occurredAt = $session->establishedAt;
         $this->tenant = $session->tenant;
         $this->context = $session->createdFrom;
     }

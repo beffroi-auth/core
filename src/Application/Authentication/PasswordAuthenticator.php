@@ -12,6 +12,7 @@ use Heidi\Core\Domain\Event\PasswordRehashed;
 use Heidi\Core\Domain\Event\UserAuthenticated;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
+use Heidi\Core\Domain\Session\AuthenticationProofs;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
@@ -102,7 +103,7 @@ final class PasswordAuthenticator
             $tenant,
             $user,
             $now,
-            [AuthenticationMethod::Password],
+            AuthenticationProofs::of(AuthenticationMethod::password(), $now),
             $authenticationContextClass,
             $context,
             $now->add($this->sessionLifetime),
@@ -124,7 +125,7 @@ final class PasswordAuthenticator
             $this->clock->now(),
             $tenant,
             $context,
-            AuthenticationMethod::Password,
+            AuthenticationMethod::password(),
             $reason,
             $identifier,
             $user,
