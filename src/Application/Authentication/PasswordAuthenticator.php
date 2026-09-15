@@ -52,7 +52,6 @@ final class PasswordAuthenticator
 
     /**
      * @param string $identifier what the user typed to name themselves
-     * @param string|null $authenticationContextClass the "acr" the deployment assigns to a password login, if any
      *
      * @throws AuthenticationFailedException
      */
@@ -62,7 +61,6 @@ final class PasswordAuthenticator
         #[SensitiveParameter]
         string $password,
         RequestContext $context,
-        ?string $authenticationContextClass = null,
     ): AuthenticationSession {
         $user = $this->users->findByUsername($tenant, trim($identifier));
         if ($user === null) {
@@ -104,7 +102,6 @@ final class PasswordAuthenticator
             $user,
             $now,
             AuthenticationProofs::of(AuthenticationMethod::password(), $now),
-            $authenticationContextClass,
             $context,
             $now->add($this->sessionLifetime),
         );

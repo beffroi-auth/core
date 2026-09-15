@@ -17,7 +17,8 @@ use Symfony\Component\Uid\Uuid;
  * which is what makes them revocable together at logout. Sessions end one by one.
  *
  * "How" is a map of proofs, not a single method and a single time: a re-authentication or a step-up adds or
- * refreshes one entry and leaves the others in place (see AuthenticationProofs).
+ * refreshes one entry and leaves the others in place (see AuthenticationProofs). The "acr" is read from
+ * that map, never stored (see AuthenticationContextClass).
  */
 final class AuthenticationSession
 {
@@ -33,7 +34,6 @@ final class AuthenticationSession
 
     /**
      * @param DateTimeImmutable $establishedAt when the session was opened, which is also the date of its first proof
-     * @param string|null $authenticationContextClass the "acr" value, when the deployment defines classes
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -41,7 +41,6 @@ final class AuthenticationSession
         public readonly User $user,
         public readonly DateTimeImmutable $establishedAt,
         AuthenticationProofs $proofs,
-        public readonly ?string $authenticationContextClass,
         public readonly RequestContext $createdFrom,
         public private(set) DateTimeImmutable $expiresAt,
     ) {
@@ -54,9 +53,6 @@ final class AuthenticationSession
         if ($expiresAt <= $establishedAt) {
             throw new InvalidArgumentException('A session expires after it was established.');
         }
-        if ($authenticationContextClass === '') {
-            throw new InvalidArgumentException('An authentication context class reference is either absent or non-empty.');
-        }
         $this->proofs = $proofs;
         $this->lastSeenFrom = $createdFrom;
         $this->lastSeenAt = $establishedAt;
@@ -68,6 +64,14 @@ final class AuthenticationSession
     public function authenticatedAt(): DateTimeImmutable
     {
         return $this->proofs->latest();
+    }
+
+    /**
+     * The "acr" of OIDC Core §2: what the proofs satisfy, today, which a step-up would raise.
+     */
+    public function authenticationContextClass(): AuthenticationContextClass
+    {
+        return AuthenticationContextClass::of($this->proofs);
     }
 
     /**
