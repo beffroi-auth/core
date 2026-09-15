@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Identity;
 
 use Heidi\Core\Domain\Credential\PasswordCredential;
+use Heidi\Core\Domain\Identity\Address;
 use Heidi\Core\Domain\Identity\EmailAddress;
+use Heidi\Core\Domain\Identity\Profile;
 use Heidi\Core\Domain\Identity\Subject;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Tenant\Tenant;
@@ -66,6 +68,26 @@ final readonly class UserProvisioner
             throw UserAlreadyExistsException::subject($subject->value);
         }
         $user = User::create(Uuid::v7(), $tenant, $subject, $username, $this->clock->now(), $email, $emailVerified);
+        $this->users->save($user);
+
+        return $user;
+    }
+
+    /**
+     * Describes the user in full: the descriptive attributes, the phone number and the postal address, what
+     * a client learns through the claims of OIDC Core §5.1. A replacement, not a merge: what the caller does
+     * not say is cleared, so that a script provisioning a user is replayable and its result readable from
+     * the call alone. An empty address is no address.
+     *
+     * @throws InvalidArgumentException when a phone number is absent but said to be verified
+     */
+    public function setProfile(User $user, Profile $profile, ?string $phoneNumber = null, bool $phoneNumberVerified = false, ?Address $address = null): User
+    {
+        $now = $this->clock->now();
+        // the phone number first: it is the one change the user can refuse, before anything else moved
+        $user->changePhoneNumber($phoneNumber, $phoneNumberVerified, $now);
+        $user->updateProfile($profile, $now);
+        $user->changeAddress($address, $now);
         $this->users->save($user);
 
         return $user;
