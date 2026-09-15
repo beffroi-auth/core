@@ -31,4 +31,14 @@ final class PasswordCredential extends Credential
         $this->hash = $hash;
         $this->hashChangedAt = $now;
     }
+
+    /**
+     * Another password: what verified the previous one verifies nothing any more. Whether the sessions opened
+     * with the previous password survive is the caller's policy, not the credential's.
+     */
+    public function changePassword(PasswordHash $hash, DateTimeImmutable $now): void
+    {
+        $this->hash = $hash;
+        $this->hashChangedAt = $now;
+    }
 }
