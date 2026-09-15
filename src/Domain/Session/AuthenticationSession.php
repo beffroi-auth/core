@@ -36,7 +36,7 @@ final class AuthenticationSession
      * @param string|null $authenticationContextClass the "acr" value, when the deployment defines classes
      */
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly Tenant $tenant,
         public readonly User $user,
         public readonly DateTimeImmutable $establishedAt,

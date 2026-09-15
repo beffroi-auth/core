@@ -6,6 +6,7 @@ namespace Heidi\Core\Domain\Credential;
 
 use DateTimeImmutable;
 use Heidi\Core\Domain\Identity\User;
+use Heidi\Core\Domain\Tenant\Tenant;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -14,13 +15,19 @@ use Symfony\Component\Uid\Uuid;
  */
 abstract class Credential
 {
+    /**
+     * The tenant of the user, restated so that every stored credential carries it (decision 0002).
+     */
+    public readonly Tenant $tenant;
+
     public private(set) ?DateTimeImmutable $lastUsedAt = null;
 
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly User $user,
         public readonly DateTimeImmutable $createdAt,
     ) {
+        $this->tenant = $user->tenant;
     }
 
     public function markUsed(DateTimeImmutable $now): void

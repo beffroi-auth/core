@@ -20,7 +20,7 @@ final class User
     public private(set) ?DateTimeImmutable $disabledAt = null;
 
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly Tenant $tenant,
         public readonly Subject $subject,
         public private(set) string $username,

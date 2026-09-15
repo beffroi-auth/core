@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Identity;
 
 use DateTimeImmutable;
+use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
 
@@ -16,10 +17,15 @@ use Symfony\Component\Uid\Uuid;
 final class LinkedIdentity
 {
     /**
+     * The tenant of the user, restated so that every stored linked identity carries it (decision 0002).
+     */
+    public readonly Tenant $tenant;
+
+    /**
      * @param array<string, mixed> $claims
      */
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly User $user,
         public readonly string $provider,
         public readonly string $subject,
@@ -33,6 +39,7 @@ final class LinkedIdentity
         if ($subject === '') {
             throw new InvalidArgumentException('A linked identity carries the subject the provider gave.');
         }
+        $this->tenant = $user->tenant;
     }
 
     /**

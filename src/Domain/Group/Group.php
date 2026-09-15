@@ -12,7 +12,7 @@ use Symfony\Component\Uid\Uuid;
 final class Group
 {
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly Tenant $tenant,
         public private(set) string $name,
         public readonly GroupSource $source,

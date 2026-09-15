@@ -13,11 +13,15 @@ use Symfony\Component\Uid\Uuid;
 /**
  * An issuer, with its users, its clients and its keys. Everything in the core is scoped by a tenant, even
  * when a deployment has only one.
+ *
+ * The identifier of an entity is private(set) rather than readonly, here and on every entity: a mapper
+ * that builds lazy references assigns it before the object is loaded and again when it is, and a readonly
+ * property typed with an object refuses the second assignment even when the value is equal.
  */
 final class Tenant
 {
     public function __construct(
-        public readonly Uuid $id,
+        public private(set) Uuid $id,
         public readonly string $slug,
         public readonly Issuer $issuer,
         public private(set) string $name,
