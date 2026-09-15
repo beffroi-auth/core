@@ -18,7 +18,8 @@
         "psr/event-dispatcher": "^1.0",
         "psr/log": "^3.0",
         "symfony/key-management": "8.2.*",
-        "symfony/uid": "8.2.*"
+        "symfony/uid": "8.2.*",
+        "web-token/jwt-library": "^4.2"
     },
     "autoload": {
         "psr-4": {
