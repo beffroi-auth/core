@@ -47,7 +47,7 @@ final readonly class Issuer implements Stringable
         }
         $host = strtolower($parts['host']);
         $scheme = strtolower($parts['scheme']);
-        if ($scheme !== 'https' && ! ($scheme === 'http' && self::isLoopback($host))) {
+        if ($scheme !== 'https' && ! ($scheme === 'http' && self::isLoopbackHost($host))) {
             throw new InvalidArgumentException(sprintf('The issuer "%s" must use HTTPS; plain HTTP is only accepted on a loopback host.', $value));
         }
         $path = $parts['path'] ?? '';
@@ -70,7 +70,13 @@ final readonly class Issuer implements Stringable
         return $this->value;
     }
 
-    private static function isLoopback(string $host): bool
+    /**
+     * RFC 6761 §6.3: "localhost" and every name under it, 127.0.0.0/8 and ::1 resolve to the machine itself.
+     * The one place where plain HTTP is tolerated, for the issuer and for the redirect URIs of a client alike.
+     *
+     * @param string $host as parse_url() gives it, lowercased; an IPv6 literal keeps its brackets
+     */
+    public static function isLoopbackHost(string $host): bool
     {
         if (in_array($host, ['localhost', '[::1]'], true) || str_ends_with($host, '.localhost')) {
             return true;
