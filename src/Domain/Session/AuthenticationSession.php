@@ -75,6 +75,15 @@ final class AuthenticationSession
     }
 
     /**
+     * Whether the proofs of the session meet a class (OIDC Core §5.5.1.1): the one a client requested,
+     * which may be below the strongest the session satisfies.
+     */
+    public function satisfies(AuthenticationContextClass $class): bool
+    {
+        return $class->isSatisfiedBy($this->proofs);
+    }
+
+    /**
      * A re-authentication or a step-up: one more proof, dated now. Other proofs keep their own date.
      */
     public function recordProof(AuthenticationMethod $method, RequestContext $context): void

@@ -67,9 +67,51 @@ final readonly class AuthenticationMethod implements Stringable
         }
     }
 
+    /**
+     * What each registered value proves (RFC 8176 §2): knowledge, possession or inherence. A password, a
+     * PIN and knowledge-based questions are knowledge; a one-time password, a key, a smart card, a phone
+     * reached by SMS or by voice are possession; a face, a fingerprint, an iris, a retina, a voice are
+     * inherence.
+     */
+    private const array FACTORS = [
+        self::PASSWORD => AuthenticationFactor::Knowledge,
+        self::PIN => AuthenticationFactor::Knowledge,
+        self::KNOWLEDGE_BASED => AuthenticationFactor::Knowledge,
+        self::ONE_TIME_PASSWORD => AuthenticationFactor::Possession,
+        self::HARDWARE_KEY => AuthenticationFactor::Possession,
+        self::SOFTWARE_KEY => AuthenticationFactor::Possession,
+        self::SMART_CARD => AuthenticationFactor::Possession,
+        self::SMS => AuthenticationFactor::Possession,
+        self::TELEPHONE => AuthenticationFactor::Possession,
+        self::PROOF_OF_POSSESSION => AuthenticationFactor::Possession,
+        self::FACE => AuthenticationFactor::Inherence,
+        self::FINGERPRINT => AuthenticationFactor::Inherence,
+        self::IRIS => AuthenticationFactor::Inherence,
+        self::RETINA => AuthenticationFactor::Inherence,
+        self::VOICE => AuthenticationFactor::Inherence,
+    ];
+
     public static function password(): self
     {
         return new self(self::PASSWORD);
+    }
+
+    /**
+     * The kind of factor this method proves, or null when it proves none by itself: "mfa" says several
+     * were used without naming them, "user" is a presence check, "geo", "rba", "mca" and "wia" describe
+     * the context of a proof rather than a proof, and a value the registry does not know says nothing.
+     */
+    public function factor(): ?AuthenticationFactor
+    {
+        return self::FACTORS[$this->value] ?? null;
+    }
+
+    /**
+     * RFC 8176 §2 "mfa": an upstream provider asserted multiple factors without naming each of them.
+     */
+    public function isMultipleFactors(): bool
+    {
+        return $this->value === self::MULTIPLE_FACTORS;
     }
 
     public function equals(self $other): bool

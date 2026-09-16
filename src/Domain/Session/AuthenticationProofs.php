@@ -8,6 +8,7 @@ use function array_keys;
 use function array_map;
 use DateTimeImmutable;
 use Heidi\Core\Exception\InvalidArgumentException;
+use function in_array;
 use function max;
 
 /**
@@ -85,6 +86,25 @@ final readonly class AuthenticationProofs
     public function methods(): array
     {
         return array_map(static fn (string $value): AuthenticationMethod => new AuthenticationMethod($value), array_keys($this->entries));
+    }
+
+    /**
+     * The distinct kinds of factor the proofs cover, in the order they were proven: a password and a PIN
+     * are one kind, a password and a one-time password two.
+     *
+     * @return list<AuthenticationFactor>
+     */
+    public function factors(): array
+    {
+        $factors = [];
+        foreach ($this->methods() as $method) {
+            $factor = $method->factor();
+            if ($factor !== null && ! in_array($factor, $factors, true)) {
+                $factors[] = $factor;
+            }
+        }
+
+        return $factors;
     }
 
     /**
