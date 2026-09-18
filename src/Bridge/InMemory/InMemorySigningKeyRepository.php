@@ -41,14 +41,26 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
     public function findPublished(Tenant $tenant): array
     {
         $published = [];
-        foreach ($this->keys as $key) {
-            if ($key->tenant->equals($tenant) && $key->isPublished()) {
+        foreach ($this->findAll($tenant) as $key) {
+            if ($key->isPublished()) {
                 $published[] = $key;
             }
         }
-        usort($published, static fn (SigningKey $a, SigningKey $b): int => [$a->createdAt, $a->kid] <=> [$b->createdAt, $b->kid]);
 
         return $published;
+    }
+
+    public function findAll(Tenant $tenant): array
+    {
+        $all = [];
+        foreach ($this->keys as $key) {
+            if ($key->tenant->equals($tenant)) {
+                $all[] = $key;
+            }
+        }
+        usort($all, static fn (SigningKey $a, SigningKey $b): int => [$a->createdAt, $a->kid] <=> [$b->createdAt, $b->kid]);
+
+        return $all;
     }
 
     public function save(SigningKey $key): void

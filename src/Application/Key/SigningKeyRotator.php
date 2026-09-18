@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Key;
 
+use DateInterval;
 use DateTimeImmutable;
 use Heidi\Core\Domain\Event\SigningKeyRetired;
 use Heidi\Core\Domain\Event\SigningKeyRotated;
@@ -28,35 +29,34 @@ use function sprintf;
 /**
  * Rotation without an outage (OIDC Core §10.1.1, architecture §3.3): stage() publishes a key before it
  * signs, activate() makes it sign and starts retiring the previous one, retireDue() removes a key once
- * every JWS it could have signed has expired. rotate() does the first two steps at once.
+ * every JWS it could have signed has expired. rotate() does the first two steps at once; activateDue()
+ * does the second one when the staging window has ended.
  */
 final readonly class SigningKeyRotator
 {
     /**
      * @param iterable<IssuedJwsKindInterface> $issuedJws the longest lifetime among them dates a retirement
+     * @param DateInterval $stagingDelay how long a staged key stays published before it signs: what a relying party needs to see it
      */
     public function __construct(
         private SigningKeyRepositoryInterface $keys,
         private KeyPairGeneratorInterface $generator,
         private KeySealerInterface $sealer,
         private iterable $issuedJws,
+        private DateInterval $stagingDelay,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
     }
 
     /**
-     * Published, sealed, signing nothing until activate().
+     * Published, sealed, signing nothing until activate() or activateDue() once the staging delay elapsed.
      */
     public function stage(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context): SigningKey
     {
         $now = $this->clock->now();
-        $pair = $this->generator->generate($algorithm);
-        $key = new SigningKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now);
-        $this->keys->save($key);
-        $this->events->dispatch(new SigningKeyStaged($key, $now, $context));
 
-        return $key;
+        return $this->publish($tenant, $algorithm, $context, $now, $now->add($this->stagingDelay));
     }
 
     /**
@@ -68,15 +68,35 @@ final readonly class SigningKeyRotator
     }
 
     /**
+     * The timed step of a staging window, idempotent.
+     *
+     * @return list<SigningKey> the keys activated by this call
+     */
+    public function activateDue(Tenant $tenant, RequestContext $context): array
+    {
+        $now = $this->clock->now();
+        $activated = [];
+        foreach ($this->keys->findPublished($tenant) as $key) {
+            if ($key->isDueForActivation($now)) {
+                $activated[] = $this->takeOver($key, $context, compromised: false);
+            }
+        }
+
+        return $activated;
+    }
+
+    /**
      * Stages and activates at once; "compromised" retires the previous key with no window.
      */
     public function rotate(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context, bool $compromised = false): SigningKey
     {
-        return $this->takeOver($this->stage($tenant, $algorithm, $context), $context, $compromised);
+        $now = $this->clock->now();
+
+        return $this->takeOver($this->publish($tenant, $algorithm, $context, $now, $now), $context, $compromised);
     }
 
     /**
-     * The timed step of a rotation, idempotent.
+     * The timed step of a retirement window, idempotent.
      *
      * @return list<SigningKey> the keys retired by this call
      */
@@ -114,6 +134,16 @@ final readonly class SigningKeyRotator
         $key->retire($now);
         $this->keys->save($key);
         $this->events->dispatch(new SigningKeyRetired($key, $due ? RetirementReason::Due : RetirementReason::Forced, $now, $context));
+
+        return $key;
+    }
+
+    private function publish(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): SigningKey
+    {
+        $pair = $this->generator->generate($algorithm);
+        $key = new SigningKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now, $activationDueAt);
+        $this->keys->save($key);
+        $this->events->dispatch(new SigningKeyStaged($key, $now, $context));
 
         return $key;
     }

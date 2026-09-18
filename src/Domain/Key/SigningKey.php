@@ -14,7 +14,8 @@ use function sprintf;
 
 /**
  * A signing key of a tenant: the public JWK in clear, the private JWK sealed by the KMS, the "kid" its
- * RFC 7638 thumbprint. Staged, active, retiring, retired (architecture §3.3); every date is a fact of the key.
+ * RFC 7638 thumbprint. Staged, active, retiring, retired (architecture §3.3); every date is a fact of the
+ * key, the two due dates included: when the staging window ends and when the retirement window ends.
  */
 final class SigningKey
 {
@@ -34,6 +35,7 @@ final class SigningKey
     /**
      * @param array<string, string> $publicJwk the public members (RFC 7517 §4)
      * @param string $sealedPrivateJwk a KMS envelope, opaque here
+     * @param DateTimeImmutable $activationDueAt when the staging window ends: the timed step activates the key from then on
      */
     public function __construct(
         public readonly string $kid,
@@ -43,7 +45,11 @@ final class SigningKey
         #[SensitiveParameter]
         public readonly string $sealedPrivateJwk,
         public readonly DateTimeImmutable $createdAt,
+        public readonly DateTimeImmutable $activationDueAt,
     ) {
+        if ($activationDueAt < $createdAt) {
+            throw new InvalidArgumentException('The activation of a key is due when it is created at the earliest.');
+        }
         if ($kid === '') {
             throw new InvalidArgumentException('A signing key has a key identifier.');
         }
@@ -126,6 +132,14 @@ final class SigningKey
     public function isPublished(): bool
     {
         return $this->status->isPublished();
+    }
+
+    /**
+     * Staged and past its activation date.
+     */
+    public function isDueForActivation(DateTimeImmutable $now): bool
+    {
+        return $this->status === KeyStatus::Staged && $this->activationDueAt <= $now;
     }
 
     /**

@@ -21,5 +21,12 @@ interface SigningKeyRepositoryInterface
      */
     public function findPublished(Tenant $tenant): array;
 
+    /**
+     * Every key the tenant ever had, the retired ones included, in creation order.
+     *
+     * @return list<SigningKey>
+     */
+    public function findAll(Tenant $tenant): array;
+
     public function save(SigningKey $key): void;
 }
