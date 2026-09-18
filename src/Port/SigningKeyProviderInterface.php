@@ -20,7 +20,7 @@ interface SigningKeyProviderInterface
     public function activeKey(Tenant $tenant, SignatureAlgorithm $algorithm): UnsealedSigningKey;
 
     /**
-     * Every key still published: the active one and those in their rotation window.
+     * Every key still published: the staged ones, the active one and those in their retirement window.
      */
     public function publicKeys(Tenant $tenant): PublicKeySet;
 }

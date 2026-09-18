@@ -16,8 +16,10 @@ use function sprintf;
 
 /**
  * Reads the keys of a tenant from the repository and opens the active one with the KMS. An opened key stays
- * in the memory of this instance for the rest of the process, so that the KMS is reached once per key, not
- * once per token.
+ * in the memory of this instance while it is the active one, so that the KMS is reached once per key, not
+ * once per token; which key is active is read from the repository on each call, so that a rotation done
+ * elsewhere is seen at once. A key that stopped being active is forgotten: it never signs again, and its
+ * private half has no reason to stay in the process.
  */
 final class SealedKeyProvider implements SigningKeyProviderInterface
 {
@@ -38,8 +40,13 @@ final class SealedKeyProvider implements SigningKeyProviderInterface
         if ($key === null) {
             throw new KeyNotFoundException(sprintf('Tenant "%s" has no active %s signing key.', $tenant->slug, $algorithm->value));
         }
+        foreach ($this->opened as $kid => $opened) {
+            if ($kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm === $algorithm) {
+                unset($this->opened[$kid]);
+            }
+        }
 
-        return $this->opened[$key->kid] ??= new UnsealedSigningKey($key, $this->sealer->unseal($key->sealedPrivateJwk));
+        return $this->opened[$key->kid] ??= new UnsealedSigningKey($key, $this->sealer->unseal($tenant, $key->sealedPrivateJwk));
     }
 
     public function publicKeys(Tenant $tenant): PublicKeySet

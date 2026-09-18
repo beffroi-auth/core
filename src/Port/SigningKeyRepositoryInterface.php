@@ -12,10 +12,13 @@ interface SigningKeyRepositoryInterface
 {
     public function find(Tenant $tenant, string $kid): ?SigningKey;
 
+    /**
+     * The key that signs: never a staged one.
+     */
     public function findActive(Tenant $tenant, SignatureAlgorithm $algorithm): ?SigningKey;
 
     /**
-     * Active and retiring keys, in creation order.
+     * Staged, active and retiring keys, in creation order.
      *
      * @return list<SigningKey>
      */

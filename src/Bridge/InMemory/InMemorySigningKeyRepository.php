@@ -8,6 +8,7 @@ use Heidi\Core\Domain\Key\SignatureAlgorithm;
 use Heidi\Core\Domain\Key\SigningKey;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\SigningKeyRepositoryInterface;
+use function usort;
 
 final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterface
 {
@@ -45,6 +46,7 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
                 $published[] = $key;
             }
         }
+        usort($published, static fn (SigningKey $a, SigningKey $b): int => [$a->createdAt, $a->kid] <=> [$b->createdAt, $b->kid]);
 
         return $published;
     }

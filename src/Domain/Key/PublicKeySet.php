@@ -7,8 +7,9 @@ namespace Heidi\Core\Domain\Key;
 use function array_map;
 
 /**
- * The published keys of a tenant, active and retiring: what the JWK Set endpoint serves (RFC 7517 §5) and
- * what verifies a token the tenant issued.
+ * The published keys of a tenant, staged, active and retiring: what the JWK Set endpoint serves (RFC 7517
+ * §5) and what verifies a token the tenant issued. A staged key is in the set so that a relying party learns
+ * it before it signs; a retired one is out, and a token naming it is refused.
  */
 final readonly class PublicKeySet
 {

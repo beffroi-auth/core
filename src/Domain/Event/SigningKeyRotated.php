@@ -10,7 +10,8 @@ use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 
 /**
- * A new key signs from now on; the previous active one, if any, entered its rotation window.
+ * A new key signs from now on; the previous active one, if any, entered its retirement window. When the
+ * rotation answers a compromise, a SigningKeyRetired event follows at once for the previous key.
  */
 final readonly class SigningKeyRotated implements DomainEventInterface
 {
