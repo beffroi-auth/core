@@ -7,8 +7,7 @@ namespace Heidi\Core\Exception;
 use LogicException;
 
 /**
- * A retiring key still has a JWS it signed possibly alive: retiring it now is a choice, and the caller has
- * to make it explicitly (SigningKeyRotator::retire() with force).
+ * A JWS the key signed may be alive; retiring it now has to be forced.
  */
 final class RetirementNotDueException extends LogicException implements ExceptionInterface
 {

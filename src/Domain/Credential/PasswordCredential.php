@@ -23,8 +23,7 @@ final class PasswordCredential extends Credential
     }
 
     /**
-     * Replaces the hash after a verification with a stronger algorithm or parameters. The password itself
-     * did not change, so this is not a password change for the user.
+     * A stronger hash of the same password.
      */
     public function rehash(PasswordHash $hash, DateTimeImmutable $now): void
     {
@@ -33,8 +32,7 @@ final class PasswordCredential extends Credential
     }
 
     /**
-     * Another password: what verified the previous one verifies nothing any more. Whether the sessions opened
-     * with the previous password survive is the caller's policy, not the credential's.
+     * Another password; what happens to the sessions is the caller's policy.
      */
     public function changePassword(PasswordHash $hash, DateTimeImmutable $now): void
     {

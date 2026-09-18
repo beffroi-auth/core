@@ -7,8 +7,7 @@ namespace Heidi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * What a key pair generator returns: the private JWK, the public JWK (with kid, alg and use set) and the
- * kid, an RFC 7638 thumbprint.
+ * What a key pair generator returns; the kid is an RFC 7638 thumbprint.
  */
 final readonly class GeneratedKeyPair
 {

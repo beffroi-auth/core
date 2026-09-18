@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Session;
 
 /**
- * What a user agent string says about the browser and the machine behind a request, as a parser understood
- * it. Kept coarse on purpose: enough for a user to recognise "Firefox on Linux, desktop" in a session list.
+ * What a user agent string says, coarse enough for a session list ("Firefox on Linux, desktop").
  */
 final readonly class Device
 {

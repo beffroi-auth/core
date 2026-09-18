@@ -17,8 +17,7 @@ interface PasswordHasherInterface
     public function verify(PasswordHash $hash, #[SensitiveParameter] string $plainPassword): bool;
 
     /**
-     * Whether the hash should be recomputed after a successful verification, because its algorithm or its
-     * parameters are weaker than what the hasher produces today.
+     * Weaker than what the hasher produces today.
      */
     public function needsRehash(PasswordHash $hash): bool;
 }

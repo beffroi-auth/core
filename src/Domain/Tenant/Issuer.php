@@ -16,13 +16,8 @@ use function strtolower;
 use function trim;
 
 /**
- * The issuer identifier of a tenant (OIDC Discovery §3, RFC 8414 §2): an absolute URL with no query and no
- * fragment, compared byte for byte by every client. It may carry a path, which is how several tenants share
- * one host.
- *
- * HTTPS is required. The one named exception is a loopback host in development (RFC 6761 §6.3: "localhost"
- * and every name under ".localhost", 127.0.0.0/8, ::1), the same rule Symfony's oidc_login applies when it
- * reads a discovery document.
+ * The issuer identifier of a tenant (OIDC Discovery §3, RFC 8414 §2): an absolute HTTPS URL with no query
+ * and no fragment. Plain HTTP is tolerated on a loopback host only (RFC 6761 §6.3).
  */
 final readonly class Issuer implements Stringable
 {
@@ -71,8 +66,7 @@ final readonly class Issuer implements Stringable
     }
 
     /**
-     * RFC 6761 §6.3: "localhost" and every name under it, 127.0.0.0/8 and ::1 resolve to the machine itself.
-     * The one place where plain HTTP is tolerated, for the issuer and for the redirect URIs of a client alike.
+     * RFC 6761 §6.3: "localhost" and every name under it, 127.0.0.0/8 and ::1.
      *
      * @param string $host as parse_url() gives it, lowercased; an IPv6 literal keeps its brackets
      */

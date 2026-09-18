@@ -9,8 +9,7 @@ use RuntimeException;
 use function sprintf;
 
 /**
- * The tenant already has a user with that username or that subject. Both name one user for good: a second
- * one would sign in as the first, or be known to the clients as the first.
+ * The tenant already has a user with that username or that subject.
  */
 final class UserAlreadyExistsException extends RuntimeException implements ExceptionInterface
 {

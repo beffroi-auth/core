@@ -8,10 +8,8 @@ use Heidi\Core\Domain\Tenant\Tenant;
 use SensitiveParameter;
 
 /**
- * Seals a private JWK so that it can be stored, and opens it back in memory. The KMS keeps, it does not sign
- * (architecture §3.3): changing the KMS changes the sealer's configuration, not this contract. The tenant
- * names the master key an envelope is sealed under and is bound to the envelope: a thousand tenants have
- * a thousand master keys, and a key sealed for one tenant does not open for another.
+ * Seals a private JWK for storage and opens it back in memory (architecture §3.3). The envelope is bound
+ * to the tenant: sealed for one, it does not open for another.
  */
 interface KeySealerInterface
 {

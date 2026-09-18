@@ -12,8 +12,7 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * An identity of a tenant. Credentials, linked identities and group memberships hang off it; none of them
- * is a property of the user, there are N of each (decision 0002).
+ * An identity of a tenant; credentials, linked identities and group memberships hang off it (decision 0002).
  */
 final class User
 {
@@ -61,7 +60,7 @@ final class User
     }
 
     /**
-     * A new address is unverified unless the caller proved it is not: verification never carries over.
+     * Verification never carries over to a new address.
      */
     public function changeEmail(?EmailAddress $email, bool $verified, DateTimeImmutable $now): void
     {

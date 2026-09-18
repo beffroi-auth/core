@@ -10,10 +10,8 @@ use function sprintf;
 use Stringable;
 
 /**
- * An Authentication Method Reference, the vocabulary of the "amr" claim (RFC 8176 §2). The registered values
- * are constants; any other well-formed value is accepted, because the RFC lets providers define their own
- * and a federated login carries whatever the upstream provider sent. Same choice as Symfony 8.2, whose
- * security token records its proofs under these strings (symfony/symfony#66064).
+ * A value of the "amr" claim (RFC 8176 §2). The registered values are constants; any other well-formed
+ * value is accepted, as a federated login carries whatever the upstream provider sent.
  */
 final readonly class AuthenticationMethod implements Stringable
 {
@@ -68,10 +66,7 @@ final readonly class AuthenticationMethod implements Stringable
     }
 
     /**
-     * What each registered value proves (RFC 8176 §2): knowledge, possession or inherence. A password, a
-     * PIN and knowledge-based questions are knowledge; a one-time password, a key, a smart card, a phone
-     * reached by SMS or by voice are possession; a face, a fingerprint, an iris, a retina, a voice are
-     * inherence.
+     * What each registered value proves (RFC 8176 §2).
      */
     private const array FACTORS = [
         self::PASSWORD => AuthenticationFactor::Knowledge,
@@ -97,9 +92,7 @@ final readonly class AuthenticationMethod implements Stringable
     }
 
     /**
-     * The kind of factor this method proves, or null when it proves none by itself: "mfa" says several
-     * were used without naming them, "user" is a presence check, "geo", "rba", "mca" and "wia" describe
-     * the context of a proof rather than a proof, and a value the registry does not know says nothing.
+     * Null when the method proves no factor by itself ("mfa", "user", the context values, an unknown value).
      */
     public function factor(): ?AuthenticationFactor
     {
@@ -107,7 +100,7 @@ final readonly class AuthenticationMethod implements Stringable
     }
 
     /**
-     * RFC 8176 §2 "mfa": an upstream provider asserted multiple factors without naming each of them.
+     * RFC 8176 §2 "mfa": multiple factors asserted without naming them.
      */
     public function isMultipleFactors(): bool
     {

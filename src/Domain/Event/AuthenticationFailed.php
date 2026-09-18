@@ -13,8 +13,7 @@ use Heidi\Core\Domain\Tenant\Tenant;
 final readonly class AuthenticationFailed implements DomainEventInterface
 {
     /**
-     * @param string $identifier what the caller typed to name the user, kept as typed for the audit trail
-     * @param User|null $user the user the identifier resolved to, when it did
+     * @param string $identifier kept as typed, for the audit trail
      */
     public function __construct(
         public DateTimeImmutable $occurredAt,

@@ -14,14 +14,12 @@ use Jose\Component\KeyManagement\JWKFactory;
 use function sprintf;
 
 /**
- * Generates key pairs with jwt-framework. The kid is the RFC 7638 SHA-256 thumbprint of the public key, so
- * that two providers never mint the same kid for different keys and a key is recognisable by its material.
+ * Generates key pairs with jwt-framework; the kid is the RFC 7638 SHA-256 thumbprint of the public key.
  */
 final readonly class JwtFrameworkKeyPairGenerator implements KeyPairGeneratorInterface
 {
     /**
-     * 3072 bits by default: RFC 7518 §3.3 requires at least 2048, NIST SP 800-57 Part 1 Rev. 5 §5.6 rates
-     * 3072 at 128 bits of security. A deployment may raise it, never lower it under the algorithm's minimum.
+     * @param int $rsaKeyBits 3072 is 128 bits of security (NIST SP 800-57 Part 1 Rev. 5 §5.6); RFC 7518 §3.3 requires 2048
      */
     public function __construct(
         private int $rsaKeyBits = 3072,

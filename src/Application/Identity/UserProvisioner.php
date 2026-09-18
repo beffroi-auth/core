@@ -24,21 +24,18 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * Creates the users of a tenant and gives them a password: what a console, a fixture or an import does,
- * outside of any request. The writes are the point of the operation, they are made at once. No session is
- * opened, no event is announced: nothing happened to a user yet.
+ * Creates the users of a tenant and gives them a password, from a console, a fixture or an import.
+ * Synchronous writes, no session, no event.
  */
 final readonly class UserProvisioner
 {
     /**
-     * NIST SP 800-63B §5.1.1.2: a memorized secret is at least 8 characters long, counted in characters
-     * whatever their encoding.
+     * NIST SP 800-63B §5.1.1.2, counted in characters.
      */
     public const int MINIMUM_PASSWORD_LENGTH = 8;
 
     /**
-     * The bound Symfony's password hashers apply for the same reason: hashing is meant to be slow, and a
-     * password of a few megabytes would make one request cost as much as thousands (CVE-2013-1443).
+     * The bound of Symfony's password hashers (CVE-2013-1443).
      */
     public const int MAXIMUM_PASSWORD_BYTES = 4096;
 
@@ -51,9 +48,7 @@ final readonly class UserProvisioner
     }
 
     /**
-     * A user who cannot sign in yet: setPassword() gives them a way to. The subject is generated unless the
-     * caller brings the one another provider gave (decision 0002: an imported identity keeps the "sub" its
-     * clients know); either way it never changes afterwards.
+     * The subject is generated unless an import brings one (decision 0002); it never changes afterwards.
      *
      * @throws UserAlreadyExistsException
      */
@@ -74,17 +69,14 @@ final readonly class UserProvisioner
     }
 
     /**
-     * Describes the user in full: the descriptive attributes, the phone number and the postal address, what
-     * a client learns through the claims of OIDC Core §5.1. A replacement, not a merge: what the caller does
-     * not say is cleared, so that a script provisioning a user is replayable and its result readable from
-     * the call alone. An empty address is no address.
+     * The claims of OIDC Core §5.1. A replacement, not a merge: what the caller does not say is cleared.
      *
      * @throws InvalidArgumentException when a phone number is absent but said to be verified
      */
     public function setProfile(User $user, Profile $profile, ?string $phoneNumber = null, bool $phoneNumberVerified = false, ?Address $address = null): User
     {
         $now = $this->clock->now();
-        // the phone number first: it is the one change the user can refuse, before anything else moved
+        // first: the one change the user can refuse
         $user->changePhoneNumber($phoneNumber, $phoneNumberVerified, $now);
         $user->updateProfile($profile, $now);
         $user->changeAddress($address, $now);
@@ -94,9 +86,6 @@ final readonly class UserProvisioner
     }
 
     /**
-     * Hashes with the policy of the core and stores the hash on the password credential of the user, created
-     * on the first call, replaced on the next ones. The plain password is not kept.
-     *
      * @throws InvalidArgumentException when the password is too short or too long
      */
     public function setPassword(User $user, #[SensitiveParameter] string $password): PasswordCredential

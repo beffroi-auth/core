@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Event;
 
 /**
- * Why an authentication attempt failed, for the record. The user is told nothing more than "failed": the
- * distinction stays in the audit trail.
+ * For the audit trail only; the user is told nothing more than "failed".
  */
 enum AuthenticationFailureReason: string
 {

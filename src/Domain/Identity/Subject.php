@@ -11,9 +11,8 @@ use Stringable;
 use function strlen;
 
 /**
- * The stable identifier of a user towards clients (the "sub" claim, OIDC Core §2): a case-sensitive ASCII
- * string of at most 255 characters that never changes and is never reassigned. It is distinct from the
- * technical id so that an identity imported from another provider keeps the subject its clients know.
+ * The "sub" claim (OIDC Core §2): at most 255 ASCII characters, never changed, never reassigned, distinct
+ * from the technical id so that an import keeps it.
  */
 final readonly class Subject implements Stringable
 {

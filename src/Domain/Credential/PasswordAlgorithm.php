@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Credential;
 
 /**
- * Every password hash names its algorithm (decision 0002): a hash without one cannot be verified, re-hashed
- * or imported safely. The cases beyond argon2id exist for imports from other providers.
+ * Every password hash names its algorithm (decision 0002); the cases beyond argon2id exist for imports.
  */
 enum PasswordAlgorithm: string
 {

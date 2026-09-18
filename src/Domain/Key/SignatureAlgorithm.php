@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Key;
 
 /**
- * The JWS algorithms the provider signs with (RFC 7518 §3). RS256 is what OIDC Core §15.1 requires every
- * provider to support and what Symfony's oidc_login expects by default. No HMAC: a symmetric key shared with
- * every client is not a signature (RFC 8725 §3.1).
+ * The JWS algorithms the provider signs with (RFC 7518 §3). RS256 is mandatory (OIDC Core §15.1); no HMAC (RFC 8725 §3.1).
  */
 enum SignatureAlgorithm: string
 {
@@ -21,7 +19,7 @@ enum SignatureAlgorithm: string
     }
 
     /**
-     * RFC 7518 §3.3: a key of 2048 bits or larger MUST be used with RS256.
+     * RFC 7518 §3.3.
      */
     public function minimumKeyBits(): int
     {
@@ -31,8 +29,7 @@ enum SignatureAlgorithm: string
     }
 
     /**
-     * The digest the algorithm signs with (RFC 7518 §3.3: RS256 is RSASSA-PKCS1-v1_5 using SHA-256), as
-     * hash() names it. OIDC Core §3.1.3.6 computes "at_hash" with that same function.
+     * As hash() names it; "at_hash" uses the same function (OIDC Core §3.1.3.6).
      */
     public function digestAlgorithm(): string
     {

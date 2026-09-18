@@ -10,14 +10,13 @@ use Heidi\Core\Exception\InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * The identity a user has at an upstream provider: a Google "sub", an Entra "oid", a SAML NameID. The pair
- * (provider, subject) is what the user is recognised by on their next login; the claims are the snapshot
- * received last, kept for provisioning and diagnosis.
+ * The identity a user has at an upstream provider, recognised by (provider, subject); the claims are the
+ * last snapshot received.
  */
 final class LinkedIdentity
 {
     /**
-     * The tenant of the user, restated so that every stored linked identity carries it (decision 0002).
+     * Restated from the user (decision 0002).
      */
     public readonly Tenant $tenant;
 

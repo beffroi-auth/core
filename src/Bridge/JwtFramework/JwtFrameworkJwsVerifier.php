@@ -19,9 +19,8 @@ use Jose\Component\Signature\Serializer\CompactSerializer;
 use Throwable;
 
 /**
- * Verifies what the tenant signed: the algorithm must be one the provider signs with (never "none", never
- * HMAC), the "kid" must name a published key of the tenant, and the signature must hold under that key.
- * The key is chosen by "kid" alone; the "jwk", "jku" and "x5c" headers are ignored (RFC 8725 §3.10).
+ * The key is chosen by "kid" alone among the published keys of the tenant; "jwk", "jku" and "x5c" are
+ * ignored (RFC 8725 §3.10).
  */
 final readonly class JwtFrameworkJwsVerifier implements JwsVerifierInterface
 {

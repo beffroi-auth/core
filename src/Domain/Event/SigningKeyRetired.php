@@ -11,8 +11,7 @@ use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 
 /**
- * A key left the JWK Set: every JWS naming its "kid" is refused from now on. The reason says whether time
- * did it, an operator did, or a compromise forced it; the context says who and from where.
+ * A key left the JWK Set: every JWS naming its "kid" is refused from now on.
  */
 final readonly class SigningKeyRetired implements DomainEventInterface
 {

@@ -8,9 +8,7 @@ use Heidi\Core\Exception\InvalidArgumentException;
 use SensitiveParameter;
 
 /**
- * A password hash with the algorithm that produced it. "encoded" is the form the algorithm's verifier
- * expects (a PHC string for argon2 and bcrypt); "parameters" carries what an imported format keeps apart
- * from the digest, such as the salt and the iteration count of a Keycloak pbkdf2 credential.
+ * A password hash with its algorithm; "parameters" carries what an imported format keeps apart from the digest.
  */
 final readonly class PasswordHash
 {

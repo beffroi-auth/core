@@ -9,8 +9,7 @@ use function preg_match;
 use function sprintf;
 
 /**
- * What a GeoIP database says about an address: approximate by nature, never a proof of anything, useful to
- * show a user where their sessions come from and to notice an implausible change.
+ * What a GeoIP database says about an address: approximate, never a proof.
  */
 final readonly class GeoLocation
 {

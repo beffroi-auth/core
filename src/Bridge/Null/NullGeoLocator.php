@@ -8,7 +8,7 @@ use Heidi\Core\Domain\Session\GeoLocation;
 use Heidi\Core\Port\GeoLocatorInterface;
 
 /**
- * No database, no location. The schema keeps its columns; a real locator fills them when one is configured.
+ * No database, no location.
  */
 final class NullGeoLocator implements GeoLocatorInterface
 {

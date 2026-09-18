@@ -13,9 +13,7 @@ use SensitiveParameter;
 use function sprintf;
 
 /**
- * Routes each hash to the hasher that understands its algorithm, and produces new hashes with the default
- * one. Imported hashes (Keycloak pbkdf2, for instance) get a hasher of their own here and are re-hashed
- * with the default after their first successful verification.
+ * Routes each hash to the hasher of its algorithm; new hashes use the default one.
  */
 final readonly class PasswordHasherRegistry implements PasswordHasherInterface
 {
@@ -59,7 +57,7 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
     }
 
     /**
-     * A hash the default hasher would not have produced needs a rehash, whatever its own hasher thinks.
+     * A hash of another algorithm than the default needs a rehash.
      */
     public function needsRehash(PasswordHash $hash): bool
     {

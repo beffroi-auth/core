@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Identity;
 
 /**
- * A postal address, with the fields of the OIDC Core §5.1.1 address claim. Every field is optional; an
- * address with no field at all is not an address.
+ * The OIDC Core §5.1.1 address claim; an address with no field at all is not an address.
  */
 final readonly class Address
 {

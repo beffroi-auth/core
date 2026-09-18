@@ -15,11 +15,8 @@ use Heidi\Core\Port\SigningKeyRepositoryInterface;
 use function sprintf;
 
 /**
- * Reads the keys of a tenant from the repository and opens the active one with the KMS. An opened key stays
- * in the memory of this instance while it is the active one, so that the KMS is reached once per key, not
- * once per token; which key is active is read from the repository on each call, so that a rotation done
- * elsewhere is seen at once. A key that stopped being active is forgotten: it never signs again, and its
- * private half has no reason to stay in the process.
+ * Opens the active key of a tenant with the KMS once and keeps it in memory while it is active; which key
+ * is active is read from the repository on each call, so that a rotation is seen at once.
  */
 final class SealedKeyProvider implements SigningKeyProviderInterface
 {

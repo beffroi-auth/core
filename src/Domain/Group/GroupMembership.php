@@ -13,7 +13,7 @@ use Symfony\Component\Uid\Uuid;
 final class GroupMembership
 {
     /**
-     * The tenant of the group, restated so that every stored membership carries it (decision 0002).
+     * Restated from the group (decision 0002).
      */
     public readonly Tenant $tenant;
 

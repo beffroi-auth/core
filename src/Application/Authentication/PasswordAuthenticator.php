@@ -27,15 +27,12 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * Authenticates a user of a tenant with a password and opens a session. The writes done here (credential
- * usage, rehash, session) are the ones the protocol needs before answering; the integration decides how
- * they reach the database. Every outcome is announced as an event carrying the request context.
+ * Authenticates a user with a password and opens a session. Every outcome is an event carrying the request context.
  */
 final class PasswordAuthenticator
 {
     /**
-     * Verified against when the user or the credential does not exist, so that a failed attempt costs the
-     * same time whether the account exists or not.
+     * Verified against when the user does not exist, so that a failure costs the same time either way.
      */
     private ?PasswordHash $decoyHash = null;
 
@@ -51,8 +48,6 @@ final class PasswordAuthenticator
     }
 
     /**
-     * @param string $identifier what the user typed to name themselves
-     *
      * @throws AuthenticationFailedException
      */
     public function authenticate(
@@ -80,8 +75,7 @@ final class PasswordAuthenticator
             throw $this->failure($tenant, $context, AuthenticationFailureReason::InvalidCredential, $identifier, $user);
         }
 
-        // Checked after the password on purpose: a disabled account answers exactly like a wrong password
-        // to whoever does not know the password.
+        // after the password on purpose: a disabled account answers like a wrong password
         if (! $user->isEnabled()) {
             throw $this->failure($tenant, $context, AuthenticationFailureReason::DisabledUser, $identifier, $user);
         }

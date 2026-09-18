@@ -26,18 +26,14 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use function sprintf;
 
 /**
- * Rotation without an outage, as OIDC Core §10.1.1 describes it for relying parties that cache the JWK
- * Set: the new key is published before it signs (stage(), then activate() once every cache can have seen
- * it), the previous one stays published while a JWS it signed can be alive (its retirement date, computed
- * from the kinds of JWS the tenant issues), then leaves the set when that date has passed (retireDue()).
- * rotate() does the two steps at once, for the first key of a tenant (nobody caches an empty JWK Set) or
- * for an operator who knows every client is cold; with "compromised", the previous key is retired with
- * no window, and every JWS naming it is refused from then on.
+ * Rotation without an outage (OIDC Core §10.1.1, architecture §3.3): stage() publishes a key before it
+ * signs, activate() makes it sign and starts retiring the previous one, retireDue() removes a key once
+ * every JWS it could have signed has expired. rotate() does the first two steps at once.
  */
 final readonly class SigningKeyRotator
 {
     /**
-     * @param iterable<IssuedJwsKindInterface> $issuedJws every kind of JWS the tenant signs; the longest lifetime among them dates a retirement
+     * @param iterable<IssuedJwsKindInterface> $issuedJws the longest lifetime among them dates a retirement
      */
     public function __construct(
         private SigningKeyRepositoryInterface $keys,
@@ -50,7 +46,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * Generates a key, seals it, publishes it: it signs nothing until activate().
+     * Published, sealed, signing nothing until activate().
      */
     public function stage(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context): SigningKey
     {
@@ -64,8 +60,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * A staged key signs from now on; the key that was active starts retiring, due once the last JWS it
-     * could have signed has expired.
+     * The staged key signs from now on; the active one starts retiring.
      */
     public function activate(Tenant $tenant, string $kid, RequestContext $context): SigningKey
     {
@@ -73,8 +68,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * Stages and activates at once. With "compromised", the previous active key is retired at once as well:
-     * no window, every JWS naming its kid refused from then on.
+     * Stages and activates at once; "compromised" retires the previous key with no window.
      */
     public function rotate(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context, bool $compromised = false): SigningKey
     {
@@ -82,8 +76,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * Retires every key of the tenant whose retirement date has passed, and none other: this is the timed
-     * step of a rotation, safe to run as often as wanted.
+     * The timed step of a rotation, idempotent.
      *
      * @return list<SigningKey> the keys retired by this call
      */
@@ -105,8 +98,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * Retires one retiring key. Before its retirement date, the caller has to force it, and the trail says
-     * so; the active key cannot be retired, rotate first.
+     * Before the retirement date the caller has to force it, and the trail says so.
      */
     public function retire(Tenant $tenant, string $kid, RequestContext $context, bool $force = false): SigningKey
     {
@@ -119,7 +111,6 @@ final readonly class SigningKeyRotator
         if ($key->status === KeyStatus::Retiring && ! $due && ! $force) {
             throw new RetirementNotDueException(sprintf('The key "%s" is not due for retirement before %s: a JWS it signed may be alive.', $kid, $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?'));
         }
-        // A staged or a retired key is refused by the key itself.
         $key->retire($now);
         $this->keys->save($key);
         $this->events->dispatch(new SigningKeyRetired($key, $due ? RetirementReason::Due : RetirementReason::Forced, $now, $context));
@@ -130,7 +121,7 @@ final readonly class SigningKeyRotator
     private function takeOver(SigningKey $key, RequestContext $context, bool $compromised): SigningKey
     {
         $now = $this->clock->now();
-        // Looked up before the activation: in memory, the new key would otherwise be among the candidates.
+        // looked up before the activation, or the new key would be among the candidates
         $previous = $this->keys->findActive($key->tenant, $key->algorithm);
         $key->activate($now);
         if ($previous !== null) {
@@ -149,8 +140,7 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * When the last JWS a key retiring now could have signed has expired: the longest lifetime among the
-     * kinds the tenant issues. A tenant that issues no JWS retires its key at once.
+     * The longest lifetime among the kinds of JWS the tenant issues; none means at once.
      */
     private function retirementDue(Tenant $tenant, DateTimeImmutable $retiringAt): DateTimeImmutable
     {

@@ -10,7 +10,7 @@ use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 
 /**
- * A new key is published and signs nothing yet: the staging window of a rotation has started.
+ * A new key is published and signs nothing yet.
  */
 final readonly class SigningKeyStaged implements DomainEventInterface
 {

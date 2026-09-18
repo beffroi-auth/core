@@ -12,56 +12,36 @@ use function sprintf;
 use Stringable;
 
 /**
- * An Authentication Context Class Reference, the value of the "acr" claim (OIDC Core §2): what the
- * authentication that established a session satisfied. It is computed from the proofs of the session, never
- * stored nor configured, so that a proof added later moves it the way it moves auth_time (architecture
- * §3.2).
- *
- * The vocabulary is a level of authentication as a numeric string, the one Keycloak emits by default ("1"
- * after a password, "0" once the level expired): a relying party written for it reads the same value after
- * an import (decision 0002). The registered names of RFC 6711 each carry an enrolment meaning the provider
- * does not assert, and OIDC Core §2 forbids using a registered name in another sense; "0" says there is no
- * confidence the same person is there, which is not what a verified password establishes. Above the levels,
- * the two names of OpenID Connect EAP ACR Values 1.0 say what a passkey proves: phishing resistance, in a
- * hardware-protected module or not.
- *
- * Each class is a predicate on the proofs, and a session satisfies every class whose predicate holds: a
- * password and a hardware key satisfy "1", "2", "phr" and "phrh" at once. What a request names is matched
- * against that, exactly (OIDC Core §5.5.1.1); what nothing names is answered with the strongest class
- * satisfied, in the order below.
+ * The "acr" claim (OIDC Core §2), computed from the proofs of a session, never stored (architecture §3.2).
+ * Levels as numeric strings ("1", "2", the Keycloak vocabulary) and the EAP ACR Values 1.0 names for
+ * passkeys. Each class is a predicate on the proofs; a session satisfies every class whose predicate holds.
  */
 final readonly class AuthenticationContextClass implements Stringable
 {
-    /**
-     * One factor was proven: the password.
-     */
     public const string SINGLE_FACTOR = '1';
 
     /**
-     * Two factors of different kinds were proven, a password and a one-time password, or an upstream
-     * provider asserted "mfa" (RFC 8176 §2).
+     * Two factors of different kinds, or an upstream "mfa" (RFC 8176 §2).
      */
     public const string TWO_FACTORS = '2';
 
     /**
-     * EAP ACR Values 1.0 "phr": proof of possession of a key, which a party controlling where the browser
-     * goes cannot capture; a passkey, in software or in hardware.
+     * EAP ACR Values 1.0: a passkey, in software or in hardware.
      */
     public const string PHISHING_RESISTANT = 'phr';
 
     /**
-     * EAP ACR Values 1.0 "phrh": the same, the private key held in a hardware-protected module.
+     * EAP ACR Values 1.0: a passkey in a hardware-protected module.
      */
     public const string PHISHING_RESISTANT_HARDWARE = 'phrh';
 
     /**
-     * OIDC Core §2: an absolute URI or a registered name, either way printable ASCII without space.
+     * OIDC Core §2: printable ASCII without space.
      */
     private const string PATTERN = '/^[\x21-\x7E]{1,255}$/D';
 
     /**
-     * The classes above the single factor, strongest first: the order in which a session is answered
-     * when no class is requested (architecture §3.2).
+     * Strongest first: the order a session is answered in when no class is requested.
      */
     private const array ABOVE_SINGLE_FACTOR = [self::PHISHING_RESISTANT_HARDWARE, self::PHISHING_RESISTANT, self::TWO_FACTORS];
 
@@ -99,8 +79,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * The strongest class the proofs of a session satisfy. A session holds at least one proof, and one
-     * proof of any method is one factor, so the single factor is the floor.
+     * The strongest class the proofs satisfy; one proof of any method is at least the single factor.
      */
     public static function of(AuthenticationProofs $proofs): self
     {
@@ -115,10 +94,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * What the provider can assert, what "acr_values_supported" lists (OIDC Discovery §3): the classes a
-     * credential of the provider can prove. The password is the only credential today, so the single
-     * factor is the only class; a second factor adds "2", a passkey "phr" and "phrh". A request naming
-     * a class outside this list can never be met, whatever the session (see AuthorizationHandler).
+     * What "acr_values_supported" lists (OIDC Discovery §3): the classes a credential of the provider can prove.
      *
      * @return non-empty-list<string>
      */
@@ -128,9 +104,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * Whether the proofs meet the predicate of this class. A class the provider does not define, a URI of
-     * a federation or a name of RFC 6711, is never satisfied: the provider asserts nothing it has not
-     * defined (OIDC Core §2).
+     * A class the provider does not define is never satisfied (OIDC Core §2).
      */
     public function isSatisfiedBy(AuthenticationProofs $proofs): bool
     {

@@ -18,7 +18,7 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
     private array $keys = [];
 
     /**
-     * How many times save() was called, for tests that must see a write happen on an object they already hold.
+     * For tests that must see a write happen on an object they already hold.
      */
     public private(set) int $saves = 0;
 

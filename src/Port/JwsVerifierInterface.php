@@ -11,10 +11,9 @@ use Heidi\Core\Exception\InvalidJwsException;
 interface JwsVerifierInterface
 {
     /**
-     * Verifies a compact JWS the tenant issued, against its published keys and its algorithms only.
+     * Against the published keys and the algorithms of the tenant only.
      *
-     * @throws InvalidJwsException when the token is malformed, uses another algorithm, names an unknown key or
-     *                             does not verify
+     * @throws InvalidJwsException
      */
     public function verify(Tenant $tenant, string $compactJws): VerifiedJws;
 }

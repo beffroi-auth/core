@@ -12,9 +12,6 @@ interface SigningKeyRepositoryInterface
 {
     public function find(Tenant $tenant, string $kid): ?SigningKey;
 
-    /**
-     * The key that signs: never a staged one.
-     */
     public function findActive(Tenant $tenant, SignatureAlgorithm $algorithm): ?SigningKey;
 
     /**

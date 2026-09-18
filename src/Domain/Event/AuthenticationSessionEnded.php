@@ -17,9 +17,6 @@ final readonly class AuthenticationSessionEnded implements DomainEventInterface
 
     public SessionEnd $endedBy;
 
-    /**
-     * @param RequestContext $context the request that ended the session; for an expiry sweep, the sweep's own context
-     */
     public function __construct(
         public AuthenticationSession $session,
         public DateTimeImmutable $occurredAt,

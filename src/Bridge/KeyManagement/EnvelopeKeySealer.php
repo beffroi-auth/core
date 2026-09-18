@@ -22,12 +22,8 @@ use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
 use Throwable;
 
 /**
- * Seals private JWKs as symfony/key-management envelopes. The KMS wraps a data key per envelope; the
- * private JWK itself never reaches the KMS. The KMS key is named from the tenant: "{tenant}" in the key
- * identifier stands for its slug, so that each tenant has its own master key and a KMS policy can scope a
- * credential to one; a literal identifier is one key for all. The additional authenticated data binds an
- * envelope to this use and to its tenant: a sealed signing key cannot be passed off as something else, nor
- * as the key of another tenant, nor the reverse.
+ * Seals private JWKs as symfony/key-management envelopes; the private JWK never reaches the KMS. The
+ * additional authenticated data binds an envelope to this use and to its tenant.
  */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
@@ -36,7 +32,7 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
     private const string AAD = 'heidi:signing-key:v2:';
 
     /**
-     * @param string $kmsKeyId the identifier of the KMS key, "{tenant}" standing for the slug of the tenant
+     * @param string $kmsKeyId "{tenant}" stands for the slug of the tenant
      */
     public function __construct(
         private EnvelopeEncrypterInterface&EnvelopeDecrypterInterface $envelopes,

@@ -14,9 +14,8 @@ use function sprintf;
 use function trim;
 
 /**
- * Where a request came from and with what. Built by the integration on every request that touches an
- * identity, stored on sessions and carried by every event (architecture §3.5). The raw values are kept as
- * received; the enrichments (location, device) are added later, asynchronously, and never block a request.
+ * Where a request came from and with what, carried by every session and event (architecture §3.5).
+ * Enrichments (location, device) are asynchronous.
  */
 final readonly class RequestContext
 {

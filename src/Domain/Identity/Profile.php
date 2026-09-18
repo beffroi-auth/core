@@ -9,8 +9,7 @@ use function preg_match;
 use function sprintf;
 
 /**
- * The descriptive attributes of a user: the standard profile of OIDC Core §5.1, kept protocol-neutral here.
- * Mapping to claim names belongs to the protocol modules.
+ * The standard profile of OIDC Core §5.1, protocol-neutral; the mapping to claim names belongs to the modules.
  */
 final readonly class Profile
 {

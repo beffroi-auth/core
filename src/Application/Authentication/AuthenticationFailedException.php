@@ -9,8 +9,7 @@ use Heidi\Core\Exception\ExceptionInterface;
 use RuntimeException;
 
 /**
- * The attempt failed. The reason is for the audit trail and the logs; what a user sees is the same message
- * whatever the reason, so that an attacker learns nothing about which accounts exist.
+ * The reason is for the audit trail; the user sees the same message whatever it is.
  */
 final class AuthenticationFailedException extends RuntimeException implements ExceptionInterface
 {

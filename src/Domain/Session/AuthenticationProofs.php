@@ -12,12 +12,8 @@ use function in_array;
 use function max;
 
 /**
- * Which authentication methods were proven for a session, and when each was proven last. A password
- * re-entered five minutes ago and a second factor from the login two hours ago are two entries, not one
- * timestamp: a policy on freshness or strength needs both (symfony/symfony#66064 makes the same choice for
- * the security token, and the bundle copies this map into it).
- *
- * The "amr" claim is the list of keys; "auth_time" is the most recent proof.
+ * The methods proven for a session and when each was proven last (the shape of symfony/symfony#66064).
+ * "amr" is the list of keys, "auth_time" the most recent proof.
  */
 final readonly class AuthenticationProofs
 {
@@ -49,7 +45,7 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * Records a proof. The newest proof of a method replaces the older one; other methods keep their own date.
+     * The newest proof of a method replaces the older one.
      */
     public function with(AuthenticationMethod $method, DateTimeImmutable $provenAt): self
     {
@@ -73,7 +69,7 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * The most recent proof: what OIDC Core §2 calls auth_time once a re-authentication has happened.
+     * The "auth_time" (OIDC Core §2).
      */
     public function latest(): DateTimeImmutable
     {
@@ -89,8 +85,7 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * The distinct kinds of factor the proofs cover, in the order they were proven: a password and a PIN
-     * are one kind, a password and a one-time password two.
+     * The distinct kinds of factor, in the order they were proven.
      *
      * @return list<AuthenticationFactor>
      */

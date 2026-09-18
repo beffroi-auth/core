@@ -13,15 +13,8 @@ use SensitiveParameter;
 use function sprintf;
 
 /**
- * A signing key of a tenant, as persisted: the public JWK in clear, the private JWK sealed by the KMS
- * (never stored in clear, decrypted only in the memory of the process that signs). The "kid" is the
- * RFC 7638 thumbprint of the public key.
- *
- * A new key is staged: published and signing nothing. It goes active, then retiring when another takes
- * over, then retired once its retirement date has passed (KeyStatus). Every date is a fact of the key,
- * written when the transition happens; the retirement date is computed when the key starts retiring, from
- * the longest lifetime of a JWS the tenant issues, so that retiring it is a matter of time and not of
- * judgement.
+ * A signing key of a tenant: the public JWK in clear, the private JWK sealed by the KMS, the "kid" its
+ * RFC 7638 thumbprint. Staged, active, retiring, retired (architecture §3.3); every date is a fact of the key.
  */
 final class SigningKey
 {
@@ -32,16 +25,15 @@ final class SigningKey
     public private(set) ?DateTimeImmutable $retiringAt = null;
 
     /**
-     * When the retirement is due: the last JWS this key could have signed has expired by then.
+     * When the last JWS this key could have signed has expired.
      */
     public private(set) ?DateTimeImmutable $retirementDueAt = null;
 
     public private(set) ?DateTimeImmutable $retiredAt = null;
 
     /**
-     * @param array<string, string> $publicJwk the public members (RFC 7517 §4), including kid, kty, alg and use
-     * @param string $sealedPrivateJwk the private JWK as a KMS envelope, opaque here
-     * @param DateTimeImmutable $createdAt when the key was generated and staged
+     * @param array<string, string> $publicJwk the public members (RFC 7517 §4)
+     * @param string $sealedPrivateJwk a KMS envelope, opaque here
      */
     public function __construct(
         public readonly string $kid,
@@ -82,8 +74,7 @@ final class SigningKey
     }
 
     /**
-     * The key signs from now on. Only a staged key can: the JWK Set has been serving its "kid" since it was
-     * staged, which is what lets a relying party with a warm cache verify what it signs.
+     * Only a staged key can: the JWK Set has been serving its "kid" since.
      */
     public function activate(DateTimeImmutable $now): void
     {
@@ -95,8 +86,7 @@ final class SigningKey
     }
 
     /**
-     * A new key took over: this one keeps verifying what it signed until the last such JWS expires, which
-     * is the retirement date given.
+     * A new key took over; this one stays published until the retirement date.
      */
     public function startRetiring(DateTimeImmutable $now, DateTimeImmutable $retirementDueAt): void
     {
@@ -112,7 +102,7 @@ final class SigningKey
     }
 
     /**
-     * Out of the JWK Set. The one who calls this decides whether the retirement is due (isDue()) or forced.
+     * Out of the JWK Set; due (isDue()) or forced is the caller's decision.
      */
     public function retire(DateTimeImmutable $now): void
     {
@@ -139,7 +129,7 @@ final class SigningKey
     }
 
     /**
-     * Retiring, and past its retirement date: nothing it signed is alive any more.
+     * Retiring and past its retirement date.
      */
     public function isDue(DateTimeImmutable $now): bool
     {

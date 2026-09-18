@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Group;
 
 /**
- * Where a group or a membership comes from. A membership fed by an upstream source is rewritten on the next
- * synchronisation: the source wins over a manual edit (decision 0002).
+ * Where a group or a membership comes from; the source wins over a manual edit (decision 0002).
  */
 enum GroupSource: string
 {

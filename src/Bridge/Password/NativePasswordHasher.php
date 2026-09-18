@@ -21,16 +21,14 @@ use SensitiveParameter;
 use function sprintf;
 
 /**
- * The algorithms PHP implements natively, produced and verified by password_hash() and password_verify().
- * argon2id is what new hashes get; argon2i and bcrypt are verified, then re-hashed on the next login.
+ * password_hash() and password_verify(): argon2id for new hashes, argon2i and bcrypt verified then re-hashed.
  */
 final readonly class NativePasswordHasher implements PasswordHasherInterface
 {
     private const array SUPPORTED = [PasswordAlgorithm::Argon2id, PasswordAlgorithm::Argon2i, PasswordAlgorithm::Bcrypt];
 
     /**
-     * Defaults are those of PHP (RFC 9106 §4 second recommendation is met by 64 MiB, 3 iterations, 4 lanes);
-     * a deployment raises them, never lowers them below PHP's own.
+     * The defaults of PHP meet RFC 9106 §4; a deployment raises them, never lowers them.
      */
     public function __construct(
         private int $memoryCost = PASSWORD_ARGON2_DEFAULT_MEMORY_COST,

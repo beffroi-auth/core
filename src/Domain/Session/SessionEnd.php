@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Session;
 
 /**
- * Who or what ended a session. It matters for the user reading their history and for the audit trail.
+ * Who or what ended a session.
  */
 enum SessionEnd: string
 {

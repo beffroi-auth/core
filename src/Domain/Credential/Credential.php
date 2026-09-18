@@ -10,13 +10,12 @@ use Heidi\Core\Domain\Tenant\Tenant;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * A way for a user to prove who they are. A user has N of them; the password is one kind, passkeys and TOTP
- * are others to come.
+ * A way for a user to prove who they are; a user has N of them.
  */
 abstract class Credential
 {
     /**
-     * The tenant of the user, restated so that every stored credential carries it (decision 0002).
+     * Restated from the user (decision 0002).
      */
     public readonly Tenant $tenant;
 

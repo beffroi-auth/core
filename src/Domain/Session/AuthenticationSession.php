@@ -12,13 +12,8 @@ use Heidi\Core\Exception\LogicException;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Who is authenticated at the provider, since when, how and from where. The integration owns the cookie;
- * the core owns this record and the decisions built on it. Tokens issued by a protocol point at a session,
- * which is what makes them revocable together at logout. Sessions end one by one.
- *
- * "How" is a map of proofs, not a single method and a single time: a re-authentication or a step-up adds or
- * refreshes one entry and leaves the others in place (see AuthenticationProofs). The "acr" is read from
- * that map, never stored (see AuthenticationContextClass).
+ * Who is authenticated at the provider, since when, how and from where. Tokens point at a session, which
+ * makes them revocable together at logout. "How" is a map of proofs; "acr" is read from it, never stored.
  */
 final class AuthenticationSession
 {
@@ -32,9 +27,6 @@ final class AuthenticationSession
 
     public private(set) ?SessionEnd $endedBy = null;
 
-    /**
-     * @param DateTimeImmutable $establishedAt when the session was opened, which is also the date of its first proof
-     */
     public function __construct(
         public private(set) Uuid $id,
         public readonly Tenant $tenant,
@@ -59,7 +51,7 @@ final class AuthenticationSession
     }
 
     /**
-     * The "auth_time" of OIDC Core §2: the moment of the most recent proof, which a re-authentication moves.
+     * The "auth_time" (OIDC Core §2): the most recent proof.
      */
     public function authenticatedAt(): DateTimeImmutable
     {
@@ -67,7 +59,7 @@ final class AuthenticationSession
     }
 
     /**
-     * The "acr" of OIDC Core §2: what the proofs satisfy, today, which a step-up would raise.
+     * The "acr" (OIDC Core §2): the strongest class the proofs satisfy.
      */
     public function authenticationContextClass(): AuthenticationContextClass
     {
@@ -75,8 +67,7 @@ final class AuthenticationSession
     }
 
     /**
-     * Whether the proofs of the session meet a class (OIDC Core §5.5.1.1): the one a client requested,
-     * which may be below the strongest the session satisfies.
+     * OIDC Core §5.5.1.1: the requested class may be below the strongest one satisfied.
      */
     public function satisfies(AuthenticationContextClass $class): bool
     {
@@ -84,7 +75,7 @@ final class AuthenticationSession
     }
 
     /**
-     * A re-authentication or a step-up: one more proof, dated now. Other proofs keep their own date.
+     * A re-authentication or a step-up: one more proof, dated now.
      */
     public function recordProof(AuthenticationMethod $method, RequestContext $context): void
     {
@@ -100,8 +91,7 @@ final class AuthenticationSession
     }
 
     /**
-     * Records activity: where the user was last seen from, and until when the session now lives. The
-     * lifetime policy (sliding, absolute) belongs to the caller.
+     * The lifetime policy (sliding, absolute) belongs to the caller.
      */
     public function touch(RequestContext $context, DateTimeImmutable $expiresAt): void
     {
@@ -117,7 +107,7 @@ final class AuthenticationSession
     }
 
     /**
-     * The first end wins: a session ended by the user and then swept by the expiry job stays "ended by user".
+     * The first end wins.
      */
     public function end(SessionEnd $by, DateTimeImmutable $now): void
     {

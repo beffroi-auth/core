@@ -11,12 +11,10 @@ use function sprintf;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * An issuer, with its users, its clients and its keys. Everything in the core is scoped by a tenant, even
- * when a deployment has only one.
+ * An issuer, with its users, its clients and its keys. Everything in the core is scoped by a tenant.
  *
- * The identifier of an entity is private(set) rather than readonly, here and on every entity: a mapper
- * that builds lazy references assigns it before the object is loaded and again when it is, and a readonly
- * property typed with an object refuses the second assignment even when the value is equal.
+ * On every entity the identifier is private(set), not readonly: a mapper building lazy references assigns
+ * it twice.
  */
 final class Tenant
 {

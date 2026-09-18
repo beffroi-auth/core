@@ -13,8 +13,7 @@ use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Ends one session and says so. Logout, an administrator, the expiry sweep and a security response all go
- * through here, so that every ended session leaves the same trace.
+ * Ends one session and says so; every ended session leaves the same trace.
  */
 final readonly class SessionTerminator
 {

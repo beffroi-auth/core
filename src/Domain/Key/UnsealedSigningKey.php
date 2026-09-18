@@ -7,8 +7,7 @@ namespace Heidi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * A signing key with its private JWK in clear, in memory only. Handed by the key provider to the JWS bridge
- * and to nothing else.
+ * A signing key with its private JWK in clear, in memory only.
  */
 final readonly class UnsealedSigningKey
 {
