@@ -7,6 +7,7 @@ namespace Heidi\Core\Port;
 use Heidi\Core\Domain\Credential\PasskeyCredential;
 use Heidi\Core\Domain\Credential\PasskeyUserHandle;
 use Heidi\Core\Domain\Identity\User;
+use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\PasskeyCeremonyFailedException;
 use Webauthn\CredentialRecord;
 use Webauthn\PublicKeyCredentialCreationOptions;
@@ -27,10 +28,11 @@ interface PasskeyRegistrarInterface
     public function creationOptions(User $user, PasskeyUserHandle $userHandle, array $existing): PublicKeyCredentialCreationOptions;
 
     /**
-     * The response of the browser, as it serialised it, checked against the options: origin, challenge,
-     * relying party, and the attestation when the authenticator sent one, never required.
+     * The response of the browser, as it serialised it, checked against the options: the origin of the
+     * issuer of the tenant, which the options do not carry, the challenge, the relying party, and the
+     * attestation when the authenticator sent one, never required.
      *
      * @throws PasskeyCeremonyFailedException
      */
-    public function verifyAttestation(PublicKeyCredentialCreationOptions $options, string $response): CredentialRecord;
+    public function verifyAttestation(Tenant $tenant, PublicKeyCredentialCreationOptions $options, string $response): CredentialRecord;
 }

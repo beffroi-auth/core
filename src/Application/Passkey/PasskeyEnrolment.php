@@ -65,7 +65,7 @@ final readonly class PasskeyEnrolment implements CredentialEnrolmentInterface
             throw new InvalidArgumentException('The challenge of a passkey enrolment is its creation options.');
         }
         try {
-            $record = $this->registrar->verifyAttestation($challenge, $answer);
+            $record = $this->registrar->verifyAttestation($user->tenant, $challenge, $answer);
         } catch (PasskeyCeremonyFailedException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
