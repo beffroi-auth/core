@@ -40,7 +40,7 @@ use Webauthn\PublicKeyCredentialParameters;
  * (the statement of a format it does not know is a refusal, never a pass), and the sign count is left to
  * the core (PasskeyCredential::signCountRegresses()), which tells a regression instead of refusing it.
  */
-final class WebauthnCeremonies
+final readonly class WebauthnCeremonies
 {
     /**
      * COSE algorithm identifiers (RFC 9053 §2.1, §2.2, RFC 8812 §2): what a platform authenticator and a
@@ -48,11 +48,13 @@ final class WebauthnCeremonies
      */
     private const array ALGORITHMS = [-7, -257];
 
-    private ?SerializerInterface $serializer = null;
+    private SerializerInterface $serializer;
 
     public function __construct(
-        private readonly ClockInterface $clock,
+        private ClockInterface $clock,
     ) {
+        $this->serializer = new WebauthnSerializerFactory($this->attestationFormats())
+            ->create();
     }
 
     /**
@@ -97,7 +99,7 @@ final class WebauthnCeremonies
      */
     public function optionsToJson(PublicKeyCredentialOptions $options): string
     {
-        return $this->serializer()
+        return $this->serializer
             ->serialize($options, JsonEncoder::FORMAT, [
                 AbstractObjectNormalizer::SKIP_NULL_VALUES => true,
             ]);
@@ -112,7 +114,7 @@ final class WebauthnCeremonies
     public function credentialFromJson(string $json): PublicKeyCredential
     {
         try {
-            return $this->serializer()
+            return $this->serializer
                 ->deserialize($json, PublicKeyCredential::class, JsonEncoder::FORMAT);
         } catch (Throwable $exception) {
             throw new PasskeyCeremonyFailedException(sprintf('The response of the browser cannot be read: %s', $exception->getMessage()), previous: $exception);
@@ -129,12 +131,6 @@ final class WebauthnCeremonies
         $factory->setCounterChecker(new IgnoredCounterChecker());
 
         return $factory;
-    }
-
-    private function serializer(): SerializerInterface
-    {
-        return $this->serializer ??= new WebauthnSerializerFactory($this->attestationFormats())
-            ->create();
     }
 
     private static function algorithms(): Manager
