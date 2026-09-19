@@ -21,7 +21,6 @@ use Webauthn\AttestationStatement\AndroidKeyAttestationStatementSupport;
 use Webauthn\AttestationStatement\AppleAttestationStatementSupport;
 use Webauthn\AttestationStatement\AttestationStatementSupportManager;
 use Webauthn\AttestationStatement\FidoU2FAttestationStatementSupport;
-use Webauthn\AttestationStatement\NoneAttestationStatementSupport;
 use Webauthn\AttestationStatement\PackedAttestationStatementSupport;
 use Webauthn\AttestationStatement\TPMAttestationStatementSupport;
 use Webauthn\AuthenticatorAssertionResponseValidator;
@@ -141,12 +140,12 @@ final readonly class WebauthnCeremonies
 
     /**
      * Verified when the authenticator sends one, never required (the spike README): "none" is what the
-     * provider asks for, the others are what an authenticator may send anyway.
+     * provider asks for, and what the manager always knows; the others are what an authenticator may send
+     * anyway.
      */
     private function attestationFormats(): AttestationStatementSupportManager
     {
         return new AttestationStatementSupportManager([
-            new NoneAttestationStatementSupport(),
             PackedAttestationStatementSupport::create(self::algorithms()),
             FidoU2FAttestationStatementSupport::create(),
             AndroidKeyAttestationStatementSupport::create(),
