@@ -67,7 +67,7 @@ final readonly class PasskeyEnrolment implements CredentialEnrolmentInterface
         try {
             $record = $this->registrar->verifyAttestation($challenge, $answer);
         } catch (PasskeyCeremonyFailedException $exception) {
-            throw new CredentialEnrolmentFailedException($exception->getMessage(), 0, $exception);
+            throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
         $passkeys = $this->credentials->findByUser($user, PasskeyCredential::class);
         if ($passkeys !== [] && ! $passkeys[0]->userHandle->equals(new PasskeyUserHandle($record->userHandle))) {
