@@ -19,6 +19,7 @@
         "psr/log": "^3.0",
         "symfony/key-management": "8.2.*",
         "symfony/uid": "8.2.*",
+        "web-auth/webauthn-lib": "^5.3",
         "web-token/jwt-library": "^4.2"
     },
     "autoload": {

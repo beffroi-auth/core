@@ -98,7 +98,7 @@ final readonly class UserProvisioner
         }
         $now = $this->clock->now();
         $hash = $this->hasher->hash($password);
-        $credential = $this->credentials->findPasswordCredential($user);
+        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
             $credential = new PasswordCredential(Uuid::v7(), $user, $hash, $now);
         } else {

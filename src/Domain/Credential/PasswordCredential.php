@@ -22,6 +22,11 @@ final class PasswordCredential extends Credential
         $this->hashChangedAt = $createdAt;
     }
 
+    public function kind(): string
+    {
+        return 'password';
+    }
+
     /**
      * A stronger hash of the same password.
      */

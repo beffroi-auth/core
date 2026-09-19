@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Authentication;
 
 use DateInterval;
+use Heidi\Core\Domain\Credential\PasswordCredential;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
@@ -64,7 +65,7 @@ final class PasswordAuthenticator
             throw $this->failure($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, null);
         }
 
-        $credential = $this->credentials->findPasswordCredential($user);
+        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
             $this->hasher->verify($this->decoyHash(), $password);
 

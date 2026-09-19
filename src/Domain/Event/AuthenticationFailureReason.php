@@ -13,4 +13,5 @@ enum AuthenticationFailureReason: string
     case NoSuchCredential = 'no_such_credential';
     case InvalidCredential = 'invalid_credential';
     case DisabledUser = 'disabled_user';
+    case RevokedCredential = 'revoked_credential';
 }

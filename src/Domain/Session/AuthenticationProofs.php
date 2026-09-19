@@ -45,6 +45,21 @@ final readonly class AuthenticationProofs
     }
 
     /**
+     * Several methods proven at once, as an assertion of a passkey does (RFC 8176 §2 lists them all).
+     *
+     * @param non-empty-list<AuthenticationMethod> $methods
+     */
+    public static function ofAll(array $methods, DateTimeImmutable $provenAt): self
+    {
+        $entries = [];
+        foreach ($methods as $method) {
+            $entries[$method->value] = $provenAt;
+        }
+
+        return new self($entries);
+    }
+
+    /**
      * The newest proof of a method replaces the older one.
      */
     public function with(AuthenticationMethod $method, DateTimeImmutable $provenAt): self

@@ -13,15 +13,16 @@ use Heidi\Core\Domain\Tenant\Tenant;
 final readonly class AuthenticationFailed implements DomainEventInterface
 {
     /**
-     * @param string $identifier kept as typed, for the audit trail
+     * @param AuthenticationMethod|null $method what the attempt claimed, null when a ceremony refused a passkey before naming one
+     * @param string|null $identifier kept as typed, for the audit trail; null when nothing was typed (a passkey)
      */
     public function __construct(
         public DateTimeImmutable $occurredAt,
         public Tenant $tenant,
         public RequestContext $context,
-        public AuthenticationMethod $method,
+        public ?AuthenticationMethod $method,
         public AuthenticationFailureReason $reason,
-        public string $identifier,
+        public ?string $identifier,
         public ?User $user,
     ) {
     }

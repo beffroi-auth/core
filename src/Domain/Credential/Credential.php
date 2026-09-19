@@ -29,6 +29,20 @@ abstract class Credential
         $this->tenant = $user->tenant;
     }
 
+    /**
+     * What the kind is called, for a console or an audit trail: "password", "passkey". Each kind names
+     * itself; nothing reads a class name.
+     */
+    abstract public function kind(): string;
+
+    /**
+     * What the user called it, when the kind lets them name one (a passkey); null otherwise.
+     */
+    public function label(): ?string
+    {
+        return null;
+    }
+
     public function markUsed(DateTimeImmutable $now): void
     {
         $this->lastUsedAt = $now;

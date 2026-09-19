@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\InMemory;
 
+use function hash_equals;
 use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\PasswordCredential;
+use Heidi\Core\Domain\Credential\ExternallyIdentifiedCredentialInterface;
 use Heidi\Core\Domain\Identity\User;
+use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Symfony\Component\Uid\Uuid;
+use function usort;
 
 final class InMemoryCredentialRepository implements CredentialRepositoryInterface
 {
@@ -16,22 +20,28 @@ final class InMemoryCredentialRepository implements CredentialRepositoryInterfac
      */
     private array $credentials = [];
 
-    public function findByUser(User $user): array
+    public function findByUser(User $user, string $kind = Credential::class): array
     {
         $found = [];
         foreach ($this->credentials as $credential) {
-            if ($credential->user->id->equals($user->id)) {
+            if ($credential instanceof $kind && $credential->user->id->equals($user->id)) {
                 $found[] = $credential;
             }
         }
+        usort($found, static fn (Credential $a, Credential $b): int => $a->createdAt <=> $b->createdAt);
 
         return $found;
     }
 
-    public function findPasswordCredential(User $user): ?PasswordCredential
+    public function find(Uuid $id): ?Credential
     {
-        foreach ($this->findByUser($user) as $credential) {
-            if ($credential instanceof PasswordCredential) {
+        return $this->credentials[$id->toRfc4122()] ?? null;
+    }
+
+    public function findByExternalId(Tenant $tenant, string $kind, string $externalId): ?Credential
+    {
+        foreach ($this->credentials as $credential) {
+            if ($credential instanceof $kind && $credential instanceof ExternallyIdentifiedCredentialInterface && $credential->tenant->equals($tenant) && hash_equals($credential->externalId, $externalId)) {
                 return $credential;
             }
         }
