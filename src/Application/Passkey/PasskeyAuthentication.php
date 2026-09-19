@@ -6,42 +6,37 @@ namespace Heidi\Core\Application\Passkey;
 
 use function array_filter;
 use function array_values;
-use DateInterval;
 use Heidi\Core\Application\Authentication\AuthenticationFailedException;
+use Heidi\Core\Application\Authentication\SessionOpener;
 use Heidi\Core\Domain\Credential\PasskeyCredential;
 use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasskeyUsed;
-use Heidi\Core\Domain\Event\UserAuthenticated;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\AuthenticationProofs;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\PasskeyCeremonyFailedException;
-use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Heidi\Core\Port\CredentialRepositoryInterface;
 use Heidi\Core\Port\PasskeyAuthenticatorInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Uid\Uuid;
 use Webauthn\PublicKeyCredentialRequestOptions;
 
 /**
- * Authenticates a user with a passkey and opens a session on what the assertion proved (the ceremony
- * behind PasskeyAuthenticatorInterface, WebAuthn Level 3 §7.2). Every outcome is an event carrying the
- * request context, as with a password.
+ * Authenticates a user with a passkey and opens a session, through the SessionOpener, on what the assertion
+ * proved (the ceremony behind PasskeyAuthenticatorInterface, WebAuthn Level 3 §7.2). Every outcome is an
+ * event carrying the request context, as with a password.
  */
 final readonly class PasskeyAuthentication
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
         private PasskeyAuthenticatorInterface $authenticator,
-        private AuthenticationSessionRepositoryInterface $sessions,
+        private SessionOpener $opener,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
-        private DateInterval $sessionLifetime = new DateInterval('PT12H'),
     ) {
     }
 
@@ -90,19 +85,7 @@ final readonly class PasskeyAuthentication
         $this->credentials->save($credential);
         $this->events->dispatch(new PasskeyUsed($credential, $now, $context, $signCountRegressed));
 
-        $session = new AuthenticationSession(
-            Uuid::v7(),
-            $tenant,
-            $credential->user,
-            $now,
-            AuthenticationProofs::ofAll($methods, $now),
-            $context,
-            $now->add($this->sessionLifetime),
-        );
-        $this->sessions->save($session);
-        $this->events->dispatch(new UserAuthenticated($session));
-
-        return $session;
+        return $this->opener->open($tenant, $credential->user, $methods, $context);
     }
 
     private function failure(

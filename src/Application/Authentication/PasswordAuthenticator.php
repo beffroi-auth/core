@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Authentication;
 
-use DateInterval;
 use Heidi\Core\Domain\Credential\PasswordCredential;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasswordRehashed;
-use Heidi\Core\Domain\Event\UserAuthenticated;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\AuthenticationProofs;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Heidi\Core\Port\CredentialRepositoryInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\UserRepositoryInterface;
@@ -28,7 +24,8 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * Authenticates a user with a password and opens a session. Every outcome is an event carrying the request context.
+ * Authenticates a user with a password and opens a session through the SessionOpener. Every outcome is an
+ * event carrying the request context.
  */
 final class PasswordAuthenticator
 {
@@ -41,10 +38,9 @@ final class PasswordAuthenticator
         private readonly UserRepositoryInterface $users,
         private readonly CredentialRepositoryInterface $credentials,
         private readonly PasswordHasherInterface $hasher,
-        private readonly AuthenticationSessionRepositoryInterface $sessions,
+        private readonly SessionOpener $opener,
         private readonly ClockInterface $clock,
         private readonly EventDispatcherInterface $events,
-        private readonly DateInterval $sessionLifetime = new DateInterval('PT12H'),
     ) {
     }
 
@@ -91,19 +87,7 @@ final class PasswordAuthenticator
             $this->credentials->save($credential);
         }
 
-        $session = new AuthenticationSession(
-            Uuid::v7(),
-            $tenant,
-            $user,
-            $now,
-            AuthenticationProofs::of(AuthenticationMethod::password(), $now),
-            $context,
-            $now->add($this->sessionLifetime),
-        );
-        $this->sessions->save($session);
-        $this->events->dispatch(new UserAuthenticated($session));
-
-        return $session;
+        return $this->opener->open($tenant, $user, [AuthenticationMethod::password()], $context);
     }
 
     private function failure(

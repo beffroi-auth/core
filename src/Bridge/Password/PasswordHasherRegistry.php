@@ -8,24 +8,26 @@ use Heidi\Core\Domain\Credential\PasswordAlgorithm;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\LogicException;
+use Heidi\Core\Port\AlgorithmPasswordHasherInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use SensitiveParameter;
 use function sprintf;
 
 /**
- * Routes each hash to the hasher of its algorithm; new hashes use the default one.
+ * Routes each hash to the hasher of its algorithm; new hashes use the default one. The port the use cases
+ * see, over the hashers that name their algorithms.
  */
 final readonly class PasswordHasherRegistry implements PasswordHasherInterface
 {
     /**
-     * @var list<PasswordHasherInterface>
+     * @var list<AlgorithmPasswordHasherInterface>
      */
     private array $hashers;
 
-    private PasswordHasherInterface $default;
+    private AlgorithmPasswordHasherInterface $default;
 
     /**
-     * @param iterable<PasswordHasherInterface> $hashers
+     * @param iterable<AlgorithmPasswordHasherInterface> $hashers
      */
     public function __construct(iterable $hashers, PasswordAlgorithm $defaultAlgorithm = PasswordAlgorithm::Argon2id)
     {
@@ -38,11 +40,6 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
         }
         $this->hashers = $list;
         $this->default = $this->hasherFor($defaultAlgorithm);
-    }
-
-    public function supports(PasswordAlgorithm $algorithm): bool
-    {
-        return array_any($this->hashers, fn ($hasher) => $hasher->supports($algorithm));
     }
 
     public function hash(#[SensitiveParameter] string $plainPassword): PasswordHash
@@ -66,7 +63,7 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
         return $hasher !== $this->default || $hasher->needsRehash($hash);
     }
 
-    private function hasherFor(PasswordAlgorithm $algorithm): PasswordHasherInterface
+    private function hasherFor(PasswordAlgorithm $algorithm): AlgorithmPasswordHasherInterface
     {
         foreach ($this->hashers as $hasher) {
             if ($hasher->supports($algorithm)) {

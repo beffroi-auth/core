@@ -8,7 +8,7 @@ use Heidi\Core\Domain\Credential\PasswordAlgorithm;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\LogicException;
-use Heidi\Core\Port\PasswordHasherInterface;
+use Heidi\Core\Port\AlgorithmPasswordHasherInterface;
 use function in_array;
 use const PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
 use const PASSWORD_ARGON2_DEFAULT_THREADS;
@@ -23,7 +23,7 @@ use function sprintf;
 /**
  * password_hash() and password_verify(): argon2id for new hashes, argon2i and bcrypt verified then re-hashed.
  */
-final readonly class NativePasswordHasher implements PasswordHasherInterface
+final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInterface
 {
     private const array SUPPORTED = [PasswordAlgorithm::Argon2id, PasswordAlgorithm::Argon2i, PasswordAlgorithm::Bcrypt];
 
