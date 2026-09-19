@@ -121,8 +121,8 @@ final class WebauthnCeremonies
 
     private function factory(Tenant $tenant): CeremonyStepManagerFactory
     {
+        // the factory verifies ES256 and RS256 by default, the two the options offer (ALGORITHMS)
         $factory = new CeremonyStepManagerFactory();
-        $factory->setAlgorithmManager(self::algorithms());
         $factory->setAttestationStatementSupportManager($this->attestationFormats());
         // the whole origin, scheme and port included: what lets a loopback issuer be plain HTTP, as the Issuer does
         $factory->setAllowedOrigins([self::origin($tenant)]);
