@@ -27,6 +27,9 @@ use Webauthn\AuthenticatorAssertionResponseValidator;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\CeremonyStep\CeremonyStepManagerFactory;
 use Webauthn\Denormalizer\WebauthnSerializerFactory;
+use Webauthn\MetadataService\CertificateChain\CertificateChainValidator;
+use Webauthn\MetadataService\MetadataStatementRepository;
+use Webauthn\MetadataService\StatusReportRepository;
 use Webauthn\PublicKeyCredential;
 use Webauthn\PublicKeyCredentialOptions;
 use Webauthn\PublicKeyCredentialParameters;
@@ -35,9 +38,13 @@ use Webauthn\PublicKeyCredentialParameters;
  * What the two ceremonies of WebAuthn Level 3 share, on webauthn-lib (docs/09-briques.md): the relying
  * party is the tenant (its identifier the host of the issuer, §5.4.2, the one origin allowed the origin of
  * the issuer, §13.4.9, plain HTTP on a loopback host only because the issuer is), the algorithms are those
- * the provider verifies, the attestation formats those the library verifies without a metadata service
- * (the statement of a format it does not know is a refusal, never a pass), and the sign count is left to
- * the core (PasskeyCredential::signCountRegresses()), which tells a regression instead of refusing it.
+ * the provider verifies, the attestation formats those the library verifies (the statement of a format it
+ * does not know is a refusal, never a pass), the FIDO metadata those of the store (§7.1 step 22: consulted
+ * by the library when the options asked for an attestation, which the provider's own enrolment never does,
+ * §5.4.7, and which a ceremony asking for one gets: a compromised authenticator refused on its status
+ * reports, a full attestation checked up to the root its statement names, an unknown AAGUID refused on a
+ * full attestation and passed on a self attestation), and the sign count is left to the core
+ * (PasskeyCredential::signCountRegresses()), which tells a regression instead of refusing it.
  */
 final readonly class WebauthnCeremonies
 {
@@ -51,6 +58,9 @@ final readonly class WebauthnCeremonies
 
     public function __construct(
         private ClockInterface $clock,
+        private MetadataStatementRepository $statements,
+        private StatusReportRepository $statusReports,
+        private CertificateChainValidator $chains,
     ) {
         $this->serializer = new WebauthnSerializerFactory($this->attestationFormats())
             ->create();
@@ -128,6 +138,9 @@ final readonly class WebauthnCeremonies
         // the whole origin, scheme and port included: what lets a loopback issuer be plain HTTP, as the Issuer does
         $factory->setAllowedOrigins([self::origin($tenant)]);
         $factory->setCounterChecker(new IgnoredCounterChecker());
+        // read when a ceremony asked for an attestation; the chains of an attestation are checked with the
+        // same validator as the chain of a blob, up to the roots the statement of the authenticator names
+        $factory->enableMetadataStatementSupport($this->statements, $this->statusReports, $this->chains);
 
         return $factory;
     }
@@ -141,7 +154,7 @@ final readonly class WebauthnCeremonies
     /**
      * Verified when the authenticator sends one, never required (the spike README): "none" is what the
      * provider asks for, and what the manager always knows; the others are what an authenticator may send
-     * anyway.
+     * anyway, and what a ceremony that asks for an attestation receives.
      */
     private function attestationFormats(): AttestationStatementSupportManager
     {
