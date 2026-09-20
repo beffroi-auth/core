@@ -44,8 +44,18 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
 
     public private(set) ?DateTimeImmutable $revokedAt = null;
 
-    public string $externalId {
-        get => $this->credentialId;
+    /**
+     * The credential ID (WebAuthn Level 3 §6.3.2), as the authenticator issued it: what a party presents
+     * before anything is verified, unique in the tenant (§7.1, step 26), stored under this name whatever the
+     * kind that is presented by one.
+     */
+    public readonly string $externalId;
+
+    /**
+     * The credential ID by the name WebAuthn gives it.
+     */
+    public string $credentialId {
+        get => $this->externalId;
     }
 
     /**
@@ -57,7 +67,7 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
         Uuid $id,
         User $user,
         string $name,
-        public readonly string $credentialId,
+        string $credentialId,
         public readonly string $publicKey,
         int $signCount,
         public readonly array $transports,
@@ -72,6 +82,7 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
         if ($credentialId === '') {
             throw new InvalidArgumentException('A passkey has a credential ID.');
         }
+        $this->externalId = $credentialId;
         if ($publicKey === '') {
             throw new InvalidArgumentException('A passkey has a public key.');
         }
