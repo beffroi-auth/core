@@ -159,6 +159,22 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
     }
 
     /**
+     * Every method an assertion of a passkey may prove, the flags of methods() all set at once: what a
+     * provider that signs users in with passkeys can announce (decision 0010, architecture §4.8).
+     *
+     * @return non-empty-list<AuthenticationMethod>
+     */
+    public static function provableMethods(): array
+    {
+        return [
+            new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY),
+            new AuthenticationMethod(AuthenticationMethod::SOFTWARE_KEY),
+            new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE),
+            new AuthenticationMethod(AuthenticationMethod::MULTIPLE_FACTORS),
+        ];
+    }
+
+    /**
      * What an assertion proves, as "amr" values (RFC 8176 §2), read from the flags of its authenticator
      * data (WebAuthn Level 3 §6.1): "hwk" for a key bound to its authenticator (the BE flag clear, §6.1.3),
      * "swk" for a synced passkey (the flag set: the key lives wherever the provider of the user copies it);

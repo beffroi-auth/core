@@ -6,6 +6,7 @@ namespace Heidi\Core\Domain\Session;
 
 use function array_keys;
 use function array_map;
+use function count;
 use DateTimeImmutable;
 use Heidi\Core\Exception\InvalidArgumentException;
 use function in_array;
@@ -118,11 +119,19 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * @return non-empty-list<string> the "amr" claim values
+     * The "amr" claim values (RFC 8176 §2): the methods, and "mfa" when two factors of different kinds
+     * were proven, since §2 lets the specific methods stand next to it.
+     *
+     * @return non-empty-list<string>
      */
     public function methodReferences(): array
     {
-        return array_keys($this->entries);
+        $references = array_keys($this->entries);
+        if (count($this->factors()) >= 2 && ! isset($this->entries[AuthenticationMethod::MULTIPLE_FACTORS])) {
+            $references[] = AuthenticationMethod::MULTIPLE_FACTORS;
+        }
+
+        return $references;
     }
 
     /**

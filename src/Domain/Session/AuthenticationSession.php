@@ -59,11 +59,12 @@ final class AuthenticationSession
     }
 
     /**
-     * The "acr" (OIDC Core §2): the strongest class the proofs satisfy.
+     * The "acr" (OIDC Core §2) when no class is requested: the first class of the policy of the tenant the
+     * proofs satisfy (decision 0010).
      */
     public function authenticationContextClass(): AuthenticationContextClass
     {
-        return AuthenticationContextClass::of($this->proofs);
+        return $this->tenant->authenticationContextPolicy->classOf($this->proofs);
     }
 
     /**
