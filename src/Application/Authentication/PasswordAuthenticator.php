@@ -15,6 +15,7 @@ use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\PasswordAttemptLimiterInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
@@ -24,8 +25,11 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * Authenticates a user with a password and opens a session through the SessionOpener. Every outcome is an
- * event carrying the request context.
+ * Authenticates a user with a password and opens a session through the SessionOpener. The attempts on a
+ * user are counted as soon as the user is named and before anything is verified, because a password is
+ * guessed one attempt at a time; a refused attempt still pays a hash, so that the refusal does not say
+ * whether the user exists; a correct password empties the count. Every outcome is an event carrying the
+ * request context.
  */
 final class PasswordAuthenticator
 {
@@ -39,6 +43,7 @@ final class PasswordAuthenticator
         private readonly CredentialRepositoryInterface $credentials,
         private readonly PasswordHasherInterface $hasher,
         private readonly SessionOpener $opener,
+        private readonly PasswordAttemptLimiterInterface $attempts,
         private readonly ClockInterface $clock,
         private readonly EventDispatcherInterface $events,
     ) {
@@ -61,6 +66,12 @@ final class PasswordAuthenticator
             throw $this->failure($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, null);
         }
 
+        if (! $this->attempts->attempt($user)) {
+            $this->hasher->verify($this->decoyHash(), $password);
+
+            throw $this->failure($tenant, $context, AuthenticationFailureReason::TooManyAttempts, $identifier, $user);
+        }
+
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
             $this->hasher->verify($this->decoyHash(), $password);
@@ -77,6 +88,7 @@ final class PasswordAuthenticator
             throw $this->failure($tenant, $context, AuthenticationFailureReason::DisabledUser, $identifier, $user);
         }
 
+        $this->attempts->reset($user);
         $now = $this->clock->now();
         $credential->markUsed($now);
         if ($this->hasher->needsRehash($credential->hash)) {
