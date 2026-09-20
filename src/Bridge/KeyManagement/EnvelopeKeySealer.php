@@ -22,7 +22,8 @@ use Throwable;
 
 /**
  * Seals private JWKs as symfony/key-management envelopes; the private JWK never reaches the KMS. The
- * additional authenticated data binds an envelope to this use and to its tenant.
+ * additional authenticated data binds an envelope to this use and to its tenant. A KMS that does not
+ * answer is told from an envelope it refuses (KeyManagementFailure).
  */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
@@ -47,7 +48,7 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         try {
             return (string) $this->envelopes->encrypt($this->kmsKeyId->of($tenant), $json, self::aad($tenant));
         } catch (Throwable $exception) {
-            throw new RuntimeException(sprintf('The signing key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)), 0, $exception);
+            throw KeyManagementFailure::of($exception, sprintf('The signing key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)));
         }
     }
 
@@ -56,7 +57,7 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         try {
             $json = $this->envelopes->decrypt(Envelope::fromBytes($sealed), self::aad($tenant));
         } catch (Throwable $exception) {
-            throw new RuntimeException('The sealed signing key could not be opened.', 0, $exception);
+            throw KeyManagementFailure::of($exception, 'The sealed signing key could not be opened.');
         }
         $jwk = json_decode($json, true, 8, JSON_THROW_ON_ERROR);
         if (! is_array($jwk)) {

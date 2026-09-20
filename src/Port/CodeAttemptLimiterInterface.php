@@ -14,6 +14,12 @@ use Heidi\Core\Domain\Identity\User;
 interface CodeAttemptLimiterInterface
 {
     /**
+     * Tells whether the user may attempt a code now, without counting one: read before what a code costs
+     * before it is compared (the KMS opening the secret), so that the limit bounds that cost as well.
+     */
+    public function mayAttempt(User $user): bool;
+
+    /**
      * Counts one attempt of the user and tells whether it may go on.
      */
     public function attempt(User $user): bool;

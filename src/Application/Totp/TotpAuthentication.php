@@ -14,6 +14,7 @@ use Heidi\Core\Domain\Event\TotpUsed;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Domain\Session\RequestContext;
+use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\CodeAttemptLimiterInterface;
 use Heidi\Core\Port\CredentialRepositoryInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
@@ -27,7 +28,10 @@ use SensitiveParameter;
  * code of the authenticator, accepted once within one step of drift (RFC 6238 §5.2), or one of the backup
  * codes, spent once. What it proves is "otp" either way; what the caller does with the proof (open the
  * session, add it to one) is the caller's. The attempts are counted before anything is verified, because
- * six digits are guessable. Every outcome is an event carrying the request context.
+ * six digits are guessable: the limit is read before the secret is opened, so that no code reaches the
+ * KMS past it, and the attempt is counted once the secret is open, so that a KMS that does not open it
+ * costs the user nothing. Every outcome of the user is an event carrying the request context; a failure
+ * of the KMS is not an outcome of the user and goes on as it came.
  */
 final readonly class TotpAuthentication
 {
@@ -47,17 +51,22 @@ final readonly class TotpAuthentication
      * A disabled user is refused after the code was checked, so that a refusal costs the same as a wrong code.
      *
      * @throws AuthenticationFailedException
+     * @throws KmsUnavailableException when the KMS of the tenant does not open the secret: nothing counted, nothing announced
      */
     public function authenticate(User $user, #[SensitiveParameter] string $code, RequestContext $context): AuthenticationMethod
     {
-        if (! $this->attempts->attempt($user)) {
+        if (! $this->attempts->mayAttempt($user)) {
             throw $this->failure($user, $context, AuthenticationFailureReason::TooManyAttempts);
         }
         $credential = $this->activeTotp->of($user) ?? throw $this->failure($user, $context, AuthenticationFailureReason::NoSuchCredential);
+        $secret = TotpCodeMatcher::looksLikeCode($code) ? new TotpSecret($this->sealer->unseal($user->tenant, $credential->sealedSecret)) : null;
+        if (! $this->attempts->attempt($user)) {
+            throw $this->failure($user, $context, AuthenticationFailureReason::TooManyAttempts);
+        }
         $now = $this->clock->now();
 
-        if (TotpCodeMatcher::looksLikeCode($code)) {
-            $step = $this->matcher->matchingStep(new TotpSecret($this->sealer->unseal($user->tenant, $credential->sealedSecret)), $code, $now);
+        if ($secret !== null) {
+            $step = $this->matcher->matchingStep($secret, $code, $now);
             if ($step === null) {
                 throw $this->failure($user, $context, AuthenticationFailureReason::InvalidCredential);
             }

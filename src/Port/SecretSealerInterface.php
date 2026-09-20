@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Port;
 
 use Heidi\Core\Domain\Tenant\Tenant;
+use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Exception\RuntimeException;
 use SensitiveParameter;
 
@@ -16,13 +17,15 @@ use SensitiveParameter;
 interface SecretSealerInterface
 {
     /**
-     * @throws RuntimeException when the KMS of the tenant refuses
+     * @throws KmsUnavailableException when the KMS of the tenant does not answer or refuses to seal
+     * @throws RuntimeException when the envelope cannot be made for another reason
      * @return string opaque bytes, safe to store
      */
     public function seal(Tenant $tenant, #[SensitiveParameter] string $secret): string;
 
     /**
-     * @throws RuntimeException when the envelope was not sealed by this use for this tenant, or the KMS refuses
+     * @throws KmsUnavailableException when the KMS of the tenant does not answer or refuses to open
+     * @throws RuntimeException when the envelope was not sealed by this use for this tenant
      */
     public function unseal(Tenant $tenant, #[SensitiveParameter] string $sealed): string;
 }

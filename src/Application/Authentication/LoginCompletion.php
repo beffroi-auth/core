@@ -13,6 +13,7 @@ use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\PendingLogin;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
+use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -40,6 +41,7 @@ final readonly class LoginCompletion
 
     /**
      * @throws AuthenticationFailedException
+     * @throws KmsUnavailableException when the KMS of the tenant does not open the secret of the code: nothing counted, nothing announced
      */
     public function complete(
         Tenant $tenant,
