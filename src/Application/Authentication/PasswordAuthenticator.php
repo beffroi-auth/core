@@ -12,6 +12,7 @@ use Heidi\Core\Domain\Event\PasswordRehashed;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Domain\Session\AuthenticationSession;
+use Heidi\Core\Domain\Session\PendingLogin;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\CredentialRepositoryInterface;
@@ -25,11 +26,15 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * Authenticates a user with a password and opens a session through the SessionOpener. The attempts on a
- * user are counted as soon as the user is named and before anything is verified, because a password is
- * guessed one attempt at a time; a refused attempt still pays a hash, so that the refusal does not say
- * whether the user exists; a correct password empties the count. Every outcome is an event carrying the
- * request context.
+ * Authenticates a user with a password: the first step of a login, and the whole of it for a user who
+ * holds no second factor. The attempts on a user are counted as soon as the user is named and before
+ * anything is verified, because a password is guessed one attempt at a time; a refused attempt still
+ * pays a hash, so that the refusal does not say whether the user exists; a correct password empties the
+ * count. A password alone signs nobody in who holds an active second factor (SecondFactorRequirement,
+ * architecture §3.2): the login is then held as a PendingLogin, which LoginCompletion turns into a
+ * session once the code passes; otherwise the session is opened here through the SessionOpener. Every
+ * refusal is an event carrying the request context; a held login is not an outcome yet and announces
+ * nothing.
  */
 final class PasswordAuthenticator
 {
@@ -44,12 +49,15 @@ final class PasswordAuthenticator
         private readonly PasswordHasherInterface $hasher,
         private readonly SessionOpener $opener,
         private readonly PasswordAttemptLimiterInterface $attempts,
+        private readonly SecondFactorRequirement $secondFactor,
         private readonly ClockInterface $clock,
         private readonly EventDispatcherInterface $events,
     ) {
     }
 
     /**
+     * The session opened, or the login held until a code when the user holds a second factor.
+     *
      * @throws AuthenticationFailedException
      */
     public function authenticate(
@@ -58,7 +66,7 @@ final class PasswordAuthenticator
         #[SensitiveParameter]
         string $password,
         RequestContext $context,
-    ): AuthenticationSession {
+    ): AuthenticationSession|PendingLogin {
         $user = $this->users->findByUsername($tenant, trim($identifier));
         if ($user === null) {
             $this->hasher->verify($this->decoyHash(), $password);
@@ -97,6 +105,9 @@ final class PasswordAuthenticator
             $this->events->dispatch(new PasswordRehashed($credential, $now, $context));
         } else {
             $this->credentials->save($credential);
+        }
+        if ($this->secondFactor->requiredFor($user)) {
+            return PendingLogin::provenAt($user->id, [AuthenticationMethod::password()], $now);
         }
 
         return $this->opener->open($tenant, $user, [AuthenticationMethod::password()], $context);

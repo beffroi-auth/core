@@ -16,4 +16,5 @@ enum AuthenticationFailureReason: string
     case RevokedCredential = 'revoked_credential';
     case ReplayedCode = 'replayed_code';
     case TooManyAttempts = 'too_many_attempts';
+    case ExpiredLogin = 'expired_login';
 }
