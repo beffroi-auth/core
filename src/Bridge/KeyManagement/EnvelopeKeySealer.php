@@ -15,7 +15,6 @@ use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
 use SensitiveParameter;
 use function sprintf;
-use function strtr;
 use Symfony\Component\KeyManagement\Envelope;
 use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
@@ -27,17 +26,18 @@ use Throwable;
  */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
-    public const string TENANT_PLACEHOLDER = '{tenant}';
-
     private const string AAD = 'heidi:signing-key:v2:';
+
+    private KmsKeyId $kmsKeyId;
 
     /**
      * @param string $kmsKeyId "{tenant}" stands for the slug of the tenant
      */
     public function __construct(
         private EnvelopeEncrypterInterface&EnvelopeDecrypterInterface $envelopes,
-        private string $kmsKeyId,
+        string $kmsKeyId,
     ) {
+        $this->kmsKeyId = new KmsKeyId($kmsKeyId);
     }
 
     public function seal(Tenant $tenant, #[SensitiveParameter] array $privateJwk): string
@@ -45,9 +45,9 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         $json = json_encode($privateJwk, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
 
         try {
-            return (string) $this->envelopes->encrypt($this->kmsKeyId($tenant), $json, self::aad($tenant));
+            return (string) $this->envelopes->encrypt($this->kmsKeyId->of($tenant), $json, self::aad($tenant));
         } catch (Throwable $exception) {
-            throw new RuntimeException(sprintf('The signing key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId($tenant)), 0, $exception);
+            throw new RuntimeException(sprintf('The signing key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)), 0, $exception);
         }
     }
 
@@ -71,13 +71,6 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         }
 
         return $members;
-    }
-
-    private function kmsKeyId(Tenant $tenant): string
-    {
-        return strtr($this->kmsKeyId, [
-            self::TENANT_PLACEHOLDER => $tenant->slug,
-        ]);
     }
 
     private static function aad(Tenant $tenant): string

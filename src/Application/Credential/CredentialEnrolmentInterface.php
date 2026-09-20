@@ -25,6 +25,7 @@ interface CredentialEnrolmentInterface
     public function kind(): string;
 
     /**
+     * @throws CredentialEnrolmentFailedException when the user cannot get another credential of this kind
      * @return TChallenge
      */
     public function begin(User $user): object;
