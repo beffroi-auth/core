@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Domain\Session;
 
+use function array_all;
 use function array_any;
 use function array_filter;
 use function array_map;
@@ -53,7 +54,7 @@ final readonly class AuthenticationContextPolicy
         if (! $singleFactor) {
             throw new InvalidArgumentException('An authentication context policy names a class on the single factor: every session has an "acr".');
         }
-        $this->classes = array_values($classes);
+        $this->classes = $classes;
     }
 
     /**
@@ -131,7 +132,11 @@ final readonly class AuthenticationContextPolicy
         if (count($this->classes) !== count($other->classes)) {
             return false;
         }
-        return array_all($this->classes, fn($class, $index) => !(! $class->equals($other->classes[$index]) || $class->predicate !== $other->classes[$index]->predicate));
+
+        return array_all(
+            $this->classes,
+            static fn (AuthenticationContextClass $class, int $index): bool => $class->equals($other->classes[$index]) && $class->predicate === $other->classes[$index]->predicate,
+        );
     }
 
     /**
