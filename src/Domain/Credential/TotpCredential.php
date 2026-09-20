@@ -92,17 +92,6 @@ final class TotpCredential extends Credential implements SecondFactorCredentialI
     }
 
     /**
-     * Every method a code may prove, whoever holds the credential: what a provider that asks for codes
-     * can announce (decision 0010, architecture §4.8).
-     *
-     * @return non-empty-list<AuthenticationMethod>
-     */
-    public static function everyProvableMethod(): array
-    {
-        return [self::method()];
-    }
-
-    /**
      * What a code of this credential may prove (architecture §4.3): "otp", the password it follows being
      * the password's to declare. Nothing for a revoked one.
      */

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Totp;
 
 use function array_map;
-use Heidi\Core\Application\Credential\CredentialEnrolmentInterface;
 use Heidi\Core\Domain\Credential\BackupCode;
 use Heidi\Core\Domain\Credential\TotpCredential;
 use Heidi\Core\Domain\Credential\TotpProvisioning;
@@ -15,6 +14,7 @@ use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Exception\CredentialEnrolmentFailedException;
 use Heidi\Core\Exception\InvalidArgumentException;
+use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\SecretSealerInterface;
@@ -29,12 +29,10 @@ use Symfony\Component\Uid\Uuid;
  * the answer, and the credential exists only once it holds (RFC 6238 §5.2, the same window as a login);
  * abandoned before, nothing is left. The secret is sealed by the KMS of the tenant before it is stored,
  * the backup codes hashed like passwords; the step of the first code is the last accepted one, so that it
- * does not sign the user in a second time. One active TOTP per user: the kind has no name, the label is
- * not read.
- *
- * @implements CredentialEnrolmentInterface<TotpProvisioning>
+ * does not sign the user in a second time. One active TOTP per user, and it carries no name: nothing
+ * distinguishes one authenticator app from another.
  */
-final readonly class TotpEnrolment implements CredentialEnrolmentInterface
+final readonly class TotpEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
@@ -48,14 +46,12 @@ final readonly class TotpEnrolment implements CredentialEnrolmentInterface
     ) {
     }
 
-    public function kind(): string
-    {
-        return TotpCredential::class;
-    }
-
     /**
      * The issuer of the URI is the name of the tenant, the account the username, as the Key Uri Format
-     * shows them in the authenticator.
+     * shows them in the authenticator. Nothing is stored here: an enrolment abandoned after this step
+     * leaves nothing behind.
+     *
+     * @throws CredentialEnrolmentFailedException when the user holds an active TOTP already
      */
     public function begin(User $user): TotpProvisioning
     {
@@ -69,25 +65,34 @@ final readonly class TotpEnrolment implements CredentialEnrolmentInterface
         return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $backupCodes);
     }
 
-    public function complete(User $user, string $name, object $challenge, string $answer, RequestContext $context): TotpCredential
+    /**
+     * @param TotpProvisioning $challenge what begin() issued for this user
+     * @param string $code the first code of the authenticator, as the integration received it
+     *
+     * @throws CredentialEnrolmentFailedException
+     * @throws KmsUnavailableException when the KMS of the tenant does not answer; nothing is written
+     */
+    public function complete(User $user, TotpProvisioning $challenge, string $code, RequestContext $context): TotpCredential
     {
-        if (! $challenge instanceof TotpProvisioning) {
-            throw new InvalidArgumentException('The challenge of a TOTP enrolment is its provisioning.');
-        }
         $this->refuseASecondOne($user);
         $now = $this->clock->now();
-        $step = $this->matcher->matchingStep($challenge->secret, $answer, $now);
+        $step = $this->matcher->matchingStep($challenge->secret, $code, $now);
         if ($step === null) {
             throw new CredentialEnrolmentFailedException('The code does not match the secret.');
         }
-        $credential = new TotpCredential(
-            Uuid::v7(),
-            $user,
-            $this->sealer->seal($user->tenant, $challenge->secret->bytes),
-            array_map(fn (string $code): BackupCode => new BackupCode($this->hasher->hash(BackupCode::normalize($code))), $challenge->backupCodes),
-            $step,
-            $now,
-        );
+        $sealed = $this->sealer->seal($user->tenant, $challenge->secret->bytes);
+        try {
+            $credential = new TotpCredential(
+                Uuid::v7(),
+                $user,
+                $sealed,
+                array_map(fn (string $code): BackupCode => new BackupCode($this->hasher->hash(BackupCode::normalize($code))), $challenge->backupCodes),
+                $step,
+                $now,
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
+        }
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
 

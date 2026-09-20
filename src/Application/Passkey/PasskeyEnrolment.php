@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Passkey;
 
-use Heidi\Core\Application\Credential\CredentialEnrolmentInterface;
 use Heidi\Core\Domain\Credential\PasskeyCredential;
 use Heidi\Core\Domain\Credential\PasskeyUserHandle;
 use Heidi\Core\Domain\Event\CredentialEnrolled;
@@ -24,10 +23,8 @@ use Webauthn\PublicKeyCredentialCreationOptions;
  * A passkey enters the identity model, enrolled from a session the user already holds: the creation
  * options are the challenge, the attestation response the answer (WebAuthn Level 3 §7.1, the ceremony
  * behind PasskeyRegistrarInterface). The outcome is an event carrying the request context.
- *
- * @implements CredentialEnrolmentInterface<PublicKeyCredentialCreationOptions>
  */
-final readonly class PasskeyEnrolment implements CredentialEnrolmentInterface
+final readonly class PasskeyEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
@@ -35,11 +32,6 @@ final readonly class PasskeyEnrolment implements CredentialEnrolmentInterface
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
-    }
-
-    public function kind(): string
-    {
-        return PasskeyCredential::class;
     }
 
     /**
@@ -57,27 +49,40 @@ final readonly class PasskeyEnrolment implements CredentialEnrolmentInterface
     /**
      * The record comes out with the handle the options carried; a user keeps one handle across their
      * passkeys, so options drawn for another user are refused with the record, and a credential ID known
-     * in the tenant is refused (§7.1, step 26).
+     * in the tenant is refused (§7.1, step 26). What the authenticator sent and the model refuses (a
+     * handle of another length, missing backup flags, a credential of another type) is a refused
+     * enrolment like any other: what this use case throws is what its contract names.
+     *
+     * @param PublicKeyCredentialCreationOptions $challenge what begin() issued for this user
+     * @param string $answer the attestation response, as the integration received it
+     *
+     * @throws CredentialEnrolmentFailedException
      */
-    public function complete(User $user, string $name, object $challenge, string $answer, RequestContext $context): PasskeyCredential
+    public function complete(User $user, string $name, PublicKeyCredentialCreationOptions $challenge, string $answer, RequestContext $context): PasskeyCredential
     {
-        if (! $challenge instanceof PublicKeyCredentialCreationOptions) {
-            throw new InvalidArgumentException('The challenge of a passkey enrolment is its creation options.');
-        }
         try {
             $record = $this->registrar->verifyAttestation($user->tenant, $challenge, $answer);
         } catch (PasskeyCeremonyFailedException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
         $passkeys = $this->credentials->findByUser($user, PasskeyCredential::class);
-        if ($passkeys !== [] && ! $passkeys[0]->userHandle->equals(new PasskeyUserHandle($record->userHandle))) {
+        try {
+            $handle = new PasskeyUserHandle($record->userHandle);
+        } catch (InvalidArgumentException $exception) {
+            throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
+        }
+        if ($passkeys !== [] && ! $passkeys[0]->userHandle->equals($handle)) {
             throw new CredentialEnrolmentFailedException('The options were not drawn for this user.');
         }
         if ($this->credentials->findByExternalId($user->tenant, PasskeyCredential::class, $record->publicKeyCredentialId) !== null) {
             throw new CredentialEnrolmentFailedException('This passkey is enrolled already.');
         }
         $now = $this->clock->now();
-        $credential = PasskeyCredential::fromRecord(Uuid::v7(), $user, $name, $record, $now);
+        try {
+            $credential = PasskeyCredential::fromRecord(Uuid::v7(), $user, $name, $record, $now);
+        } catch (InvalidArgumentException $exception) {
+            throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
+        }
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
 

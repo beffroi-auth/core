@@ -10,8 +10,7 @@ use SensitiveParameter;
 use function sprintf;
 
 /**
- * What a TOTP enrolment issues before any credential exists (the challenge of CredentialEnrolmentInterface):
- * the secret, the otpauth URI the authenticator scans (the Key Uri Format of Google Authenticator, over
+ * What a TOTP enrolment issues before any credential exists (TotpEnrolment::begin()): the secret, the otpauth URI the authenticator scans (the Key Uri Format of Google Authenticator, over
  * RFC 6238), and the backup codes in clear, shown once. Nothing of it is stored: an enrolment abandoned
  * here leaves nothing behind, one completed keeps the secret sealed and the codes hashed.
  */
