@@ -25,7 +25,7 @@ use Webauthn\TrustPath\EmptyTrustPath;
  * The provider holds the public key only: the private key never leaves the authenticator, and a passkey
  * has no member the provider could leak.
  */
-final class PasskeyCredential extends Credential implements RevocableCredentialInterface, ExternallyIdentifiedCredentialInterface
+final class PasskeyCredential extends Credential implements RevocableCredentialInterface, ExternallyIdentifiedCredentialInterface, ProvingCredentialInterface
 {
     public const int NAME_MAX_LENGTH = 255;
 
@@ -164,13 +164,32 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
      *
      * @return non-empty-list<AuthenticationMethod>
      */
-    public static function provableMethods(): array
+    public static function everyProvableMethod(): array
     {
         return [
             new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY),
             new AuthenticationMethod(AuthenticationMethod::SOFTWARE_KEY),
             new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE),
             new AuthenticationMethod(AuthenticationMethod::MULTIPLE_FACTORS),
+        ];
+    }
+
+    /**
+     * What an assertion of this passkey may prove (architecture §4.3): the key as its backup eligibility
+     * says, "swk" for a synced passkey and "hwk" for one bound to its authenticator, and "user", the
+     * presence WebAuthn Level 3 §7.2 requires of every assertion (step 16). Not "mfa": the provider asks
+     * the authenticator to verify the user when it can (userVerification "preferred") and learns whether
+     * it did from the flags of the assertion, so it promises nothing of it ahead. Nothing for a revoked passkey.
+     */
+    public function provableMethods(): array
+    {
+        if ($this->revokedAt !== null) {
+            return [];
+        }
+
+        return [
+            new AuthenticationMethod($this->backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY),
+            new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE),
         ];
     }
 
