@@ -6,9 +6,13 @@ namespace Heidi\Core\Domain\Credential;
 
 use DateTimeImmutable;
 use Heidi\Core\Domain\Identity\User;
+use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Symfony\Component\Uid\Uuid;
 
-final class PasswordCredential extends Credential
+/**
+ * A password: what a user knows, "pwd" (RFC 8176 §2). Replaced, never revoked.
+ */
+final class PasswordCredential extends Credential implements ProvingCredentialInterface
 {
     public private(set) DateTimeImmutable $hashChangedAt;
 
@@ -25,6 +29,11 @@ final class PasswordCredential extends Credential
     public function kind(): string
     {
         return 'password';
+    }
+
+    public function provableMethods(): array
+    {
+        return [AuthenticationMethod::password()];
     }
 
     /**

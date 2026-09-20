@@ -21,7 +21,7 @@ use Symfony\Component\Uid\Uuid;
  * (§5.1: thirty seconds, six digits, HMAC-SHA-1) and are not a choice. While one is active, the password
  * of the user signs nobody in on its own (SecondFactorCredentialInterface).
  */
-final class TotpCredential extends Credential implements SecondFactorCredentialInterface
+final class TotpCredential extends Credential implements SecondFactorCredentialInterface, ProvingCredentialInterface
 {
     /**
      * RFC 6238 §5.2: thirty seconds.
@@ -92,14 +92,23 @@ final class TotpCredential extends Credential implements SecondFactorCredentialI
     }
 
     /**
-     * Every method a code may prove: what a provider that asks for codes can announce (decision 0010,
-     * architecture §4.8).
+     * Every method a code may prove, whoever holds the credential: what a provider that asks for codes
+     * can announce (decision 0010, architecture §4.8).
      *
      * @return non-empty-list<AuthenticationMethod>
      */
-    public static function provableMethods(): array
+    public static function everyProvableMethod(): array
     {
         return [self::method()];
+    }
+
+    /**
+     * What a code of this credential may prove (architecture §4.3): "otp", the password it follows being
+     * the password's to declare. Nothing for a revoked one.
+     */
+    public function provableMethods(): array
+    {
+        return $this->revokedAt === null ? [self::method()] : [];
     }
 
     /**
