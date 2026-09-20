@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Authentication;
 
 use Heidi\Core\Domain\Credential\PasswordCredential;
-use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasswordRehashed;
@@ -22,36 +21,31 @@ use Heidi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
-use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
  * Authenticates a user with a password: the first step of a login, and the whole of it for a user who
  * holds no second factor. The attempts on a user are counted as soon as the user is named and before
  * anything is verified, because a password is guessed one attempt at a time; a refused attempt still
- * pays a hash, so that the refusal does not say whether the user exists; a correct password empties the
- * count. A password alone signs nobody in who holds an active second factor (SecondFactorRequirement,
- * architecture §3.2): the login is then held as a PendingLogin, which LoginCompletion turns into a
- * session once the code passes; otherwise the session is opened here through the SessionOpener. Every
- * refusal is an event carrying the request context; a held login is not an outcome yet and announces
- * nothing.
+ * pays a hash (DecoyHash), so that the refusal does not say whether the user exists; a correct password
+ * empties the count. A password alone signs nobody in who holds an active second factor
+ * (SecondFactorRequirement, architecture §3.2): the login is then held as a PendingLogin, which
+ * LoginCompletion turns into a session once the code passes; otherwise the session is opened here
+ * through the SessionOpener. Every refusal is an event carrying the request context; a held login is not
+ * an outcome yet and announces nothing.
  */
-final class PasswordAuthenticator
+final readonly class PasswordAuthenticator
 {
-    /**
-     * Verified against when the user does not exist, so that a failure costs the same time either way.
-     */
-    private ?PasswordHash $decoyHash = null;
-
     public function __construct(
-        private readonly UserRepositoryInterface $users,
-        private readonly CredentialRepositoryInterface $credentials,
-        private readonly PasswordHasherInterface $hasher,
-        private readonly SessionOpener $opener,
-        private readonly PasswordAttemptLimiterInterface $attempts,
-        private readonly SecondFactorRequirement $secondFactor,
-        private readonly ClockInterface $clock,
-        private readonly EventDispatcherInterface $events,
+        private UserRepositoryInterface $users,
+        private CredentialRepositoryInterface $credentials,
+        private PasswordHasherInterface $hasher,
+        private DecoyHash $decoy,
+        private SessionOpener $opener,
+        private PasswordAttemptLimiterInterface $attempts,
+        private SecondFactorRequirement $secondFactor,
+        private ClockInterface $clock,
+        private EventDispatcherInterface $events,
     ) {
     }
 
@@ -69,20 +63,20 @@ final class PasswordAuthenticator
     ): AuthenticationSession|PendingLogin {
         $user = $this->users->findByUsername($tenant, trim($identifier));
         if ($user === null) {
-            $this->hasher->verify($this->decoyHash(), $password);
+            $this->decoy->verify($password);
 
             throw $this->failure($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, null);
         }
 
         if (! $this->attempts->attempt($user)) {
-            $this->hasher->verify($this->decoyHash(), $password);
+            $this->decoy->verify($password);
 
             throw $this->failure($tenant, $context, AuthenticationFailureReason::TooManyAttempts, $identifier, $user);
         }
 
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
-            $this->hasher->verify($this->decoyHash(), $password);
+            $this->decoy->verify($password);
 
             throw $this->failure($tenant, $context, AuthenticationFailureReason::NoSuchCredential, $identifier, $user);
         }
@@ -131,10 +125,5 @@ final class PasswordAuthenticator
         ));
 
         return new AuthenticationFailedException($reason);
-    }
-
-    private function decoyHash(): PasswordHash
-    {
-        return $this->decoyHash ??= $this->hasher->hash(Uuid::v4()->toRfc4122());
     }
 }
