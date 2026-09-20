@@ -38,6 +38,7 @@ final readonly class TotpEnrolment implements CredentialEnrolmentInterface
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private ActiveTotp $activeTotp,
         private TotpAlgorithmInterface $algorithm,
         private TotpCodeMatcher $matcher,
         private SecretSealerInterface $sealer,
@@ -98,10 +99,8 @@ final readonly class TotpEnrolment implements CredentialEnrolmentInterface
      */
     private function refuseASecondOne(User $user): void
     {
-        foreach ($this->credentials->findByUser($user, TotpCredential::class) as $existing) {
-            if (! $existing->isRevoked()) {
-                throw new CredentialEnrolmentFailedException('The user has a TOTP already; it is revoked before another is enrolled.');
-            }
+        if ($this->activeTotp->of($user) !== null) {
+            throw new CredentialEnrolmentFailedException('The user has a TOTP already; it is revoked before another is enrolled.');
         }
     }
 }

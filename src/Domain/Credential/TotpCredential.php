@@ -18,9 +18,10 @@ use Symfony\Component\Uid\Uuid;
  * sealed by the KMS of the tenant (an envelope, never the secret), the last time step whose code was
  * accepted so that a code is accepted once (§5.2), the backup codes, and its revocation, which keeps the
  * row for the audit trail. One active per user; the parameters are those every authenticator implements
- * (§5.1: thirty seconds, six digits, HMAC-SHA-1) and are not a choice.
+ * (§5.1: thirty seconds, six digits, HMAC-SHA-1) and are not a choice. While one is active, the password
+ * of the user signs nobody in on its own (SecondFactorCredentialInterface).
  */
-final class TotpCredential extends Credential implements RevocableCredentialInterface
+final class TotpCredential extends Credential implements SecondFactorCredentialInterface
 {
     /**
      * RFC 6238 §5.2: thirty seconds.

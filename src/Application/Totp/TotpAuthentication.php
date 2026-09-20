@@ -33,6 +33,7 @@ final readonly class TotpAuthentication
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private ActiveTotp $activeTotp,
         private TotpCodeMatcher $matcher,
         private SecretSealerInterface $sealer,
         private PasswordHasherInterface $hasher,
@@ -52,7 +53,7 @@ final readonly class TotpAuthentication
         if (! $this->attempts->attempt($user)) {
             throw $this->failure($user, $context, AuthenticationFailureReason::TooManyAttempts);
         }
-        $credential = $this->activeCredential($user) ?? throw $this->failure($user, $context, AuthenticationFailureReason::NoSuchCredential);
+        $credential = $this->activeTotp->of($user) ?? throw $this->failure($user, $context, AuthenticationFailureReason::NoSuchCredential);
         $now = $this->clock->now();
 
         if (TotpCodeMatcher::looksLikeCode($code)) {
@@ -78,17 +79,6 @@ final readonly class TotpAuthentication
         $this->events->dispatch(new TotpUsed($credential, $now, $context, $backupCode));
 
         return TotpCredential::method();
-    }
-
-    private function activeCredential(User $user): ?TotpCredential
-    {
-        foreach ($this->credentials->findByUser($user, TotpCredential::class) as $credential) {
-            if (! $credential->isRevoked()) {
-                return $credential;
-            }
-        }
-
-        return null;
     }
 
     /**
