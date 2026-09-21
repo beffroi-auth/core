@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Bridge\Key;
 
 use Heidi\Core\Domain\Key\PublicKeySet;
-use Heidi\Core\Domain\Key\SignatureAlgorithm;
+use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Heidi\Core\Domain\Key\UnsealedSigningKey;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\KeyNotFoundException;
@@ -31,14 +31,14 @@ final class SealedKeyProvider implements SigningKeyProviderInterface
     ) {
     }
 
-    public function activeKey(Tenant $tenant, SignatureAlgorithm $algorithm): UnsealedSigningKey
+    public function activeKey(Tenant $tenant, SignatureAlgorithmInterface $algorithm): UnsealedSigningKey
     {
         $key = $this->keys->findActive($tenant, $algorithm);
         if ($key === null) {
-            throw new KeyNotFoundException(sprintf('Tenant "%s" has no active %s signing key.', $tenant->slug, $algorithm->value));
+            throw new KeyNotFoundException(sprintf('Tenant "%s" has no active %s signing key.', $tenant->slug, $algorithm->name()));
         }
         foreach ($this->opened as $kid => $opened) {
-            if ($kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm === $algorithm) {
+            if ($kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm->name() === $algorithm->name()) {
                 unset($this->opened[$kid]);
             }
         }

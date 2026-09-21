@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithm;
+use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Heidi\Core\Domain\Key\SigningKey;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\SigningKeyRepositoryInterface;
@@ -27,10 +27,10 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
         return $this->keys[self::index($tenant, $kid)] ?? null;
     }
 
-    public function findActive(Tenant $tenant, SignatureAlgorithm $algorithm): ?SigningKey
+    public function findActive(Tenant $tenant, SignatureAlgorithmInterface $algorithm): ?SigningKey
     {
         foreach ($this->keys as $key) {
-            if ($key->tenant->equals($tenant) && $key->algorithm === $algorithm && $key->isActive()) {
+            if ($key->tenant->equals($tenant) && $key->algorithm->name() === $algorithm->name() && $key->isActive()) {
                 return $key;
             }
         }

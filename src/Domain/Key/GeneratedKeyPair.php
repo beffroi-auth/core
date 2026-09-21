@@ -17,7 +17,7 @@ final readonly class GeneratedKeyPair
      */
     public function __construct(
         public string $kid,
-        public SignatureAlgorithm $algorithm,
+        public SignatureAlgorithmInterface $algorithm,
         #[SensitiveParameter]
         public array $privateJwk,
         public array $publicJwk,

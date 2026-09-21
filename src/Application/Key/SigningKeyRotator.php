@@ -11,7 +11,7 @@ use Heidi\Core\Domain\Event\SigningKeyRotated;
 use Heidi\Core\Domain\Event\SigningKeyStaged;
 use Heidi\Core\Domain\Key\KeyStatus;
 use Heidi\Core\Domain\Key\RetirementReason;
-use Heidi\Core\Domain\Key\SignatureAlgorithm;
+use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Heidi\Core\Domain\Key\SigningKey;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
@@ -52,7 +52,7 @@ final readonly class SigningKeyRotator
     /**
      * Published, sealed, signing nothing until activate() or activateDue() once the staging delay elapsed.
      */
-    public function stage(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context): SigningKey
+    public function stage(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context): SigningKey
     {
         $now = $this->clock->now();
 
@@ -88,7 +88,7 @@ final readonly class SigningKeyRotator
     /**
      * Stages and activates at once; "compromised" retires the previous key with no window.
      */
-    public function rotate(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context, bool $compromised = false): SigningKey
+    public function rotate(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context, bool $compromised = false): SigningKey
     {
         $now = $this->clock->now();
 
@@ -138,7 +138,7 @@ final readonly class SigningKeyRotator
         return $key;
     }
 
-    private function publish(Tenant $tenant, SignatureAlgorithm $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): SigningKey
+    private function publish(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): SigningKey
     {
         $pair = $this->generator->generate($algorithm);
         $key = new SigningKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now, $activationDueAt);

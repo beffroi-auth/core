@@ -2,19 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtFramework;
+namespace Heidi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithm;
+use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\JwsSignerInterface;
 use Heidi\Core\Port\SigningKeyProviderInterface;
-use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
-use Jose\Component\Signature\Algorithm\RS256;
 use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 
-final readonly class JwtFrameworkJwsSigner implements JwsSignerInterface
+final readonly class JwtLibraryJwsSigner implements JwsSignerInterface
 {
     private JWSBuilder $builder;
 
@@ -22,19 +20,20 @@ final readonly class JwtFrameworkJwsSigner implements JwsSignerInterface
 
     public function __construct(
         private SigningKeyProviderInterface $keys,
+        JoseSignatureAlgorithms $algorithms,
     ) {
-        $this->builder = new JWSBuilder(new AlgorithmManager([new RS256()]));
+        $this->builder = new JWSBuilder($algorithms->manager());
         $this->serializer = new CompactSerializer();
     }
 
-    public function sign(Tenant $tenant, SignatureAlgorithm $algorithm, string $payload, array $protectedHeader = []): string
+    public function sign(Tenant $tenant, SignatureAlgorithmInterface $algorithm, string $payload, array $protectedHeader = []): string
     {
         $unsealed = $this->keys->activeKey($tenant, $algorithm);
         $jws = $this->builder->create()
             ->withPayload($payload)
             ->addSignature(new JWK($unsealed->privateJwk), [
                 ...$protectedHeader,
-                'alg' => $algorithm->value,
+                'alg' => $algorithm->name(),
                 'kid' => $unsealed->key->kid,
             ])
             ->build();

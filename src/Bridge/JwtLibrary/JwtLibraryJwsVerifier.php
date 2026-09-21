@@ -2,27 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtFramework;
+namespace Heidi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithm;
 use Heidi\Core\Domain\Key\VerifiedJws;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\InvalidJwsException;
+use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\JwsVerifierInterface;
 use Heidi\Core\Port\SigningKeyProviderInterface;
 use function is_string;
-use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
-use Jose\Component\Signature\Algorithm\RS256;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Throwable;
 
 /**
  * The key is chosen by "kid" alone among the published keys of the tenant; "jwk", "jku" and "x5c" are
- * ignored (RFC 8725 §3.10).
+ * ignored (RFC 8725 §3.10). The "alg" of the header has to be one the provider signs with and the one
+ * the key names (RFC 7515 §4.1.1, RFC 8725 §3.1).
  */
-final readonly class JwtFrameworkJwsVerifier implements JwsVerifierInterface
+final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
 {
     private JWSVerifier $verifier;
 
@@ -30,8 +29,9 @@ final readonly class JwtFrameworkJwsVerifier implements JwsVerifierInterface
 
     public function __construct(
         private SigningKeyProviderInterface $keys,
+        private JoseSignatureAlgorithms $algorithms,
     ) {
-        $this->verifier = new JWSVerifier(new AlgorithmManager([new RS256()]));
+        $this->verifier = new JWSVerifier($algorithms->manager());
         $this->serializer = new CompactSerializer();
     }
 
@@ -48,8 +48,13 @@ final readonly class JwtFrameworkJwsVerifier implements JwsVerifierInterface
         $header = $jws->getSignature(0)
             ->getProtectedHeader();
         $alg = $header['alg'] ?? null;
-        if (! is_string($alg) || SignatureAlgorithm::tryFrom($alg) === null) {
-            throw new InvalidJwsException('The token uses an algorithm this provider does not sign with.');
+        if (! is_string($alg)) {
+            throw new InvalidJwsException('The token does not name its algorithm.');
+        }
+        try {
+            $this->algorithms->named($alg);
+        } catch (UnsupportedAlgorithmException $exception) {
+            throw new InvalidJwsException('The token uses an algorithm this provider does not sign with.', 0, $exception);
         }
         $kid = $header['kid'] ?? null;
         if (! is_string($kid) || $kid === '') {
@@ -57,7 +62,7 @@ final readonly class JwtFrameworkJwsVerifier implements JwsVerifierInterface
         }
         $key = $this->keys->publicKeys($tenant)
             ->find($kid);
-        if ($key === null || $key->algorithm->value !== $alg) {
+        if ($key === null || $key->algorithm->name() !== $alg) {
             throw new InvalidJwsException('The token names a key this tenant does not publish.');
         }
         if (! $this->verifier->verifyWithKey($jws, new JWK($key->publicJwk), 0)) {

@@ -40,7 +40,7 @@ final class SigningKey
     public function __construct(
         public readonly string $kid,
         public readonly Tenant $tenant,
-        public readonly SignatureAlgorithm $algorithm,
+        public readonly SignatureAlgorithmInterface $algorithm,
         public readonly array $publicJwk,
         #[SensitiveParameter]
         public readonly string $sealedPrivateJwk,
@@ -59,7 +59,7 @@ final class SigningKey
         foreach ([
             'kid' => $kid,
             'kty' => $algorithm->keyType(),
-            'alg' => $algorithm->value,
+            'alg' => $algorithm->name(),
             'use' => 'sig',
         ] as $member => $expected) {
             $actual = $publicJwk[$member] ?? null;
