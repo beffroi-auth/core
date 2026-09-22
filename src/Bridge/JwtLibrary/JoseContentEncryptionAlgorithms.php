@@ -6,7 +6,9 @@ namespace Heidi\Core\Bridge\JwtLibrary;
 
 use function array_values;
 use Heidi\Core\Exception\InvalidArgumentException;
+use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\ContentEncryptionAlgorithmsInterface;
+use function implode;
 use function sprintf;
 
 /**
@@ -42,5 +44,32 @@ final readonly class JoseContentEncryptionAlgorithms implements ContentEncryptio
     public function all(): array
     {
         return $this->algorithms;
+    }
+
+    public function named(string $name): JoseContentEncryptionAlgorithmInterface
+    {
+        foreach ($this->algorithms as $algorithm) {
+            if ($algorithm->name() === $name) {
+                return $algorithm;
+            }
+        }
+        if ($this->algorithms === []) {
+            throw new UnsupportedAlgorithmException(sprintf('This provider encrypts no payload; "%s" is not read.', $name));
+        }
+
+        throw new UnsupportedAlgorithmException(sprintf('This provider does not encrypt a payload with "%s"; it encrypts with %s.', $name, implode(', ', $this->names())));
+    }
+
+    /**
+     * @return list<non-empty-string>
+     */
+    private function names(): array
+    {
+        $names = [];
+        foreach ($this->algorithms as $algorithm) {
+            $names[] = $algorithm->name();
+        }
+
+        return $names;
     }
 }

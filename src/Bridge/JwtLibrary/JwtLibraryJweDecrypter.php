@@ -11,7 +11,6 @@ use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\DecryptionKeyProviderInterface;
 use Heidi\Core\Port\JweDecrypterInterface;
 use function is_string;
-use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\Encryption\JWEDecrypter;
 use Jose\Component\Encryption\Serializer\CompactSerializer;
@@ -32,17 +31,9 @@ final readonly class JwtLibraryJweDecrypter implements JweDecrypterInterface
 
     public function __construct(
         private DecryptionKeyProviderInterface $keys,
-        private JoseKeyEncryptionAlgorithms $keyEncryption,
-        private JoseContentEncryptionAlgorithms $contentEncryption,
+        private JoseEncryptionAlgorithms $algorithms,
     ) {
-        $jose = [];
-        foreach ($keyEncryption->all() as $algorithm) {
-            $jose[] = $algorithm->joseAlgorithm();
-        }
-        foreach ($contentEncryption->all() as $algorithm) {
-            $jose[] = $algorithm->joseAlgorithm();
-        }
-        $this->decrypter = new JWEDecrypter(new AlgorithmManager($jose));
+        $this->decrypter = new JWEDecrypter($algorithms->manager());
         $this->serializer = new CompactSerializer();
     }
 
@@ -59,13 +50,18 @@ final readonly class JwtLibraryJweDecrypter implements JweDecrypterInterface
             throw new InvalidJweException('The token does not name its key management algorithm.');
         }
         try {
-            $this->keyEncryption->named($alg);
+            $this->algorithms->keyEncryption->named($alg);
         } catch (UnsupportedAlgorithmException $exception) {
             throw new InvalidJweException('The token is encrypted to with an algorithm this provider is not wired with.', 0, $exception);
         }
         $enc = $header['enc'] ?? null;
-        if (! is_string($enc) || ! $this->opensContentEncryptedWith($enc)) {
-            throw new InvalidJweException('The token encrypts its payload with a method this provider is not wired with.');
+        if (! is_string($enc)) {
+            throw new InvalidJweException('The token does not name how its payload is encrypted.');
+        }
+        try {
+            $this->algorithms->contentEncryption->named($enc);
+        } catch (UnsupportedAlgorithmException $exception) {
+            throw new InvalidJweException('The token encrypts its payload with a method this provider is not wired with.', 0, $exception);
         }
         $kid = $header['kid'] ?? null;
         if (! is_string($kid) || $kid === '') {
@@ -88,10 +84,5 @@ final readonly class JwtLibraryJweDecrypter implements JweDecrypterInterface
         }
 
         return $payload;
-    }
-
-    private function opensContentEncryptedWith(string $enc): bool
-    {
-        return array_any($this->contentEncryption->all(), fn ($algorithm) => $algorithm->name() === $enc);
     }
 }
