@@ -21,11 +21,13 @@ final readonly class Address
 
     public function isEmpty(): bool
     {
-        return $this->formatted === null
+        return (
+            $this->formatted === null
             && $this->streetAddress === null
             && $this->locality === null
             && $this->region === null
             && $this->postalCode === null
-            && $this->country === null;
+            && $this->country === null
+        );
     }
 }

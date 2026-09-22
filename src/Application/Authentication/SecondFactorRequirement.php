@@ -23,6 +23,9 @@ final readonly class SecondFactorRequirement
 
     public function requiredFor(User $user): bool
     {
-        return array_any($this->credentials->findByUser($user), fn ($credential) => $credential instanceof SecondFactorCredentialInterface && ! $credential->isRevoked());
+        return array_any(
+            $this->credentials->findByUser($user),
+            fn ($credential) => $credential instanceof SecondFactorCredentialInterface && ! $credential->isRevoked(),
+        );
     }
 }

@@ -134,7 +134,11 @@ final readonly class TenantKeyRotator
         $now = $this->clock->now();
         $due = $key->isDue($now);
         if ($key->status === KeyStatus::Retiring && ! $due && ! $force) {
-            throw new RetirementNotDueException(sprintf('The key "%s" is not due for retirement before %s: what it is bound to may still be alive.', $kid, $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?'));
+            throw new RetirementNotDueException(sprintf(
+                'The key "%s" is not due for retirement before %s: what it is bound to may still be alive.',
+                $kid,
+                $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?',
+            ));
         }
         $key->retire($now);
         $this->keys->save($key);
@@ -143,8 +147,13 @@ final readonly class TenantKeyRotator
         return $key;
     }
 
-    private function publish(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): TenantKey
-    {
+    private function publish(
+        Tenant $tenant,
+        KeyAlgorithmInterface $algorithm,
+        RequestContext $context,
+        DateTimeImmutable $now,
+        DateTimeImmutable $activationDueAt,
+    ): TenantKey {
         $pair = $this->generator->generate($algorithm);
         $key = new TenantKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now, $activationDueAt);
         $this->keys->save($key);

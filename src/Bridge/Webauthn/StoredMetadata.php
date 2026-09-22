@@ -38,8 +38,7 @@ final class StoredMetadata implements MetadataStatementRepository, StatusReportR
     public function __construct(
         private readonly MetadataBlobStoreInterface $store,
     ) {
-        $this->serializer = new WebauthnSerializerFactory(AttestationStatementSupportManager::create())
-            ->create();
+        $this->serializer = new WebauthnSerializerFactory(AttestationStatementSupportManager::create())->create();
     }
 
     public function findOneByAAGUID(string $aaguid): ?MetadataStatement
@@ -81,7 +80,10 @@ final class StoredMetadata implements MetadataStatementRepository, StatusReportR
         try {
             return $this->serializer->deserialize($payload, MetadataBLOBPayload::class, JsonEncoder::FORMAT);
         } catch (Throwable $exception) {
-            throw new RuntimeException(sprintf('The metadata document "%s" is not a Metadata BLOB payload: %s', $name, $exception->getMessage()), previous: $exception);
+            throw new RuntimeException(
+                sprintf('The metadata document "%s" is not a Metadata BLOB payload: %s', $name, $exception->getMessage()),
+                previous: $exception,
+            );
         }
     }
 }

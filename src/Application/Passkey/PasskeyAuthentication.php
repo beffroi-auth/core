@@ -46,10 +46,12 @@ final readonly class PasskeyAuthentication
      */
     public function requestOptions(Tenant $tenant, ?User $user = null): PublicKeyCredentialRequestOptions
     {
-        $allowed = $user === null ? [] : array_values(array_filter(
-            $this->credentials->findByUser($user, PasskeyCredential::class),
-            static fn (PasskeyCredential $passkey): bool => ! $passkey->isRevoked(),
-        ));
+        $allowed = $user === null
+            ? []
+            : array_values(array_filter(
+                $this->credentials->findByUser($user, PasskeyCredential::class),
+                static fn (PasskeyCredential $passkey): bool => ! $passkey->isRevoked(),
+            ));
 
         return $this->authenticator->requestOptions($tenant, $allowed);
     }

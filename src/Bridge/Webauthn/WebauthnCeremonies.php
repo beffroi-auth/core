@@ -62,8 +62,7 @@ final readonly class WebauthnCeremonies
         private StatusReportRepository $statusReports,
         private CertificateChainValidator $chains,
     ) {
-        $this->serializer = new WebauthnSerializerFactory($this->attestationFormats())
-            ->create();
+        $this->serializer = new WebauthnSerializerFactory($this->attestationFormats())->create();
     }
 
     /**
@@ -108,10 +107,9 @@ final readonly class WebauthnCeremonies
      */
     public function optionsToJson(PublicKeyCredentialOptions $options): string
     {
-        return $this->serializer
-            ->serialize($options, JsonEncoder::FORMAT, [
-                AbstractObjectNormalizer::SKIP_NULL_VALUES => true,
-            ]);
+        return $this->serializer->serialize($options, JsonEncoder::FORMAT, [
+            AbstractObjectNormalizer::SKIP_NULL_VALUES => true,
+        ]);
     }
 
     /**
@@ -123,8 +121,7 @@ final readonly class WebauthnCeremonies
     public function credentialFromJson(string $json): PublicKeyCredential
     {
         try {
-            return $this->serializer
-                ->deserialize($json, PublicKeyCredential::class, JsonEncoder::FORMAT);
+            return $this->serializer->deserialize($json, PublicKeyCredential::class, JsonEncoder::FORMAT);
         } catch (Throwable $exception) {
             throw new PasskeyCeremonyFailedException(sprintf('The response of the browser cannot be read: %s', $exception->getMessage()), previous: $exception);
         }
@@ -147,8 +144,7 @@ final readonly class WebauthnCeremonies
 
     private static function algorithms(): Manager
     {
-        return Manager::create()
-            ->add(ES256::create(), RS256::create());
+        return Manager::create()->add(ES256::create(), RS256::create());
     }
 
     /**

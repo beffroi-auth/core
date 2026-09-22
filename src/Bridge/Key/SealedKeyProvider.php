@@ -65,7 +65,11 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
         if (! $key->isPublished()) {
             unset($this->opened[$kid]);
 
-            throw new KeyNotFoundException(sprintf('The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.', $kid, $tenant->slug));
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.',
+                $kid,
+                $tenant->slug,
+            ));
         }
         self::assertUse($key, KeyUse::Encryption);
 
@@ -98,6 +102,12 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
             return;
         }
 
-        throw new KeyNotFoundException(sprintf('The key "%s" of tenant "%s" is published with "use": "%s"; it is not a key that %s.', $key->kid, $key->tenant->slug, $use->value, $expected === KeyUse::Signature ? 'signs' : 'opens a JWE'));
+        throw new KeyNotFoundException(sprintf(
+            'The key "%s" of tenant "%s" is published with "use": "%s"; it is not a key that %s.',
+            $key->kid,
+            $key->tenant->slug,
+            $use->value,
+            $expected === KeyUse::Signature ? 'signs' : 'opens a JWE',
+        ));
     }
 }

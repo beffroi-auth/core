@@ -41,7 +41,11 @@ final readonly class EnvelopeSecretSealer implements SecretSealerInterface
         try {
             return (string) $this->envelopes->encrypt($this->kmsKeyId->of($tenant), $secret, self::aad($tenant));
         } catch (Throwable $exception) {
-            throw KeyManagementFailure::of($exception, sprintf('A secret of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)));
+            throw KeyManagementFailure::of($exception, sprintf(
+                'A secret of tenant "%s" could not be sealed under the KMS key "%s".',
+                $tenant->slug,
+                $this->kmsKeyId->of($tenant),
+            ));
         }
     }
 

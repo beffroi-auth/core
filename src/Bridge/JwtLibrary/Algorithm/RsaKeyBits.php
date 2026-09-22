@@ -21,7 +21,7 @@ final readonly class RsaKeyBits
     public function __construct(
         public int $value = self::DEFAULT,
     ) {
-        if ($value < self::MINIMUM || $value % 8 !== 0) {
+        if ($value < self::MINIMUM || ($value % 8) !== 0) {
             throw new InvalidArgumentException(sprintf('RSA keys are at least %d bits, in whole bytes.', self::MINIMUM));
         }
     }

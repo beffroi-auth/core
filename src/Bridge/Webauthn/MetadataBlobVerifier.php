@@ -43,8 +43,7 @@ final readonly class MetadataBlobVerifier
     public function __construct(
         private CertificateChainValidator $chains,
     ) {
-        $this->serializer = new WebauthnSerializerFactory(AttestationStatementSupportManager::create())
-            ->create();
+        $this->serializer = new WebauthnSerializerFactory(AttestationStatementSupportManager::create())->create();
         // what the FIDO Alliance signs with today (RS256) and what a test service may (ES256), nothing else
         $this->verifier = new JWSVerifier(new AlgorithmManager([new ES256(), new RS256()]));
     }
@@ -70,7 +69,10 @@ final readonly class MetadataBlobVerifier
         try {
             $this->chains->check(CertificateToolbox::fixPEMStructures($chain), [CertificateToolbox::fixPEMStructure($rootCertificate)]);
         } catch (Throwable $exception) {
-            throw new MetadataBlobRefusedException(sprintf('The certificate chain of the blob does not lead to the pinned root: %s', $exception->getMessage()), previous: $exception);
+            throw new MetadataBlobRefusedException(
+                sprintf('The certificate chain of the blob does not lead to the pinned root: %s', $exception->getMessage()),
+                previous: $exception,
+            );
         }
         $payload = $jws->getPayload();
         if ($payload === null || $payload === '') {
@@ -79,7 +81,10 @@ final readonly class MetadataBlobVerifier
         try {
             $content = $this->serializer->deserialize($payload, MetadataBLOBPayload::class, JsonEncoder::FORMAT);
         } catch (Throwable $exception) {
-            throw new MetadataBlobRefusedException(sprintf('The payload of the blob is not a Metadata BLOB payload: %s', $exception->getMessage()), previous: $exception);
+            throw new MetadataBlobRefusedException(
+                sprintf('The payload of the blob is not a Metadata BLOB payload: %s', $exception->getMessage()),
+                previous: $exception,
+            );
         }
 
         return new MetadataBlob($payload, $content);
@@ -91,8 +96,7 @@ final readonly class MetadataBlobVerifier
     private function parse(string $token): JWS
     {
         try {
-            $jws = new CompactSerializer()
-                ->unserialize($token);
+            $jws = new CompactSerializer()->unserialize($token);
         } catch (Throwable $exception) {
             throw new MetadataBlobRefusedException(sprintf('The blob is not a compact JWS: %s', $exception->getMessage()), previous: $exception);
         }
@@ -111,8 +115,7 @@ final readonly class MetadataBlobVerifier
      */
     private static function chain(JWS $jws): array
     {
-        $header = $jws->getSignature(0)
-            ->getProtectedHeader();
+        $header = $jws->getSignature(0)->getProtectedHeader();
         $x5c = $header['x5c'] ?? null;
         if (! is_array($x5c) || $x5c === [] || ! array_is_list($x5c)) {
             throw new MetadataBlobRefusedException('The protected header of the blob names no certificate chain ("x5c").');

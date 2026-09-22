@@ -52,8 +52,7 @@ final readonly class EdDsa implements JoseSignatureAlgorithmInterface
     {
         return JWKFactory::createOKPKey(self::CURVE, [
             'alg' => $this->name(),
-            'use' => $this->keyUse()
-                ->value,
+            'use' => $this->keyUse()->value,
         ]);
     }
 }

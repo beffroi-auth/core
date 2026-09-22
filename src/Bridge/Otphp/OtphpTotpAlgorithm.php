@@ -39,8 +39,7 @@ final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
         /** @var int<0, max> $unixTime the step is bounded on both sides */
         $unixTime = $timeStep * TotpCredential::PERIOD;
 
-        return $this->totp($secret)
-            ->at($unixTime);
+        return $this->totp($secret)->at($unixTime);
     }
 
     /**
@@ -49,10 +48,7 @@ final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
      */
     public function provisioningUri(TotpSecret $secret, string $issuer, string $account): string
     {
-        return $this->totp($secret)
-            ->withIssuer(self::labelPart($issuer, 'issuer'))
-            ->withLabel(self::labelPart($account, 'account'))
-            ->getProvisioningUri();
+        return $this->totp($secret)->withIssuer(self::labelPart($issuer, 'issuer'))->withLabel(self::labelPart($account, 'account'))->getProvisioningUri();
     }
 
     private function totp(TotpSecret $secret): TOTP

@@ -51,8 +51,7 @@ final readonly class Es256 implements JoseSignatureAlgorithmInterface
     {
         return JWKFactory::createECKey(self::CURVE, [
             'alg' => $this->name(),
-            'use' => $this->keyUse()
-                ->value,
+            'use' => $this->keyUse()->value,
         ]);
     }
 }

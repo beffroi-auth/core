@@ -135,7 +135,10 @@ final readonly class AuthenticationContextPolicy
 
         return array_all(
             $this->classes,
-            static fn (AuthenticationContextClass $class, int $index): bool => $class->equals($other->classes[$index]) && $class->predicate === $other->classes[$index]->predicate,
+            static fn (AuthenticationContextClass $class, int $index): bool => (
+                $class->equals($other->classes[$index])
+                && $class->predicate === $other->classes[$index]->predicate
+            ),
         );
     }
 
@@ -151,7 +154,11 @@ final readonly class AuthenticationContextPolicy
             default => null,
         };
         if ($allowed !== null && ! array_any($allowed, static fn (AuthenticationPredicate $predicate): bool => $predicate === $class->predicate)) {
-            throw new InvalidArgumentException(sprintf('"%s" is a registered name (OpenID Connect EAP ACR Values 1.0) and keeps its meaning: it cannot be named on the "%s" predicate.', $class->value, $class->predicate->value));
+            throw new InvalidArgumentException(sprintf(
+                '"%s" is a registered name (OpenID Connect EAP ACR Values 1.0) and keeps its meaning: it cannot be named on the "%s" predicate.',
+                $class->value,
+                $class->predicate->value,
+            ));
         }
     }
 }

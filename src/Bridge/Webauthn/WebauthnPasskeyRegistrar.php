@@ -55,7 +55,9 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
                 residentKey: AuthenticatorSelectionCriteria::RESIDENT_KEY_REQUIREMENT_REQUIRED,
             ),
             PublicKeyCredentialCreationOptions::ATTESTATION_CONVEYANCE_PREFERENCE_NONE,
-            array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey->record()->getPublicKeyCredentialDescriptor(), $existing),
+            array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey
+                ->record()
+                ->getPublicKeyCredentialDescriptor(), $existing),
         );
     }
 
@@ -66,8 +68,7 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
             throw new PasskeyCeremonyFailedException('The response of the browser is not the attestation of a new passkey.');
         }
         try {
-            return $this->ceremonies->attestationValidator($tenant)
-                ->check($credential->response, $options, WebauthnCeremonies::relyingPartyId($tenant));
+            return $this->ceremonies->attestationValidator($tenant)->check($credential->response, $options, WebauthnCeremonies::relyingPartyId($tenant));
         } catch (Throwable $exception) {
             throw new PasskeyCeremonyFailedException(sprintf('The attestation was refused: %s', $exception->getMessage()), previous: $exception);
         }

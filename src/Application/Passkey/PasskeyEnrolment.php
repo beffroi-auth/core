@@ -58,8 +58,13 @@ final readonly class PasskeyEnrolment
      *
      * @throws CredentialEnrolmentFailedException
      */
-    public function complete(User $user, string $name, PublicKeyCredentialCreationOptions $challenge, string $answer, RequestContext $context): PasskeyCredential
-    {
+    public function complete(
+        User $user,
+        string $name,
+        PublicKeyCredentialCreationOptions $challenge,
+        string $answer,
+        RequestContext $context,
+    ): PasskeyCredential {
         try {
             $record = $this->registrar->verifyAttestation($user->tenant, $challenge, $answer);
         } catch (PasskeyCeremonyFailedException $exception) {

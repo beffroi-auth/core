@@ -47,8 +47,7 @@ final readonly class EcdhEsA256Kw implements JoseKeyEncryptionAlgorithmInterface
     {
         return JWKFactory::createECKey(self::CURVE, [
             'alg' => $this->name(),
-            'use' => $this->keyUse()
-                ->value,
+            'use' => $this->keyUse()->value,
         ]);
     }
 }

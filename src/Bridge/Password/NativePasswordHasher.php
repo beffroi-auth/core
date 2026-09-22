@@ -61,8 +61,7 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
     {
         $this->assertSupported($hash->algorithm);
 
-        return $hash->algorithm !== PasswordAlgorithm::Argon2id
-            || password_needs_rehash($hash->encoded, PASSWORD_ARGON2ID, $this->options());
+        return $hash->algorithm !== PasswordAlgorithm::Argon2id || password_needs_rehash($hash->encoded, PASSWORD_ARGON2ID, $this->options());
     }
 
     /**

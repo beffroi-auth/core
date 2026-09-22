@@ -52,8 +52,7 @@ final readonly class Ps256 implements JoseSignatureAlgorithmInterface
     {
         return JWKFactory::createRSAKey($this->keyBits->value, [
             'alg' => $this->name(),
-            'use' => $this->keyUse()
-                ->value,
+            'use' => $this->keyUse()->value,
         ]);
     }
 }

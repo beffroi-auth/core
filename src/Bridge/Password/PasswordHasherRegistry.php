@@ -49,8 +49,7 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
 
     public function verify(PasswordHash $hash, #[SensitiveParameter] string $plainPassword): bool
     {
-        return $this->hasherFor($hash->algorithm)
-            ->verify($hash, $plainPassword);
+        return $this->hasherFor($hash->algorithm)->verify($hash, $plainPassword);
     }
 
     /**

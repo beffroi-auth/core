@@ -41,7 +41,12 @@ final class InMemoryCredentialRepository implements CredentialRepositoryInterfac
     public function findByExternalId(Tenant $tenant, string $kind, string $externalId): ?Credential
     {
         foreach ($this->credentials as $credential) {
-            if ($credential instanceof $kind && $credential instanceof ExternallyIdentifiedCredentialInterface && $credential->tenant->equals($tenant) && hash_equals($credential->externalId, $externalId)) {
+            if (
+                $credential instanceof $kind
+                && $credential instanceof ExternallyIdentifiedCredentialInterface
+                && $credential->tenant->equals($tenant)
+                && hash_equals($credential->externalId, $externalId)
+            ) {
                 return $credential;
             }
         }

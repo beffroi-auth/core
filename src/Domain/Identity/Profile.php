@@ -29,7 +29,10 @@ final readonly class Profile
         public ?string $locale = null,
     ) {
         if ($birthdate !== null && preg_match('/^\d{4}(?:-\d{2}-\d{2})?$/', $birthdate) !== 1) {
-            throw new InvalidArgumentException(sprintf('The birthdate "%s" must be "YYYY-MM-DD" or "YYYY" (a year alone, or "0000" for an unknown year).', $birthdate));
+            throw new InvalidArgumentException(sprintf(
+                'The birthdate "%s" must be "YYYY-MM-DD" or "YYYY" (a year alone, or "0000" for an unknown year).',
+                $birthdate,
+            ));
         }
     }
 

@@ -59,7 +59,11 @@ final readonly class JoseKeyEncryptionAlgorithms implements KeyEncryptionAlgorit
             throw new UnsupportedAlgorithmException(sprintf('This provider is encrypted to with nothing; "%s" is not read.', $name));
         }
 
-        throw new UnsupportedAlgorithmException(sprintf('This provider is not encrypted to with "%s"; it is encrypted to with %s.', $name, implode(', ', $this->names())));
+        throw new UnsupportedAlgorithmException(sprintf(
+            'This provider is not encrypted to with "%s"; it is encrypted to with %s.',
+            $name,
+            implode(', ', $this->names()),
+        ));
     }
 
     /**

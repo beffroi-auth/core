@@ -25,8 +25,7 @@ final readonly class JwtLibraryKeyPairGenerator implements KeyPairGeneratorInter
 
     public function generate(KeyAlgorithmInterface $algorithm): GeneratedKeyPair
     {
-        $private = $this->algorithms->named($algorithm->name())
-            ->generateKey();
+        $private = $this->algorithms->named($algorithm->name())->generateKey();
         $kid = $private->thumbprint('sha256');
         $private = new JWK([
             ...$private->all(),

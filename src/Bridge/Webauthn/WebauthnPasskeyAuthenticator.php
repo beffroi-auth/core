@@ -41,7 +41,9 @@ final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticato
         return PublicKeyCredentialRequestOptions::create(
             random_bytes(self::CHALLENGE_LENGTH),
             WebauthnCeremonies::relyingPartyId($tenant),
-            array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey->record()->getPublicKeyCredentialDescriptor(), $allowed),
+            array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey
+                ->record()
+                ->getPublicKeyCredentialDescriptor(), $allowed),
             PublicKeyCredentialRequestOptions::USER_VERIFICATION_REQUIREMENT_PREFERRED,
         );
     }
@@ -52,11 +54,19 @@ final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticato
         if (! $credential->response instanceof AuthenticatorAssertionResponse) {
             throw new PasskeyCeremonyFailedException('The response of the browser is not the assertion of a passkey.');
         }
-        $passkey = $this->credentials->findByExternalId($tenant, PasskeyCredential::class, $credential->rawId)
-            ?? throw new PasskeyCeremonyFailedException('The response names no passkey of the tenant.');
+        $passkey = $this->credentials->findByExternalId(
+            $tenant,
+            PasskeyCredential::class,
+            $credential->rawId,
+        ) ?? throw new PasskeyCeremonyFailedException('The response names no passkey of the tenant.');
         try {
-            $this->ceremonies->assertionValidator($tenant)
-                ->check($passkey->record(), $credential->response, $options, WebauthnCeremonies::relyingPartyId($tenant), null);
+            $this->ceremonies->assertionValidator($tenant)->check(
+                $passkey->record(),
+                $credential->response,
+                $options,
+                WebauthnCeremonies::relyingPartyId($tenant),
+                null,
+            );
         } catch (Throwable $exception) {
             throw new PasskeyCeremonyFailedException(sprintf('The assertion was refused: %s', $exception->getMessage()), previous: $exception);
         }

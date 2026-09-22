@@ -39,8 +39,10 @@ enum AuthenticationPredicate: string
     {
         return match ($this) {
             self::SingleFactor => true,
-            self::TwoFactors => count($proofs->factors()) >= 2 || array_any($proofs->methods(), static fn (AuthenticationMethod $method): bool => $method->isMultipleFactors()),
-            self::PhishingResistant => $proofs->has(new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY)) || $proofs->has(new AuthenticationMethod(AuthenticationMethod::SOFTWARE_KEY)),
+            self::TwoFactors => count($proofs->factors()) >= 2
+                || array_any($proofs->methods(), static fn (AuthenticationMethod $method): bool => $method->isMultipleFactors()),
+            self::PhishingResistant => $proofs->has(new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY))
+                || $proofs->has(new AuthenticationMethod(AuthenticationMethod::SOFTWARE_KEY)),
             self::PhishingResistantHardware => $proofs->has(new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY)),
         };
     }

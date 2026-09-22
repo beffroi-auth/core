@@ -65,8 +65,7 @@ final class TenantKey
             'kid' => $kid,
             'kty' => $algorithm->keyType(),
             'alg' => $algorithm->name(),
-            'use' => $algorithm->keyUse()
-                ->value,
+            'use' => $algorithm->keyUse()->value,
         ] as $member => $expected) {
             $actual = $publicJwk[$member] ?? null;
             if (! is_string($actual) || $actual !== $expected) {

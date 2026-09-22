@@ -57,7 +57,11 @@ final readonly class JoseContentEncryptionAlgorithms implements ContentEncryptio
             throw new UnsupportedAlgorithmException(sprintf('This provider encrypts no payload; "%s" is not read.', $name));
         }
 
-        throw new UnsupportedAlgorithmException(sprintf('This provider does not encrypt a payload with "%s"; it encrypts with %s.', $name, implode(', ', $this->names())));
+        throw new UnsupportedAlgorithmException(sprintf(
+            'This provider does not encrypt a payload with "%s"; it encrypts with %s.',
+            $name,
+            implode(', ', $this->names()),
+        ));
     }
 
     /**
