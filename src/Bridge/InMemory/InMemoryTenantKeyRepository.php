@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
-use Heidi\Core\Domain\Key\SigningKey;
+use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
+use Heidi\Core\Domain\Key\TenantKey;
 use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\SigningKeyRepositoryInterface;
+use Heidi\Core\Port\TenantKeyRepositoryInterface;
 use function usort;
 
-final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterface
+final class InMemoryTenantKeyRepository implements TenantKeyRepositoryInterface
 {
     /**
-     * @var array<string, SigningKey> by tenant id and kid
+     * @var array<string, TenantKey> by tenant id and kid
      */
     private array $keys = [];
 
@@ -22,12 +22,12 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
      */
     public private(set) int $saves = 0;
 
-    public function find(Tenant $tenant, string $kid): ?SigningKey
+    public function find(Tenant $tenant, string $kid): ?TenantKey
     {
         return $this->keys[self::index($tenant, $kid)] ?? null;
     }
 
-    public function findActive(Tenant $tenant, SignatureAlgorithmInterface $algorithm): ?SigningKey
+    public function findActive(Tenant $tenant, KeyAlgorithmInterface $algorithm): ?TenantKey
     {
         foreach ($this->keys as $key) {
             if ($key->tenant->equals($tenant) && $key->algorithm->name() === $algorithm->name() && $key->isActive()) {
@@ -58,12 +58,12 @@ final class InMemorySigningKeyRepository implements SigningKeyRepositoryInterfac
                 $all[] = $key;
             }
         }
-        usort($all, static fn (SigningKey $a, SigningKey $b): int => [$a->createdAt, $a->kid] <=> [$b->createdAt, $b->kid]);
+        usort($all, static fn (TenantKey $a, TenantKey $b): int => [$a->createdAt, $a->kid] <=> [$b->createdAt, $b->kid]);
 
         return $all;
     }
 
-    public function save(SigningKey $key): void
+    public function save(TenantKey $key): void
     {
         ++$this->saves;
         $this->keys[self::index($key->tenant, $key->kid)] = $key;

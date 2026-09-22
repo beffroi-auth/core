@@ -12,7 +12,7 @@ use Heidi\Core\Exception\UnsupportedAlgorithmException;
  * generates, the JWS it signs, the names a client may register and what the discovery document announces
  * all read this one (issue #98). Nothing enumerates them in parallel.
  */
-interface SignatureAlgorithmsInterface
+interface SignatureAlgorithmsInterface extends KeyAlgorithmsInterface
 {
     /**
      * @return non-empty-list<SignatureAlgorithmInterface> in the order they are wired

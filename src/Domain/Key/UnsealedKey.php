@@ -7,15 +7,15 @@ namespace Heidi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * A signing key with its private JWK in clear, in memory only.
+ * A key of a tenant with its private JWK in clear, in memory only: what signs, and what opens a JWE.
  */
-final readonly class UnsealedSigningKey
+final readonly class UnsealedKey
 {
     /**
      * @param array<string, string> $privateJwk
      */
     public function __construct(
-        public SigningKey $key,
+        public TenantKey $key,
         #[SensitiveParameter]
         public array $privateJwk,
     ) {

@@ -13,7 +13,7 @@ final readonly class VerifiedJws
      * @param array<string, mixed> $protectedHeader
      */
     public function __construct(
-        public SigningKey $key,
+        public TenantKey $key,
         public array $protectedHeader,
         public string $payload,
     ) {

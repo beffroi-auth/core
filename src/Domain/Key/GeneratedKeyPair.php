@@ -7,7 +7,7 @@ namespace Heidi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * What a key pair generator returns; the kid is an RFC 7638 thumbprint.
+ * What a key pair generator returns, for either use; the kid is an RFC 7638 thumbprint.
  */
 final readonly class GeneratedKeyPair
 {
@@ -17,7 +17,7 @@ final readonly class GeneratedKeyPair
      */
     public function __construct(
         public string $kid,
-        public SignatureAlgorithmInterface $algorithm,
+        public KeyAlgorithmInterface $algorithm,
         #[SensitiveParameter]
         public array $privateJwk,
         public array $publicJwk,

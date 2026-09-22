@@ -27,6 +27,13 @@ use Throwable;
  */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
+    /**
+     * What the envelope of a key of a tenant is, whatever the key is published for: it tells a key
+     * envelope from a secret one (EnvelopeSecretSealer) and one tenant from another, never one use of a
+     * key from the other, which the key itself carries. The wording is the one of the day it was written
+     * and it does not change: every envelope sealed before the encryption keys of issue #164 opens under
+     * it, and nothing rewraps an envelope (architecture §3.3).
+     */
     private const string AAD = 'heidi:signing-key:v2:';
 
     private KmsKeyId $kmsKeyId;
@@ -48,7 +55,7 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         try {
             return (string) $this->envelopes->encrypt($this->kmsKeyId->of($tenant), $json, self::aad($tenant));
         } catch (Throwable $exception) {
-            throw KeyManagementFailure::of($exception, sprintf('The signing key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)));
+            throw KeyManagementFailure::of($exception, sprintf('The key of tenant "%s" could not be sealed under the KMS key "%s".', $tenant->slug, $this->kmsKeyId->of($tenant)));
         }
     }
 
@@ -57,16 +64,16 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         try {
             $json = $this->envelopes->decrypt(Envelope::fromBytes($sealed), self::aad($tenant));
         } catch (Throwable $exception) {
-            throw KeyManagementFailure::of($exception, 'The sealed signing key could not be opened.');
+            throw KeyManagementFailure::of($exception, 'The sealed key could not be opened.');
         }
         $jwk = json_decode($json, true, 8, JSON_THROW_ON_ERROR);
         if (! is_array($jwk)) {
-            throw new RuntimeException('The sealed signing key does not contain a JWK.');
+            throw new RuntimeException('The sealed key does not contain a JWK.');
         }
         $members = [];
         foreach ($jwk as $member => $value) {
             if (! is_string($member) || ! is_string($value)) {
-                throw new RuntimeException('The sealed signing key does not contain a JWK.');
+                throw new RuntimeException('The sealed key does not contain a JWK.');
             }
             $members[$member] = $value;
         }

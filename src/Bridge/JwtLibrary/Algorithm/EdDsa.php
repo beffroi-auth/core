@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
 
 use Heidi\Core\Bridge\JwtLibrary\JoseSignatureAlgorithmInterface;
+use Heidi\Core\Domain\Key\KeyUse;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\EdDSA as JoseEdDsa;
@@ -32,6 +33,11 @@ final readonly class EdDsa implements JoseSignatureAlgorithmInterface
         return 'OKP';
     }
 
+    public function keyUse(): KeyUse
+    {
+        return KeyUse::Signature;
+    }
+
     public function digestAlgorithm(): string
     {
         return 'sha512';
@@ -46,7 +52,8 @@ final readonly class EdDsa implements JoseSignatureAlgorithmInterface
     {
         return JWKFactory::createOKPKey(self::CURVE, [
             'alg' => $this->name(),
-            'use' => 'sig',
+            'use' => $this->keyUse()
+                ->value,
         ]);
     }
 }

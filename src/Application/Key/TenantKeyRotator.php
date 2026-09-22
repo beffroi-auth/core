@@ -6,43 +6,48 @@ namespace Heidi\Core\Application\Key;
 
 use DateInterval;
 use DateTimeImmutable;
-use Heidi\Core\Domain\Event\SigningKeyRetired;
-use Heidi\Core\Domain\Event\SigningKeyRotated;
-use Heidi\Core\Domain\Event\SigningKeyStaged;
+use Heidi\Core\Domain\Event\TenantKeyRetired;
+use Heidi\Core\Domain\Event\TenantKeyRotated;
+use Heidi\Core\Domain\Event\TenantKeyStaged;
+use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
 use Heidi\Core\Domain\Key\KeyStatus;
+use Heidi\Core\Domain\Key\KeyUse;
 use Heidi\Core\Domain\Key\RetirementReason;
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
-use Heidi\Core\Domain\Key\SigningKey;
+use Heidi\Core\Domain\Key\TenantKey;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\KeyNotFoundException;
 use Heidi\Core\Exception\LogicException;
 use Heidi\Core\Exception\RetirementNotDueException;
-use Heidi\Core\Port\IssuedJwsKindInterface;
+use Heidi\Core\Port\KeyBoundArtifactInterface;
 use Heidi\Core\Port\KeyPairGeneratorInterface;
 use Heidi\Core\Port\KeySealerInterface;
-use Heidi\Core\Port\SigningKeyRepositoryInterface;
+use Heidi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use function sprintf;
 
 /**
- * Rotation without an outage (OIDC Core §10.1.1, architecture §3.3): stage() publishes a key before it
- * signs, activate() makes it sign and starts retiring the previous one, retireDue() removes a key once
- * every JWS it could have signed has expired. rotate() does the first two steps at once; activateDue()
- * does the second one when the staging window has ended.
+ * Rotation without an outage (OIDC Core §10.1.1, architecture §3.3): stage() publishes a key before it is
+ * used, activate() puts it to work and starts retiring the previous one, retireDue() removes a key once
+ * everything bound to it has expired. rotate() does the first two steps at once; activateDue() does the
+ * second one when the staging window has ended.
+ *
+ * The same four steps for a key that signs and for a key a client encrypts to: what changes between the
+ * two is only how long the retirement window lasts, and that is read from the kinds of artifact that name
+ * the use of the key retiring, never written here.
  */
-final readonly class SigningKeyRotator
+final readonly class TenantKeyRotator
 {
     /**
-     * @param iterable<IssuedJwsKindInterface> $issuedJws the longest lifetime among them dates a retirement
-     * @param DateInterval $stagingDelay how long a staged key stays published before it signs: what a relying party needs to see it
+     * @param iterable<KeyBoundArtifactInterface> $artifacts the longest lifetime among those of the use of a key dates its retirement
+     * @param DateInterval $stagingDelay how long a staged key stays published before it is used: what a relying party needs to see it
      */
     public function __construct(
-        private SigningKeyRepositoryInterface $keys,
+        private TenantKeyRepositoryInterface $keys,
         private KeyPairGeneratorInterface $generator,
         private KeySealerInterface $sealer,
-        private iterable $issuedJws,
+        private iterable $artifacts,
         private DateInterval $stagingDelay,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
@@ -50,9 +55,9 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * Published, sealed, signing nothing until activate() or activateDue() once the staging delay elapsed.
+     * Published, sealed, doing nothing until activate() or activateDue() once the staging delay elapsed.
      */
-    public function stage(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context): SigningKey
+    public function stage(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
     {
         $now = $this->clock->now();
 
@@ -60,9 +65,9 @@ final readonly class SigningKeyRotator
     }
 
     /**
-     * The staged key signs from now on; the active one starts retiring.
+     * The staged key is the one in use from now on; the active one starts retiring.
      */
-    public function activate(Tenant $tenant, string $kid, RequestContext $context): SigningKey
+    public function activate(Tenant $tenant, string $kid, RequestContext $context): TenantKey
     {
         return $this->takeOver($this->findOrFail($tenant, $kid), $context, compromised: false);
     }
@@ -70,7 +75,7 @@ final readonly class SigningKeyRotator
     /**
      * The timed step of a staging window, idempotent.
      *
-     * @return list<SigningKey> the keys activated by this call
+     * @return list<TenantKey> the keys activated by this call
      */
     public function activateDue(Tenant $tenant, RequestContext $context): array
     {
@@ -88,7 +93,7 @@ final readonly class SigningKeyRotator
     /**
      * Stages and activates at once; "compromised" retires the previous key with no window.
      */
-    public function rotate(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context, bool $compromised = false): SigningKey
+    public function rotate(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context, bool $compromised = false): TenantKey
     {
         $now = $this->clock->now();
 
@@ -98,7 +103,7 @@ final readonly class SigningKeyRotator
     /**
      * The timed step of a retirement window, idempotent.
      *
-     * @return list<SigningKey> the keys retired by this call
+     * @return list<TenantKey> the keys retired by this call
      */
     public function retireDue(Tenant $tenant, RequestContext $context): array
     {
@@ -110,7 +115,7 @@ final readonly class SigningKeyRotator
             }
             $key->retire($now);
             $this->keys->save($key);
-            $this->events->dispatch(new SigningKeyRetired($key, RetirementReason::Due, $now, $context));
+            $this->events->dispatch(new TenantKeyRetired($key, RetirementReason::Due, $now, $context));
             $retired[] = $key;
         }
 
@@ -120,7 +125,7 @@ final readonly class SigningKeyRotator
     /**
      * Before the retirement date the caller has to force it, and the trail says so.
      */
-    public function retire(Tenant $tenant, string $kid, RequestContext $context, bool $force = false): SigningKey
+    public function retire(Tenant $tenant, string $kid, RequestContext $context, bool $force = false): TenantKey
     {
         $key = $this->findOrFail($tenant, $kid);
         if ($key->isActive()) {
@@ -129,53 +134,58 @@ final readonly class SigningKeyRotator
         $now = $this->clock->now();
         $due = $key->isDue($now);
         if ($key->status === KeyStatus::Retiring && ! $due && ! $force) {
-            throw new RetirementNotDueException(sprintf('The key "%s" is not due for retirement before %s: a JWS it signed may be alive.', $kid, $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?'));
+            throw new RetirementNotDueException(sprintf('The key "%s" is not due for retirement before %s: what it is bound to may still be alive.', $kid, $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?'));
         }
         $key->retire($now);
         $this->keys->save($key);
-        $this->events->dispatch(new SigningKeyRetired($key, $due ? RetirementReason::Due : RetirementReason::Forced, $now, $context));
+        $this->events->dispatch(new TenantKeyRetired($key, $due ? RetirementReason::Due : RetirementReason::Forced, $now, $context));
 
         return $key;
     }
 
-    private function publish(Tenant $tenant, SignatureAlgorithmInterface $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): SigningKey
+    private function publish(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context, DateTimeImmutable $now, DateTimeImmutable $activationDueAt): TenantKey
     {
         $pair = $this->generator->generate($algorithm);
-        $key = new SigningKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now, $activationDueAt);
+        $key = new TenantKey($pair->kid, $tenant, $algorithm, $pair->publicJwk, $this->sealer->seal($tenant, $pair->privateJwk), $now, $activationDueAt);
         $this->keys->save($key);
-        $this->events->dispatch(new SigningKeyStaged($key, $now, $context));
+        $this->events->dispatch(new TenantKeyStaged($key, $now, $context));
 
         return $key;
     }
 
-    private function takeOver(SigningKey $key, RequestContext $context, bool $compromised): SigningKey
+    private function takeOver(TenantKey $key, RequestContext $context, bool $compromised): TenantKey
     {
         $now = $this->clock->now();
         // looked up before the activation, or the new key would be among the candidates
         $previous = $this->keys->findActive($key->tenant, $key->algorithm);
         $key->activate($now);
         if ($previous !== null) {
-            $previous->startRetiring($now, $compromised ? $now : $this->retirementDue($key->tenant, $now));
+            $previous->startRetiring($now, $compromised ? $now : $this->retirementDue($key->tenant, $key->algorithm->keyUse(), $now));
             $this->keys->save($previous);
         }
         $this->keys->save($key);
-        $this->events->dispatch(new SigningKeyRotated($key, $previous, $now, $context));
+        $this->events->dispatch(new TenantKeyRotated($key, $previous, $now, $context));
         if ($compromised && $previous !== null) {
             $previous->retire($now);
             $this->keys->save($previous);
-            $this->events->dispatch(new SigningKeyRetired($previous, RetirementReason::Compromised, $now, $context));
+            $this->events->dispatch(new TenantKeyRetired($previous, RetirementReason::Compromised, $now, $context));
         }
 
         return $key;
     }
 
     /**
-     * The longest lifetime among the kinds of JWS the tenant issues; none means at once.
+     * The longest lifetime among the kinds of artifact bound to a key of that use: the JWS the tenant
+     * issues for a key that signs, what a client may still be encrypting to it for a key it publishes to
+     * be encrypted to. None of them means at once.
      */
-    private function retirementDue(Tenant $tenant, DateTimeImmutable $retiringAt): DateTimeImmutable
+    private function retirementDue(Tenant $tenant, KeyUse $use, DateTimeImmutable $retiringAt): DateTimeImmutable
     {
         $due = $retiringAt;
-        foreach ($this->issuedJws as $kind) {
+        foreach ($this->artifacts as $kind) {
+            if ($kind->keyUse() !== $use) {
+                continue;
+            }
             $lifetime = $kind->longestLifetime($tenant);
             if ($lifetime === null) {
                 continue;
@@ -189,7 +199,7 @@ final readonly class SigningKeyRotator
         return $due;
     }
 
-    private function findOrFail(Tenant $tenant, string $kid): SigningKey
+    private function findOrFail(Tenant $tenant, string $kid): TenantKey
     {
         return $this->keys->find($tenant, $kid) ?? throw new KeyNotFoundException(sprintf('Tenant "%s" has no key "%s".', $tenant->slug, $kid));
     }

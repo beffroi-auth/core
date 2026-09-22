@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\JwtLibrary;
 
+use Heidi\Core\Domain\Key\KeyUse;
 use Heidi\Core\Domain\Key\VerifiedJws;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\InvalidJwsException;
 use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\JwsVerifierInterface;
-use Heidi\Core\Port\SigningKeyProviderInterface;
+use Heidi\Core\Port\PublicKeySetProviderInterface;
 use function is_string;
 use Jose\Component\Core\JWK;
 use Jose\Component\Signature\JWSVerifier;
@@ -17,8 +18,9 @@ use Jose\Component\Signature\Serializer\CompactSerializer;
 use Throwable;
 
 /**
- * The key is chosen by "kid" alone among the published keys of the tenant; "jwk", "jku" and "x5c" are
- * ignored (RFC 8725 §3.10). The "alg" of the header has to be one the provider signs with and the one
+ * The key is chosen by "kid" alone among the published keys of the tenant that sign; "jwk", "jku" and
+ * "x5c" are ignored (RFC 8725 §3.10), and a key the tenant publishes to be encrypted to is not among the
+ * candidates (RFC 7517 §4.2). The "alg" of the header has to be one the provider signs with and the one
  * the key names (RFC 7515 §4.1.1, RFC 8725 §3.1).
  */
 final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
@@ -28,7 +30,7 @@ final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
     private CompactSerializer $serializer;
 
     public function __construct(
-        private SigningKeyProviderInterface $keys,
+        private PublicKeySetProviderInterface $keys,
         private JoseSignatureAlgorithms $algorithms,
     ) {
         $this->verifier = new JWSVerifier($algorithms->manager());
@@ -61,6 +63,7 @@ final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
             throw new InvalidJwsException('The token does not name its key.');
         }
         $key = $this->keys->publicKeys($tenant)
+            ->forUse(KeyUse::Signature)
             ->find($kid);
         if ($key === null || $key->algorithm->name() !== $alg) {
             throw new InvalidJwsException('The token names a key this tenant does not publish.');

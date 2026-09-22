@@ -13,11 +13,16 @@ use SensitiveParameter;
 use function sprintf;
 
 /**
- * A signing key of a tenant: the public JWK in clear, the private JWK sealed by the KMS, the "kid" its
+ * A key pair of a tenant: the public JWK in clear, the private JWK sealed by the KMS, the "kid" its
  * RFC 7638 thumbprint. Staged, active, retiring, retired (architecture §3.3); every date is a fact of the
  * key, the two due dates included: when the staging window ends and when the retirement window ends.
+ *
+ * What the key is for is what its algorithm is for, written once: a key of a signature algorithm signs,
+ * a key of a key encryption algorithm opens a JWE, and the "use" its JWK publishes is asserted against
+ * the algorithm rather than trusted (RFC 7517 §4.2). The two lives are the same life, so there is one
+ * class, one repository and one set of commands for both.
  */
-final class SigningKey
+final class TenantKey
 {
     public private(set) KeyStatus $status = KeyStatus::Staged;
 
@@ -40,7 +45,7 @@ final class SigningKey
     public function __construct(
         public readonly string $kid,
         public readonly Tenant $tenant,
-        public readonly SignatureAlgorithmInterface $algorithm,
+        public readonly KeyAlgorithmInterface $algorithm,
         public readonly array $publicJwk,
         #[SensitiveParameter]
         public readonly string $sealedPrivateJwk,
@@ -51,16 +56,17 @@ final class SigningKey
             throw new InvalidArgumentException('The activation of a key is due when it is created at the earliest.');
         }
         if ($kid === '') {
-            throw new InvalidArgumentException('A signing key has a key identifier.');
+            throw new InvalidArgumentException('A key has a key identifier.');
         }
         if ($sealedPrivateJwk === '') {
-            throw new InvalidArgumentException('A signing key carries its sealed private material.');
+            throw new InvalidArgumentException('A key carries its sealed private material.');
         }
         foreach ([
             'kid' => $kid,
             'kty' => $algorithm->keyType(),
             'alg' => $algorithm->name(),
-            'use' => 'sig',
+            'use' => $algorithm->keyUse()
+                ->value,
         ] as $member => $expected) {
             $actual = $publicJwk[$member] ?? null;
             if (! is_string($actual) || $actual !== $expected) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
 
 use Heidi\Core\Bridge\JwtLibrary\JoseSignatureAlgorithmInterface;
+use Heidi\Core\Domain\Key\KeyUse;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\PS256 as JosePs256;
@@ -32,6 +33,11 @@ final readonly class Ps256 implements JoseSignatureAlgorithmInterface
         return 'RSA';
     }
 
+    public function keyUse(): KeyUse
+    {
+        return KeyUse::Signature;
+    }
+
     public function digestAlgorithm(): string
     {
         return 'sha256';
@@ -46,7 +52,8 @@ final readonly class Ps256 implements JoseSignatureAlgorithmInterface
     {
         return JWKFactory::createRSAKey($this->keyBits->value, [
             'alg' => $this->name(),
-            'use' => 'sig',
+            'use' => $this->keyUse()
+                ->value,
         ]);
     }
 }
