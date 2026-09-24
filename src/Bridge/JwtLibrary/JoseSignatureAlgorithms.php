@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Bridge\JwtLibrary;
 
 use function array_map;
+use Heidi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\SignatureAlgorithmsInterface;

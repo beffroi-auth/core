@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Domain\Key;
 
+use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
+
 /**
  * One algorithm a key pair of the tenant is generated and published for: what it is called, the kind of
  * key pair it takes and what that pair is used for. What the provider is wired with is what it generates,

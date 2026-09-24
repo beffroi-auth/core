@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\Password;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithm;
+use Heidi\Core\Bridge\Password\Algorithm\Argon2i;
+use Heidi\Core\Bridge\Password\Algorithm\Argon2id;
+use Heidi\Core\Bridge\Password\Algorithm\Bcrypt;
+use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\LogicException;
@@ -25,7 +28,10 @@ use function sprintf;
  */
 final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInterface
 {
-    private const array SUPPORTED = [PasswordAlgorithm::Argon2id, PasswordAlgorithm::Argon2i, PasswordAlgorithm::Bcrypt];
+    /**
+     * What password_verify() reads. A hasher knows what it handles; nothing else enumerates algorithms.
+     */
+    private const array SUPPORTED = [Argon2id::NAME, Argon2i::NAME, Bcrypt::NAME];
 
     /**
      * The defaults of PHP meet RFC 9106 §4; a deployment raises them, never lowers them.
@@ -40,14 +46,14 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
         }
     }
 
-    public function supports(PasswordAlgorithm $algorithm): bool
+    public function supports(PasswordAlgorithmInterface $algorithm): bool
     {
-        return in_array($algorithm, self::SUPPORTED, true);
+        return in_array($algorithm->name(), self::SUPPORTED, true);
     }
 
     public function hash(#[SensitiveParameter] string $plainPassword): PasswordHash
     {
-        return new PasswordHash(PasswordAlgorithm::Argon2id, password_hash($plainPassword, PASSWORD_ARGON2ID, $this->options()));
+        return new PasswordHash(new Argon2id(), password_hash($plainPassword, PASSWORD_ARGON2ID, $this->options()));
     }
 
     public function verify(PasswordHash $hash, #[SensitiveParameter] string $plainPassword): bool
@@ -61,7 +67,7 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
     {
         $this->assertSupported($hash->algorithm);
 
-        return $hash->algorithm !== PasswordAlgorithm::Argon2id || password_needs_rehash($hash->encoded, PASSWORD_ARGON2ID, $this->options());
+        return $hash->algorithm->name() !== Argon2id::NAME || password_needs_rehash($hash->encoded, PASSWORD_ARGON2ID, $this->options());
     }
 
     /**
@@ -76,10 +82,10 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
         ];
     }
 
-    private function assertSupported(PasswordAlgorithm $algorithm): void
+    private function assertSupported(PasswordAlgorithmInterface $algorithm): void
     {
         if (! $this->supports($algorithm)) {
-            throw new LogicException(sprintf('The native hasher does not handle "%s" hashes; route them through the registry.', $algorithm->value));
+            throw new LogicException(sprintf('The native hasher does not handle "%s" hashes; route them through the registry.', $algorithm->name()));
         }
     }
 }

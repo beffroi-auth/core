@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Port;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithm;
+use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Exception\LogicException;
 use SensitiveParameter;
@@ -19,7 +19,7 @@ interface AlgorithmPasswordHasherInterface extends PasswordHasherInterface
     /**
      * Verifies and judges hashes of that algorithm; the registry asks before handing one over.
      */
-    public function supports(PasswordAlgorithm $algorithm): bool;
+    public function supports(PasswordAlgorithmInterface $algorithm): bool;
 
     /**
      * @throws LogicException when the algorithm of the hash is not supported: the registry was bypassed

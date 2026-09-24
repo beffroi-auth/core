@@ -2,21 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Heidi\Core\Bridge\Algorithm;
 
 use function array_values;
-use Heidi\Core\Domain\Key\NamedAlgorithmInterface;
+use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
 use Heidi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
 /**
  * What the wiring gave a registry: the algorithms in the order they were wired, each name held once, and
- * the lookup of a name among them. Every registry of this bridge is one of these plus the refusal it
+ * the lookup of a name among them. Every registry of the provider is one of these plus the refusal it
  * words for its own use, so that the order of a wiring, its refusal to carry a name twice and the way a
  * name is resolved are written once for the three of them (issue #98).
  *
  * What a registry does not find is its own to refuse: the message names what the provider signs with, is
- * encrypted to with, or encrypts a payload with, and only the registry of that use can say it.
+ * encrypted to with, encrypts a payload with or hashes a password with, and only the registry of that
+ * use can say it.
  *
  * @template T of NamedAlgorithmInterface
  */

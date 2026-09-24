@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\JwtLibrary;
 
+use Heidi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\ContentEncryptionAlgorithmsInterface;
 use function implode;

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Domain\Key;
 
+use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
+
 /**
  * One JWE content encryption algorithm the provider opens a payload with (RFC 7518 §5): the "enc" of the
  * header. It takes no key of the tenant, the content encryption key being the one the "alg" wrapped or
