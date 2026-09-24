@@ -16,12 +16,12 @@ use Heidi\Core\Exception\CredentialEnrolmentFailedException;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\UuidGeneratorInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\SecretSealerInterface;
 use Heidi\Core\Port\TotpAlgorithmInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * A TOTP enters the identity model in two steps, from a session the user already holds: the provisioning
@@ -36,6 +36,7 @@ final readonly class TotpEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private UuidGeneratorInterface $uuids,
         private ActiveTotp $activeTotp,
         private TotpAlgorithmInterface $algorithm,
         private TotpCodeMatcher $matcher,
@@ -83,7 +84,7 @@ final readonly class TotpEnrolment
         $sealed = $this->sealer->seal($user->tenant, $challenge->secret->bytes);
         try {
             $credential = new TotpCredential(
-                Uuid::v7(),
+                $this->uuids->timeOrdered(),
                 $user,
                 $sealed,
                 array_map(fn (string $code): BackupCode => new BackupCode($this->hasher->hash(BackupCode::normalize($code))), $challenge->backupCodes),

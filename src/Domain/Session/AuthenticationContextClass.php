@@ -64,9 +64,12 @@ final readonly class AuthenticationContextClass implements Stringable
         return preg_match(self::PATTERN, $value) === 1;
     }
 
-    public function isSatisfiedBy(AuthenticationProofs $proofs): bool
+    /**
+     * @param list<AuthenticationMethod> $methods what was proven, or what a login would prove
+     */
+    public function isSatisfiedBy(array $methods): bool
     {
-        return $this->predicate->isSatisfiedBy($proofs);
+        return $this->predicate->isSatisfiedBy($methods);
     }
 
     /**

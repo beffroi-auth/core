@@ -15,7 +15,7 @@ use function count;
 enum AuthenticationPredicate: string
 {
     /**
-     * At least one proof, whatever the method.
+     * At least one method, whatever it is.
      */
     case SingleFactor = 'single_factor';
 
@@ -35,15 +35,29 @@ enum AuthenticationPredicate: string
      */
     case PhishingResistantHardware = 'phishing_resistant_hardware';
 
-    public function isSatisfiedBy(AuthenticationProofs $proofs): bool
+    /**
+     * A predicate reads which methods were proven and nothing else: not when, not how often. It takes the
+     * methods themselves, so that asking what a login *could* prove needs no proofs invented for the
+     * occasion, and no date fabricated to carry them.
+     *
+     * @param list<AuthenticationMethod> $methods
+     */
+    public function isSatisfiedBy(array $methods): bool
     {
         return match ($this) {
-            self::SingleFactor => true,
-            self::TwoFactors => count($proofs->factors()) >= 2
-                || array_any($proofs->methods(), static fn (AuthenticationMethod $method): bool => $method->isMultipleFactors()),
-            self::PhishingResistant => $proofs->has(new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY))
-                || $proofs->has(new AuthenticationMethod(AuthenticationMethod::SOFTWARE_KEY)),
-            self::PhishingResistantHardware => $proofs->has(new AuthenticationMethod(AuthenticationMethod::HARDWARE_KEY)),
+            self::SingleFactor => $methods !== [],
+            self::TwoFactors => count(AuthenticationMethod::factorsOf($methods)) >= 2
+                || array_any($methods, static fn (AuthenticationMethod $method): bool => $method->isMultipleFactors()),
+            self::PhishingResistant => self::holds($methods, AuthenticationMethod::HARDWARE_KEY) || self::holds($methods, AuthenticationMethod::SOFTWARE_KEY),
+            self::PhishingResistantHardware => self::holds($methods, AuthenticationMethod::HARDWARE_KEY),
         };
+    }
+
+    /**
+     * @param list<AuthenticationMethod> $methods
+     */
+    private static function holds(array $methods, string $value): bool
+    {
+        return array_any($methods, static fn (AuthenticationMethod $method): bool => $method->value === $value);
     }
 }

@@ -72,7 +72,7 @@ final class AuthenticationSession
      */
     public function satisfies(AuthenticationContextClass $class): bool
     {
-        return $class->isSatisfiedBy($this->proofs);
+        return $class->isSatisfiedBy($this->proofs->methods());
     }
 
     /**

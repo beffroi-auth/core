@@ -14,11 +14,11 @@ use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\UuidGeneratorInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
-use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
@@ -31,6 +31,7 @@ final readonly class UserProvisioner
         private UserRepositoryInterface $users,
         private CredentialRepositoryInterface $credentials,
         private PasswordHasherInterface $hasher,
+        private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
     ) {
     }
@@ -46,11 +47,11 @@ final readonly class UserProvisioner
         if ($this->users->findByUsername($tenant, $username) !== null) {
             throw UserAlreadyExistsException::username($username);
         }
-        $subject ??= new Subject(Uuid::v4()->toRfc4122());
+        $subject ??= new Subject($this->uuids->opaque()->toRfc4122());
         if ($this->users->findBySubject($tenant, $subject) !== null) {
             throw UserAlreadyExistsException::subject($subject->value);
         }
-        $user = User::create(Uuid::v7(), $tenant, $subject, $username, $this->clock->now(), $email, $emailVerified);
+        $user = User::create($this->uuids->timeOrdered(), $tenant, $subject, $username, $this->clock->now(), $email, $emailVerified);
         $this->users->save($user);
 
         return $user;
@@ -83,7 +84,7 @@ final readonly class UserProvisioner
         $hash = $this->hasher->hash($password->value);
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
-            $credential = new PasswordCredential(Uuid::v7(), $user, $hash, $now);
+            $credential = new PasswordCredential($this->uuids->timeOrdered(), $user, $hash, $now);
         } else {
             $credential->changePassword($hash, $now);
         }

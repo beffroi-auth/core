@@ -10,7 +10,6 @@ use function array_filter;
 use function array_map;
 use function array_values;
 use function count;
-use DateTimeImmutable;
 use Heidi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function sprintf;
@@ -92,7 +91,7 @@ final readonly class AuthenticationContextPolicy
     public function classOf(AuthenticationProofs $proofs): AuthenticationContextClass
     {
         foreach ($this->classes as $class) {
-            if ($class->isSatisfiedBy($proofs)) {
+            if ($class->isSatisfiedBy($proofs->methods())) {
                 return $class;
             }
         }
@@ -111,9 +110,7 @@ final readonly class AuthenticationContextPolicy
      */
     public function provableWith(array $methods): array
     {
-        $proofs = AuthenticationProofs::ofAll($methods, new DateTimeImmutable('@0'));
-
-        return array_values(array_filter($this->classes, static fn (AuthenticationContextClass $class): bool => $class->isSatisfiedBy($proofs)));
+        return array_values(array_filter($this->classes, static fn (AuthenticationContextClass $class): bool => $class->isSatisfiedBy($methods)));
     }
 
     /**

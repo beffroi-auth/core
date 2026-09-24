@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Session;
 
 use Heidi\Core\Exception\InvalidArgumentException;
+use function in_array;
 use function preg_match;
 use function sprintf;
 use Stringable;
@@ -89,6 +90,27 @@ final readonly class AuthenticationMethod implements Stringable
     public static function password(): self
     {
         return new self(self::PASSWORD);
+    }
+
+    /**
+     * The distinct kinds of factor a set of methods proves, in the order the methods come. Two proofs of
+     * the same kind are one factor (NIST SP 800-63B §4), and a method that proves none is not counted.
+     *
+     * @param list<self> $methods
+     *
+     * @return list<AuthenticationFactor>
+     */
+    public static function factorsOf(array $methods): array
+    {
+        $factors = [];
+        foreach ($methods as $method) {
+            $factor = $method->factor();
+            if ($factor !== null && ! in_array($factor, $factors, true)) {
+                $factors[] = $factor;
+            }
+        }
+
+        return $factors;
     }
 
     /**

@@ -13,10 +13,10 @@ use Heidi\Core\Exception\CredentialEnrolmentFailedException;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\PasskeyCeremonyFailedException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\UuidGeneratorInterface;
 use Heidi\Core\Port\PasskeyRegistrarInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Uid\Uuid;
 use Webauthn\PublicKeyCredentialCreationOptions;
 
 /**
@@ -28,6 +28,7 @@ final readonly class PasskeyEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private UuidGeneratorInterface $uuids,
         private PasskeyRegistrarInterface $registrar,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
@@ -84,7 +85,7 @@ final readonly class PasskeyEnrolment
         }
         $now = $this->clock->now();
         try {
-            $credential = PasskeyCredential::fromRecord(Uuid::v7(), $user, $name, $record, $now);
+            $credential = PasskeyCredential::fromRecord($this->uuids->timeOrdered(), $user, $name, $record, $now);
         } catch (InvalidArgumentException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }

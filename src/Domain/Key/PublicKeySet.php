@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Key;
 
 use function array_map;
+use Heidi\Core\Exception\InvalidArgumentException;
+use function sprintf;
 
 /**
  * The published keys of a tenant (staged, active, retiring), whatever they are published for: the JWK Set
@@ -20,9 +22,34 @@ final readonly class PublicKeySet
     public array $keys;
 
     /**
-     * @param iterable<TenantKey> $keys
+     * @param iterable<TenantKey> $keys every one of them published
+     *
+     * @throws InvalidArgumentException when a key that has retired is among them: what a tenant
+     *                                  publishes is not something to be guessed from a longer list
      */
     public function __construct(iterable $keys)
+    {
+        $published = [];
+        foreach ($keys as $key) {
+            if (! $key->isPublished()) {
+                throw new InvalidArgumentException(sprintf(
+                    'The key "%s" has retired and is not published; take the published ones with PublicKeySet::published().',
+                    $key->kid,
+                ));
+            }
+            $published[] = $key;
+        }
+        $this->keys = $published;
+    }
+
+    /**
+     * The published ones among whatever is given, the retired ones left out. Named, because a set that
+     * quietly drops what it was handed is a set nobody can be sure of: a caller that means "all of them"
+     * says so here, and one that means "these" uses the constructor and hears about a retired key.
+     *
+     * @param iterable<TenantKey> $keys
+     */
+    public static function published(iterable $keys): self
     {
         $published = [];
         foreach ($keys as $key) {
@@ -30,7 +57,8 @@ final readonly class PublicKeySet
                 $published[] = $key;
             }
         }
-        $this->keys = $published;
+
+        return new self($published);
     }
 
     /**

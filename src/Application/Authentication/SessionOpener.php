@@ -13,9 +13,9 @@ use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Heidi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * Opens one session on what was just proven and says so; every opened session leaves the same trace,
@@ -26,6 +26,7 @@ final readonly class SessionOpener
 {
     public function __construct(
         private AuthenticationSessionRepositoryInterface $sessions,
+        private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
         private DateInterval $lifetime = new DateInterval('PT12H'),
@@ -39,7 +40,7 @@ final readonly class SessionOpener
     {
         $now = $this->clock->now();
         $session = new AuthenticationSession(
-            Uuid::v7(),
+            $this->uuids->timeOrdered(),
             $tenant,
             $user,
             $now,

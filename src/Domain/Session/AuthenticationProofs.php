@@ -9,7 +9,6 @@ use function array_map;
 use function count;
 use DateTimeImmutable;
 use Heidi\Core\Exception\InvalidArgumentException;
-use function in_array;
 use function max;
 
 /**
@@ -107,15 +106,7 @@ final readonly class AuthenticationProofs
      */
     public function factors(): array
     {
-        $factors = [];
-        foreach ($this->methods() as $method) {
-            $factor = $method->factor();
-            if ($factor !== null && ! in_array($factor, $factors, true)) {
-                $factors[] = $factor;
-            }
-        }
-
-        return $factors;
+        return AuthenticationMethod::factorsOf($this->methods());
     }
 
     /**
