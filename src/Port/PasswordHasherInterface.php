@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Port;
 
 use Heidi\Core\Domain\Credential\PasswordHash;
+use Heidi\Core\Exception\LogicException;
 use SensitiveParameter;
 
 /**
@@ -17,10 +18,17 @@ interface PasswordHasherInterface
 {
     public function hash(#[SensitiveParameter] string $plainPassword): PasswordHash;
 
+    /**
+     * @throws LogicException when no hasher of this deployment handles the algorithm the hash names: an
+     *                        import brought a hash nothing here can verify, which is a wiring to fix and
+     *                        not an answer to give the user
+     */
     public function verify(PasswordHash $hash, #[SensitiveParameter] string $plainPassword): bool;
 
     /**
      * Weaker than what the hasher produces today.
+     *
+     * @throws LogicException when no hasher of this deployment handles the algorithm the hash names
      */
     public function needsRehash(PasswordHash $hash): bool;
 }

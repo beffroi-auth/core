@@ -95,7 +95,7 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
      */
     public function provableMethods(): array
     {
-        return $this->revokedAt === null ? [self::method()] : [];
+        return $this->isRevoked() ? [] : [self::method()];
     }
 
     /**
@@ -109,9 +109,7 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
 
     public function recordUse(int $step, DateTimeImmutable $now): void
     {
-        if ($this->revokedAt !== null) {
-            throw new LogicException('A revoked TOTP credential never authenticates again.');
-        }
+        $this->refuseIfRevoked();
         if (! $this->acceptsStep($step)) {
             throw new LogicException('A TOTP code is accepted once (RFC 6238 §5.2).');
         }
@@ -124,9 +122,7 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
      */
     public function spendBackupCode(int $index, DateTimeImmutable $now): void
     {
-        if ($this->revokedAt !== null) {
-            throw new LogicException('A revoked TOTP credential never authenticates again.');
-        }
+        $this->refuseIfRevoked();
         $code = $this->backupCodes[$index] ?? throw new InvalidArgumentException(sprintf('There is no backup code at position %d.', $index));
         $this->backupCodes[$index] = $code->spend($now);
         $this->markUsed($now);

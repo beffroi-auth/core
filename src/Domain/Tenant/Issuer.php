@@ -12,7 +12,9 @@ use function preg_match;
 use function sprintf;
 use function str_ends_with;
 use Stringable;
+use function strlen;
 use function strtolower;
+use function substr;
 use function trim;
 
 /**
@@ -53,6 +55,19 @@ final readonly class Issuer implements Stringable
         $this->value = $value;
         $this->host = $host;
         $this->path = $path;
+    }
+
+    /**
+     * The issuer without its path: the scheme, the host and the port it names, which is what a browser
+     * calls the origin (RFC 6454 §3.2). The one place it is derived, because everything that speaks of
+     * this provider to a browser has to say the same thing: the origin a WebAuthn ceremony accepts
+     * (WebAuthn Level 3 §13.4.9), the one the metadata of RFC 8414 §3 hangs its path under, and the one
+     * a router builds an absolute URL from. Two of them disagreeing is a ceremony that refuses without
+     * saying why.
+     */
+    public function origin(): string
+    {
+        return substr($this->value, 0, strlen($this->value) - strlen($this->path));
     }
 
     public function equals(self $other): bool

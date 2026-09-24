@@ -7,6 +7,7 @@ namespace Heidi\Core\Application\Authentication;
 use Heidi\Core\Domain\Credential\PasswordCredential;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasswordRehashed;
+use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\PendingLogin;
@@ -62,36 +63,16 @@ final readonly class PasswordAuthenticator
     ): AuthenticationSession|PendingLogin {
         $user = $this->users->findByUsername($tenant, trim($identifier));
         if ($user === null) {
-            $this->decoy->verify($password);
-
-            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::UnknownUser, AuthenticationMethod::password(), $identifier, null);
+            throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, $password, null);
         }
 
         if (! $this->attempts->attempt($user)) {
-            $this->decoy->verify($password);
-
-            throw $this->refusals->refuse(
-                $tenant,
-                $context,
-                AuthenticationFailureReason::TooManyAttempts,
-                AuthenticationMethod::password(),
-                $identifier,
-                $user,
-            );
+            throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::TooManyAttempts, $identifier, $password, $user);
         }
 
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
-            $this->decoy->verify($password);
-
-            throw $this->refusals->refuse(
-                $tenant,
-                $context,
-                AuthenticationFailureReason::NoSuchCredential,
-                AuthenticationMethod::password(),
-                $identifier,
-                $user,
-            );
+            throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::NoSuchCredential, $identifier, $password, $user);
         }
 
         if (! $this->hasher->verify($credential->hash, $password)) {
@@ -112,7 +93,7 @@ final readonly class PasswordAuthenticator
 
         $this->attempts->reset($user);
         $now = $this->clock->now();
-        $credential->markUsed($now);
+        $credential->recordUse($now);
         if ($this->hasher->needsRehash($credential->hash)) {
             $credential->rehash($this->hasher->hash($password), $now);
             $this->credentials->save($credential);
@@ -125,5 +106,25 @@ final readonly class PasswordAuthenticator
         }
 
         return $this->opener->open($tenant, $user, [AuthenticationMethod::password()], $context);
+    }
+
+    /**
+     * A refusal reached before any hash of the user could be verified still pays for one (DecoyHash,
+     * decision 0006): what is refused before the password was read must cost what a wrong password
+     * costs, or the time says whether the account exists. The two are one gesture here, so that a
+     * refusal added later cannot be the one that forgets to pay.
+     */
+    private function refuseAtTheCostOfAPassword(
+        Tenant $tenant,
+        RequestContext $context,
+        AuthenticationFailureReason $reason,
+        string $identifier,
+        #[SensitiveParameter]
+        string $password,
+        ?User $user,
+    ): AuthenticationFailedException {
+        $this->decoy->verify($password);
+
+        return $this->refusals->refuse($tenant, $context, $reason, AuthenticationMethod::password(), $identifier, $user);
     }
 }

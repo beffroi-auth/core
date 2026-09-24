@@ -43,6 +43,11 @@ abstract class Credential
         return null;
     }
 
+    /**
+     * Restates when the credential was last used: what a store replays and what an import brings. A
+     * login does not call this, it calls the recordUse() of the kind, which holds what a use of that
+     * kind means (a sign count, a spent code, a date).
+     */
     public function markUsed(DateTimeImmutable $now): void
     {
         $this->lastUsedAt = $now;

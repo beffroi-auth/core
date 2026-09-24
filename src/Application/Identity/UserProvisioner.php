@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Identity;
 
 use Heidi\Core\Domain\Credential\PasswordCredential;
+use Heidi\Core\Domain\Credential\PlainPassword;
 use Heidi\Core\Domain\Identity\Address;
 use Heidi\Core\Domain\Identity\EmailAddress;
 use Heidi\Core\Domain\Identity\Profile;
@@ -15,11 +16,8 @@ use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\UserRepositoryInterface;
-use function mb_strlen;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
-use function sprintf;
-use function strlen;
 use Symfony\Component\Uid\Uuid;
 use function trim;
 
@@ -29,16 +27,6 @@ use function trim;
  */
 final readonly class UserProvisioner
 {
-    /**
-     * NIST SP 800-63B §5.1.1.2, counted in characters.
-     */
-    public const int MINIMUM_PASSWORD_LENGTH = 8;
-
-    /**
-     * The bound of Symfony's password hashers (CVE-2013-1443).
-     */
-    public const int MAXIMUM_PASSWORD_BYTES = 4096;
-
     public function __construct(
         private UserRepositoryInterface $users,
         private CredentialRepositoryInterface $credentials,
@@ -86,18 +74,13 @@ final readonly class UserProvisioner
     }
 
     /**
-     * @throws InvalidArgumentException when the password is too short or too long
+     * What a password has to be is the PlainPassword's, checked where one is built; this hashes what it
+     * is given and stores it.
      */
-    public function setPassword(User $user, #[SensitiveParameter] string $password): PasswordCredential
+    public function setPassword(User $user, #[SensitiveParameter] PlainPassword $password): PasswordCredential
     {
-        if (mb_strlen($password) < self::MINIMUM_PASSWORD_LENGTH) {
-            throw new InvalidArgumentException(sprintf('A password is at least %d characters long.', self::MINIMUM_PASSWORD_LENGTH));
-        }
-        if (strlen($password) > self::MAXIMUM_PASSWORD_BYTES) {
-            throw new InvalidArgumentException(sprintf('A password is at most %d bytes long.', self::MAXIMUM_PASSWORD_BYTES));
-        }
         $now = $this->clock->now();
-        $hash = $this->hasher->hash($password);
+        $hash = $this->hasher->hash($password->value);
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
             $credential = new PasswordCredential(Uuid::v7(), $user, $hash, $now);

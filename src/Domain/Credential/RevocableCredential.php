@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Credential;
 
 use DateTimeImmutable;
+use Heidi\Core\Exception\LogicException;
+use function sprintf;
 
 /**
  * A credential that can be taken out of use without leaving its row. The revocation is the same fact
@@ -29,5 +31,18 @@ abstract class RevocableCredential extends Credential implements RevocableCreden
     public function isRevoked(): bool
     {
         return $this->revokedAt !== null;
+    }
+
+    /**
+     * A revoked credential never authenticates again: the rule of every kind that can be revoked, so it
+     * is stated once and each kind calls it where it would otherwise restate it.
+     *
+     * @throws LogicException
+     */
+    protected function refuseIfRevoked(): void
+    {
+        if ($this->revokedAt !== null) {
+            throw new LogicException(sprintf('A revoked %s never authenticates again.', $this->kind()));
+        }
     }
 }

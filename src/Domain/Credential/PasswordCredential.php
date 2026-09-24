@@ -37,6 +37,16 @@ final class PasswordCredential extends Credential implements ProvingCredentialIn
     }
 
     /**
+     * The password was just verified and signed its user in. Every kind says what a use of it does to it;
+     * a password has nothing to move forward but the date, and a login says so here rather than reaching
+     * for the date itself.
+     */
+    public function recordUse(DateTimeImmutable $now): void
+    {
+        $this->markUsed($now);
+    }
+
+    /**
      * A stronger hash of the same password.
      */
     public function rehash(PasswordHash $hash, DateTimeImmutable $now): void

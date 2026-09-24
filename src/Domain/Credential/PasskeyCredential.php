@@ -9,7 +9,6 @@ use DateTimeImmutable;
 use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
 use function mb_strlen;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;
@@ -165,7 +164,7 @@ final class PasskeyCredential extends RevocableCredential implements ExternallyI
      */
     public function provableMethods(): array
     {
-        if ($this->revokedAt !== null) {
+        if ($this->isRevoked()) {
             return [];
         }
 
@@ -210,9 +209,7 @@ final class PasskeyCredential extends RevocableCredential implements ExternallyI
      */
     public function recordUse(AuthenticatorData $data, DateTimeImmutable $now): void
     {
-        if ($this->revokedAt !== null) {
-            throw new LogicException('A revoked passkey never authenticates again.');
-        }
+        $this->refuseIfRevoked();
         if ($data->isBackedUp() && ! $data->isBackupEligible()) {
             throw new InvalidArgumentException('A passkey that is not eligible for backup cannot be backed up (WebAuthn Level 3 §6.1.3).');
         }

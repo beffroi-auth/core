@@ -11,8 +11,6 @@ use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\PasskeyCeremonyFailedException;
 use Psr\Clock\ClockInterface;
 use function sprintf;
-use function strlen;
-use function substr;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -87,16 +85,6 @@ final readonly class WebauthnCeremonies
         return $tenant->issuer->host;
     }
 
-    /**
-     * The one origin a ceremony of the tenant accepts (§13.4.9): the issuer without its path.
-     */
-    public static function origin(Tenant $tenant): string
-    {
-        $issuer = $tenant->issuer->value;
-
-        return substr($issuer, 0, strlen($issuer) - strlen($tenant->issuer->path));
-    }
-
     public function attestationValidator(Tenant $tenant): AuthenticatorAttestationResponseValidator
     {
         return AuthenticatorAttestationResponseValidator::create($this->factory($tenant)->creationCeremony());
@@ -139,7 +127,7 @@ final readonly class WebauthnCeremonies
         $factory = new CeremonyStepManagerFactory();
         $factory->setAttestationStatementSupportManager($this->attestationFormats());
         // the whole origin, scheme and port included: what lets a loopback issuer be plain HTTP, as the Issuer does
-        $factory->setAllowedOrigins([self::origin($tenant)]);
+        $factory->setAllowedOrigins([$tenant->issuer->origin()]);
         $factory->setCounterChecker(new IgnoredCounterChecker());
         // read when a ceremony asked for an attestation; the chains of an attestation are checked with the
         // same validator as the chain of a blob, up to the roots the statement of the authenticator names
