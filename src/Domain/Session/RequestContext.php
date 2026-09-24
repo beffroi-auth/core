@@ -8,7 +8,6 @@ use DateTimeImmutable;
 use const FILTER_VALIDATE_IP;
 use function filter_var;
 use Heidi\Core\Exception\InvalidArgumentException;
-use function mb_strlen;
 use function mb_substr;
 use function sprintf;
 use function trim;
@@ -58,10 +57,5 @@ final readonly class RequestContext
     public function isEnriched(): bool
     {
         return $this->location !== null || $this->device !== null;
-    }
-
-    public function userAgentLength(): int
-    {
-        return $this->userAgent === null ? 0 : mb_strlen($this->userAgent);
     }
 }

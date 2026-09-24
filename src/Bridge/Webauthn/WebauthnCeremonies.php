@@ -54,6 +54,12 @@ final readonly class WebauthnCeremonies
      */
     private const array ALGORITHMS = [-7, -257];
 
+    /**
+     * WebAuthn Level 3 §13.4.3: at least 16 bytes. The same for either ceremony, so it is written here
+     * and not once per adapter.
+     */
+    public const int CHALLENGE_LENGTH = 32;
+
     private SerializerInterface $serializer;
 
     public function __construct(

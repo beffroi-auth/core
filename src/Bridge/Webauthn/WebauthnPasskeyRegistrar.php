@@ -30,11 +30,6 @@ use Webauthn\PublicKeyCredentialUserEntity;
  */
 final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterface
 {
-    /**
-     * WebAuthn Level 3 §13.4.3: at least 16 bytes.
-     */
-    private const int CHALLENGE_LENGTH = 32;
-
     public function __construct(
         private WebauthnCeremonies $ceremonies,
     ) {
@@ -48,7 +43,7 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
             // no name: deprecated by webauthn-lib 5.3, the JSON carries the relying party identifier as the name
             PublicKeyCredentialRpEntity::create('', WebauthnCeremonies::relyingPartyId($tenant)),
             PublicKeyCredentialUserEntity::create($user->username, $userHandle->value, $user->profile->name ?? $user->username),
-            random_bytes(self::CHALLENGE_LENGTH),
+            random_bytes(WebauthnCeremonies::CHALLENGE_LENGTH),
             WebauthnCeremonies::parameters(),
             AuthenticatorSelectionCriteria::create(
                 userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED,

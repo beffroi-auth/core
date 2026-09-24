@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Authentication;
 
+use function array_any;
+use Heidi\Core\Application\Credential\ActiveCredentials;
+use Heidi\Core\Domain\Credential\Credential;
 use Heidi\Core\Domain\Credential\SecondFactorCredentialInterface;
 use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Port\CredentialRepositoryInterface;
 
 /**
  * Whether a password alone signs a user in (architecture §3.2): it does not while the user holds an
@@ -17,15 +19,15 @@ use Heidi\Core\Port\CredentialRepositoryInterface;
 final readonly class SecondFactorRequirement
 {
     public function __construct(
-        private CredentialRepositoryInterface $credentials,
+        private ActiveCredentials $active,
     ) {
     }
 
     public function requiredFor(User $user): bool
     {
         return array_any(
-            $this->credentials->findByUser($user),
-            fn ($credential) => $credential instanceof SecondFactorCredentialInterface && ! $credential->isRevoked(),
+            $this->active->of($user),
+            static fn (Credential $credential): bool => $credential instanceof SecondFactorCredentialInterface,
         );
     }
 }

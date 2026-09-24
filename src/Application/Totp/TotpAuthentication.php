@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Totp;
 
 use Heidi\Core\Application\Authentication\AuthenticationFailedException;
+use Heidi\Core\Application\Authentication\AuthenticationRefusal;
 use Heidi\Core\Domain\Credential\BackupCode;
 use Heidi\Core\Domain\Credential\TotpCredential;
 use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\TotpUsed;
 use Heidi\Core\Domain\Identity\User;
@@ -42,6 +42,7 @@ final readonly class TotpAuthentication
         private SecretSealerInterface $sealer,
         private PasswordHasherInterface $hasher,
         private CodeAttemptLimiterInterface $attempts,
+        private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -56,32 +57,32 @@ final readonly class TotpAuthentication
     public function authenticate(User $user, #[SensitiveParameter] string $code, RequestContext $context): AuthenticationMethod
     {
         if (! $this->attempts->mayAttempt($user)) {
-            throw $this->failure($user, $context, AuthenticationFailureReason::TooManyAttempts);
+            throw $this->refuse($user, $context, AuthenticationFailureReason::TooManyAttempts);
         }
-        $credential = $this->activeTotp->of($user) ?? throw $this->failure($user, $context, AuthenticationFailureReason::NoSuchCredential);
+        $credential = $this->activeTotp->of($user) ?? throw $this->refuse($user, $context, AuthenticationFailureReason::NoSuchCredential);
         $secret = TotpCodeMatcher::looksLikeCode($code) ? new TotpSecret($this->sealer->unseal($user->tenant, $credential->sealedSecret)) : null;
         if (! $this->attempts->attempt($user)) {
-            throw $this->failure($user, $context, AuthenticationFailureReason::TooManyAttempts);
+            throw $this->refuse($user, $context, AuthenticationFailureReason::TooManyAttempts);
         }
         $now = $this->clock->now();
 
         if ($secret !== null) {
             $step = $this->matcher->matchingStep($secret, $code, $now);
             if ($step === null) {
-                throw $this->failure($user, $context, AuthenticationFailureReason::InvalidCredential);
+                throw $this->refuse($user, $context, AuthenticationFailureReason::InvalidCredential);
             }
             if (! $credential->acceptsStep($step)) {
-                throw $this->failure($user, $context, AuthenticationFailureReason::ReplayedCode);
+                throw $this->refuse($user, $context, AuthenticationFailureReason::ReplayedCode);
             }
             $backupCode = false;
             $record = static fn () => $credential->recordUse($step, $now);
         } else {
-            $index = $this->matchingBackupCode($credential, $code) ?? throw $this->failure($user, $context, AuthenticationFailureReason::InvalidCredential);
+            $index = $this->matchingBackupCode($credential, $code) ?? throw $this->refuse($user, $context, AuthenticationFailureReason::InvalidCredential);
             $backupCode = true;
             $record = static fn () => $credential->spendBackupCode($index, $now);
         }
         if (! $user->isEnabled()) {
-            throw $this->failure($user, $context, AuthenticationFailureReason::DisabledUser);
+            throw $this->refuse($user, $context, AuthenticationFailureReason::DisabledUser);
         }
         $record();
         $this->credentials->save($credential);
@@ -107,18 +108,13 @@ final readonly class TotpAuthentication
         return $matched;
     }
 
-    private function failure(User $user, RequestContext $context, AuthenticationFailureReason $reason): AuthenticationFailedException
+    /**
+     * Every refusal here is the same statement, whatever the reason: this user, in their tenant, having
+     * claimed an "otp". What it announces and what it hands back to throw is the AuthenticationRefusal's,
+     * as for every other login.
+     */
+    private function refuse(User $user, RequestContext $context, AuthenticationFailureReason $reason): AuthenticationFailedException
     {
-        $this->events->dispatch(new AuthenticationFailed(
-            $this->clock->now(),
-            $user->tenant,
-            $context,
-            TotpCredential::method(),
-            $reason,
-            $user->username,
-            $user,
-        ));
-
-        return new AuthenticationFailedException($reason);
+        return $this->refusals->refuse($user->tenant, $context, $reason, TotpCredential::method(), $user->username, $user);
     }
 }

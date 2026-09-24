@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Passkey;
 
-use function array_filter;
-use function array_values;
 use Heidi\Core\Application\Authentication\AuthenticationFailedException;
+use Heidi\Core\Application\Authentication\AuthenticationRefusal;
+use Heidi\Core\Application\Credential\ActiveCredentials;
 use Heidi\Core\Application\Authentication\SessionOpener;
 use Heidi\Core\Domain\Credential\PasskeyCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasskeyUsed;
 use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\RequestContext;
 use Heidi\Core\Domain\Tenant\Tenant;
@@ -33,8 +31,10 @@ final readonly class PasskeyAuthentication
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private ActiveCredentials $active,
         private PasskeyAuthenticatorInterface $authenticator,
         private SessionOpener $opener,
+        private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -46,12 +46,7 @@ final readonly class PasskeyAuthentication
      */
     public function requestOptions(Tenant $tenant, ?User $user = null): PublicKeyCredentialRequestOptions
     {
-        $allowed = $user === null
-            ? []
-            : array_values(array_filter(
-                $this->credentials->findByUser($user, PasskeyCredential::class),
-                static fn (PasskeyCredential $passkey): bool => ! $passkey->isRevoked(),
-            ));
+        $allowed = $user === null ? [] : $this->active->of($user, PasskeyCredential::class);
 
         return $this->authenticator->requestOptions($tenant, $allowed);
     }
@@ -67,18 +62,18 @@ final readonly class PasskeyAuthentication
         try {
             $assertion = $this->authenticator->verifyAssertion($tenant, $options, $response);
         } catch (PasskeyCeremonyFailedException) {
-            throw $this->failure($tenant, $context, null, AuthenticationFailureReason::InvalidCredential, null);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, null, null, null);
         }
         $credential = $assertion->credential;
         $methods = $credential->methods($assertion->authenticatorData);
         if (! $credential->tenant->equals($tenant)) {
-            throw $this->failure($tenant, $context, $methods[0], AuthenticationFailureReason::InvalidCredential, null);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, null);
         }
         if ($credential->isRevoked()) {
-            throw $this->failure($tenant, $context, $methods[0], AuthenticationFailureReason::RevokedCredential, $credential->user);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::RevokedCredential, $methods[0], null, $credential->user);
         }
         if (! $credential->user->isEnabled()) {
-            throw $this->failure($tenant, $context, $methods[0], AuthenticationFailureReason::DisabledUser, $credential->user);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::DisabledUser, $methods[0], null, $credential->user);
         }
 
         $now = $this->clock->now();
@@ -88,25 +83,5 @@ final readonly class PasskeyAuthentication
         $this->events->dispatch(new PasskeyUsed($credential, $now, $context, $signCountRegressed));
 
         return $this->opener->open($tenant, $credential->user, $methods, $context);
-    }
-
-    private function failure(
-        Tenant $tenant,
-        RequestContext $context,
-        ?AuthenticationMethod $method,
-        AuthenticationFailureReason $reason,
-        ?User $user,
-    ): AuthenticationFailedException {
-        $this->events->dispatch(new AuthenticationFailed(
-            $this->clock->now(),
-            $tenant,
-            $context,
-            $method,
-            $reason,
-            null,
-            $user,
-        ));
-
-        return new AuthenticationFailedException($reason);
     }
 }

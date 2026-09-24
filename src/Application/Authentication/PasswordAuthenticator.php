@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Heidi\Core\Application\Authentication;
 
 use Heidi\Core\Domain\Credential\PasswordCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
 use Heidi\Core\Domain\Event\PasswordRehashed;
-use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationMethod;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\PendingLogin;
@@ -44,6 +42,7 @@ final readonly class PasswordAuthenticator
         private SessionOpener $opener,
         private PasswordAttemptLimiterInterface $attempts,
         private SecondFactorRequirement $secondFactor,
+        private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -65,29 +64,50 @@ final readonly class PasswordAuthenticator
         if ($user === null) {
             $this->decoy->verify($password);
 
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, null);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::UnknownUser, AuthenticationMethod::password(), $identifier, null);
         }
 
         if (! $this->attempts->attempt($user)) {
             $this->decoy->verify($password);
 
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::TooManyAttempts, $identifier, $user);
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::TooManyAttempts,
+                AuthenticationMethod::password(),
+                $identifier,
+                $user,
+            );
         }
 
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if ($credential === null) {
             $this->decoy->verify($password);
 
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::NoSuchCredential, $identifier, $user);
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::NoSuchCredential,
+                AuthenticationMethod::password(),
+                $identifier,
+                $user,
+            );
         }
 
         if (! $this->hasher->verify($credential->hash, $password)) {
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::InvalidCredential, $identifier, $user);
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::InvalidCredential,
+                AuthenticationMethod::password(),
+                $identifier,
+                $user,
+            );
         }
 
         // after the password on purpose: a disabled account answers like a wrong password
         if (! $user->isEnabled()) {
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::DisabledUser, $identifier, $user);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::DisabledUser, AuthenticationMethod::password(), $identifier, $user);
         }
 
         $this->attempts->reset($user);
@@ -105,25 +125,5 @@ final readonly class PasswordAuthenticator
         }
 
         return $this->opener->open($tenant, $user, [AuthenticationMethod::password()], $context);
-    }
-
-    private function failure(
-        Tenant $tenant,
-        RequestContext $context,
-        AuthenticationFailureReason $reason,
-        string $identifier,
-        ?User $user,
-    ): AuthenticationFailedException {
-        $this->events->dispatch(new AuthenticationFailed(
-            $this->clock->now(),
-            $tenant,
-            $context,
-            AuthenticationMethod::password(),
-            $reason,
-            $identifier,
-            $user,
-        ));
-
-        return new AuthenticationFailedException($reason);
     }
 }

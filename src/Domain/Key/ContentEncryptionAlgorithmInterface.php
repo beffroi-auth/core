@@ -10,12 +10,6 @@ namespace Heidi\Core\Domain\Key;
  * agreed on, so it is not a KeyAlgorithmInterface; what the provider announces in
  * "request_object_encryption_enc_values_supported" is the list of those wired.
  */
-interface ContentEncryptionAlgorithmInterface
+interface ContentEncryptionAlgorithmInterface extends NamedAlgorithmInterface
 {
-    /**
-     * The "enc" of the JOSE header (RFC 7516 §4.1.2).
-     *
-     * @return non-empty-string
-     */
-    public function name(): string;
 }

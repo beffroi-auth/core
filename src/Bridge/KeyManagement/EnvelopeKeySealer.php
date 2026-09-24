@@ -14,16 +14,12 @@ use function json_encode;
 use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
 use SensitiveParameter;
-use function sprintf;
-use Symfony\Component\KeyManagement\Envelope;
 use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
-use Throwable;
 
 /**
- * Seals private JWKs as symfony/key-management envelopes; the private JWK never reaches the KMS. The
- * additional authenticated data binds an envelope to this use and to its tenant. A KMS that does not
- * answer is told from an envelope it refuses (KeyManagementFailure).
+ * Seals private JWKs as symfony/key-management envelopes; the private JWK never reaches the KMS. A JWK
+ * goes in the envelope as JSON, which is all this adds to the TenantEnvelope of its use.
  */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
@@ -36,41 +32,26 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
      */
     private const string AAD = 'heidi:signing-key:v2:';
 
-    private KmsKeyId $kmsKeyId;
+    private TenantEnvelope $envelope;
 
     /**
      * @param string $kmsKeyId "{tenant}" stands for the slug of the tenant
      */
     public function __construct(
-        private EnvelopeEncrypterInterface&EnvelopeDecrypterInterface $envelopes,
+        EnvelopeEncrypterInterface&EnvelopeDecrypterInterface $envelopes,
         string $kmsKeyId,
     ) {
-        $this->kmsKeyId = new KmsKeyId($kmsKeyId);
+        $this->envelope = new TenantEnvelope($envelopes, $kmsKeyId, self::AAD, 'key');
     }
 
     public function seal(Tenant $tenant, #[SensitiveParameter] array $privateJwk): string
     {
-        $json = json_encode($privateJwk, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-
-        try {
-            return (string) $this->envelopes->encrypt($this->kmsKeyId->of($tenant), $json, self::aad($tenant));
-        } catch (Throwable $exception) {
-            throw KeyManagementFailure::of($exception, sprintf(
-                'The key of tenant "%s" could not be sealed under the KMS key "%s".',
-                $tenant->slug,
-                $this->kmsKeyId->of($tenant),
-            ));
-        }
+        return $this->envelope->seal($tenant, json_encode($privateJwk, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
     }
 
     public function unseal(Tenant $tenant, #[SensitiveParameter] string $sealed): array
     {
-        try {
-            $json = $this->envelopes->decrypt(Envelope::fromBytes($sealed), self::aad($tenant));
-        } catch (Throwable $exception) {
-            throw KeyManagementFailure::of($exception, 'The sealed key could not be opened.');
-        }
-        $jwk = json_decode($json, true, 8, JSON_THROW_ON_ERROR);
+        $jwk = json_decode($this->envelope->open($tenant, $sealed), true, 8, JSON_THROW_ON_ERROR);
         if (! is_array($jwk)) {
             throw new RuntimeException('The sealed key does not contain a JWK.');
         }
@@ -83,10 +64,5 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
         }
 
         return $members;
-    }
-
-    private static function aad(Tenant $tenant): string
-    {
-        return self::AAD . $tenant->slug;
     }
 }

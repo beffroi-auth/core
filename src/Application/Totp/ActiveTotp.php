@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Application\Totp;
 
+use Heidi\Core\Application\Credential\ActiveCredentials;
 use Heidi\Core\Domain\Credential\TotpCredential;
 use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Port\CredentialRepositoryInterface;
 
 /**
  * The TOTP a user holds and may use: one active per user (architecture §3.1), the revoked ones staying
@@ -16,18 +16,12 @@ use Heidi\Core\Port\CredentialRepositoryInterface;
 final readonly class ActiveTotp
 {
     public function __construct(
-        private CredentialRepositoryInterface $credentials,
+        private ActiveCredentials $active,
     ) {
     }
 
     public function of(User $user): ?TotpCredential
     {
-        foreach ($this->credentials->findByUser($user, TotpCredential::class) as $credential) {
-            if (! $credential->isRevoked()) {
-                return $credential;
-            }
-        }
-
-        return null;
+        return $this->active->of($user, TotpCredential::class)[0] ?? null;
     }
 }

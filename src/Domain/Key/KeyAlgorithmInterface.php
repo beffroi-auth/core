@@ -10,15 +10,8 @@ namespace Heidi\Core\Domain\Key;
  * what it publishes and what it announces: a new algorithm is a class that implements the interface of
  * its use and a line in the wiring, never a case added to an enumeration.
  */
-interface KeyAlgorithmInterface
+interface KeyAlgorithmInterface extends NamedAlgorithmInterface
 {
-    /**
-     * The "alg" of the JOSE header and of the published JWK (RFC 7517 §4.4).
-     *
-     * @return non-empty-string
-     */
-    public function name(): string;
-
     /**
      * The "kty" of the key pairs it takes (RFC 7518 §6.1).
      *

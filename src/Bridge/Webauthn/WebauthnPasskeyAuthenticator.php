@@ -25,11 +25,6 @@ use Webauthn\PublicKeyCredentialRequestOptions;
  */
 final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticatorInterface
 {
-    /**
-     * WebAuthn Level 3 §13.4.3: at least 16 bytes.
-     */
-    private const int CHALLENGE_LENGTH = 32;
-
     public function __construct(
         private WebauthnCeremonies $ceremonies,
         private CredentialRepositoryInterface $credentials,
@@ -39,7 +34,7 @@ final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticato
     public function requestOptions(Tenant $tenant, array $allowed): PublicKeyCredentialRequestOptions
     {
         return PublicKeyCredentialRequestOptions::create(
-            random_bytes(self::CHALLENGE_LENGTH),
+            random_bytes(WebauthnCeremonies::CHALLENGE_LENGTH),
             WebauthnCeremonies::relyingPartyId($tenant),
             array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey
                 ->record()

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\JwtLibrary;
 
-use function array_values;
+use function array_map;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\SignatureAlgorithmsInterface;
 use function implode;
 use Jose\Component\Core\AlgorithmManager;
+use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 use function sprintf;
 
 /**
@@ -20,7 +21,14 @@ use function sprintf;
 final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInterface
 {
     /**
-     * @var non-empty-list<JoseSignatureAlgorithmInterface>
+     * @var WiredAlgorithms<JoseSignatureAlgorithmInterface> the wiring, held and looked up as in every registry
+     */
+    private WiredAlgorithms $wired;
+
+    /**
+     * @var non-empty-list<JoseSignatureAlgorithmInterface> the same list, narrowed by the check the
+     * constructor makes: a provider signs with at least one algorithm, which is a promise of this
+     * registry and of no other, and what "defaultAlgorithm()" rests on
      */
     private array $algorithms;
 
@@ -31,21 +39,16 @@ final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInter
      */
     public function __construct(iterable $algorithms)
     {
-        $wired = [];
-        $jose = [];
-        foreach ($algorithms as $algorithm) {
-            $name = $algorithm->name();
-            if (isset($wired[$name])) {
-                throw new InvalidArgumentException(sprintf('The algorithm "%s" is wired twice.', $name));
-            }
-            $wired[$name] = $algorithm;
-            $jose[] = $algorithm->joseAlgorithm();
-        }
-        if ($wired === []) {
+        $wired = new WiredAlgorithms($algorithms);
+        if ($wired->algorithms === []) {
             throw new InvalidArgumentException('A provider signs with at least one algorithm.');
         }
-        $this->algorithms = array_values($wired);
-        $this->manager = new AlgorithmManager($jose);
+        $this->wired = $wired;
+        $this->algorithms = $wired->algorithms;
+        $this->manager = new AlgorithmManager(array_map(
+            static fn (JoseSignatureAlgorithmInterface $algorithm): JoseAlgorithm => $algorithm->joseAlgorithm(),
+            $this->algorithms,
+        ));
     }
 
     /**
@@ -58,13 +61,13 @@ final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInter
 
     public function named(string $name): JoseSignatureAlgorithmInterface
     {
-        foreach ($this->algorithms as $algorithm) {
-            if ($algorithm->name() === $name) {
-                return $algorithm;
-            }
-        }
-
-        throw new UnsupportedAlgorithmException(sprintf('This provider does not sign with "%s"; it signs with %s.', $name, implode(', ', $this->names())));
+        return (
+            $this->wired->named($name) ?? throw new UnsupportedAlgorithmException(sprintf(
+                'This provider does not sign with "%s"; it signs with %s.',
+                $name,
+                implode(', ', $this->wired->names()),
+            ))
+        );
     }
 
     public function defaultAlgorithm(): JoseSignatureAlgorithmInterface
@@ -78,18 +81,5 @@ final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInter
     public function manager(): AlgorithmManager
     {
         return $this->manager;
-    }
-
-    /**
-     * @return non-empty-list<non-empty-string>
-     */
-    private function names(): array
-    {
-        $names = [];
-        foreach ($this->algorithms as $algorithm) {
-            $names[] = $algorithm->name();
-        }
-
-        return $names;
     }
 }

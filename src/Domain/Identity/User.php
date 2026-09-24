@@ -7,6 +7,7 @@ namespace Heidi\Core\Domain\Identity;
 use DateTimeImmutable;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\InvalidArgumentException;
+use function sprintf;
 use function strlen;
 use Symfony\Component\Uid\Uuid;
 use function trim;
@@ -33,12 +34,8 @@ final class User
         public private(set) DateTimeImmutable $updatedAt,
     ) {
         $this->username = self::normalizeUsername($username);
-        if ($email === null && $emailVerified) {
-            throw new InvalidArgumentException('An absent email address cannot be verified.');
-        }
-        if ($phoneNumber === null && $phoneNumberVerified) {
-            throw new InvalidArgumentException('An absent phone number cannot be verified.');
-        }
+        self::assertVerifiable($email, $emailVerified, 'email address');
+        self::assertVerifiable($phoneNumber, $phoneNumberVerified, 'phone number');
     }
 
     public static function create(
@@ -64,9 +61,7 @@ final class User
      */
     public function changeEmail(?EmailAddress $email, bool $verified, DateTimeImmutable $now): void
     {
-        if ($email === null && $verified) {
-            throw new InvalidArgumentException('An absent email address cannot be verified.');
-        }
+        self::assertVerifiable($email, $verified, 'email address');
         $this->email = $email;
         $this->emailVerified = $verified;
         $this->updatedAt = $now;
@@ -74,9 +69,7 @@ final class User
 
     public function changePhoneNumber(?string $phoneNumber, bool $verified, DateTimeImmutable $now): void
     {
-        if ($phoneNumber === null && $verified) {
-            throw new InvalidArgumentException('An absent phone number cannot be verified.');
-        }
+        self::assertVerifiable($phoneNumber, $verified, 'phone number');
         $this->phoneNumber = $phoneNumber;
         $this->phoneNumberVerified = $verified;
         $this->updatedAt = $now;
@@ -120,6 +113,19 @@ final class User
     public function belongsTo(Tenant $tenant): bool
     {
         return $this->tenant->equals($tenant);
+    }
+
+    /**
+     * A contact detail nobody gave cannot have been verified; the same rule when the user is created and
+     * when it changes, for the address as for the number.
+     *
+     * @throws InvalidArgumentException
+     */
+    private static function assertVerifiable(EmailAddress|string|null $value, bool $verified, string $what): void
+    {
+        if ($value === null && $verified) {
+            throw new InvalidArgumentException(sprintf('An absent %s cannot be verified.', $what));
+        }
     }
 
     private static function normalizeUsername(string $username): string

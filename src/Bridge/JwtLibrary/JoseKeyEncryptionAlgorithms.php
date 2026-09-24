@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\JwtLibrary;
 
-use function array_values;
-use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\UnsupportedAlgorithmException;
 use Heidi\Core\Port\KeyEncryptionAlgorithmsInterface;
 use function implode;
@@ -20,24 +18,16 @@ use function sprintf;
 final readonly class JoseKeyEncryptionAlgorithms implements KeyEncryptionAlgorithmsInterface
 {
     /**
-     * @var list<JoseKeyEncryptionAlgorithmInterface>
+     * @var WiredAlgorithms<JoseKeyEncryptionAlgorithmInterface>
      */
-    private array $algorithms;
+    private WiredAlgorithms $wired;
 
     /**
      * @param iterable<JoseKeyEncryptionAlgorithmInterface> $algorithms in the order they are wired, none of them twice
      */
     public function __construct(iterable $algorithms)
     {
-        $wired = [];
-        foreach ($algorithms as $algorithm) {
-            $name = $algorithm->name();
-            if (isset($wired[$name])) {
-                throw new InvalidArgumentException(sprintf('The algorithm "%s" is wired twice.', $name));
-            }
-            $wired[$name] = $algorithm;
-        }
-        $this->algorithms = array_values($wired);
+        $this->wired = new WiredAlgorithms($algorithms);
     }
 
     /**
@@ -45,37 +35,23 @@ final readonly class JoseKeyEncryptionAlgorithms implements KeyEncryptionAlgorit
      */
     public function all(): array
     {
-        return $this->algorithms;
+        return $this->wired->algorithms;
     }
 
     public function named(string $name): JoseKeyEncryptionAlgorithmInterface
     {
-        foreach ($this->algorithms as $algorithm) {
-            if ($algorithm->name() === $name) {
-                return $algorithm;
-            }
+        $algorithm = $this->wired->named($name);
+        if ($algorithm !== null) {
+            return $algorithm;
         }
-        if ($this->algorithms === []) {
+        if ($this->wired->algorithms === []) {
             throw new UnsupportedAlgorithmException(sprintf('This provider is encrypted to with nothing; "%s" is not read.', $name));
         }
 
         throw new UnsupportedAlgorithmException(sprintf(
             'This provider is not encrypted to with "%s"; it is encrypted to with %s.',
             $name,
-            implode(', ', $this->names()),
+            implode(', ', $this->wired->names()),
         ));
-    }
-
-    /**
-     * @return list<non-empty-string>
-     */
-    private function names(): array
-    {
-        $names = [];
-        foreach ($this->algorithms as $algorithm) {
-            $names[] = $algorithm->name();
-        }
-
-        return $names;
     }
 }

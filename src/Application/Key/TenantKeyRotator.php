@@ -91,13 +91,26 @@ final readonly class TenantKeyRotator
     }
 
     /**
-     * Stages and activates at once; "compromised" retires the previous key with no window.
+     * Stages and activates at once: the new key signs from now on and the previous one, if any, starts
+     * its retirement window.
      */
-    public function rotate(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context, bool $compromised = false): TenantKey
+    public function rotate(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
     {
         $now = $this->clock->now();
 
-        return $this->takeOver($this->publish($tenant, $algorithm, $context, $now, $now), $context, $compromised);
+        return $this->takeOver($this->publish($tenant, $algorithm, $context, $now, $now), $context, compromised: false);
+    }
+
+    /**
+     * The same, for a key that is compromised: the previous one leaves the JWK Set at once, with no
+     * window, because what it signed is not to be honoured any more. Named rather than a flag on
+     * rotate(): the two are different decisions and the trail tells them apart (RetirementReason).
+     */
+    public function rotateAfterCompromise(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
+    {
+        $now = $this->clock->now();
+
+        return $this->takeOver($this->publish($tenant, $algorithm, $context, $now, $now), $context, compromised: true);
     }
 
     /**

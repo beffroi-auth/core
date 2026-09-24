@@ -6,9 +6,7 @@ namespace Heidi\Core\Application\Authentication;
 
 use Heidi\Core\Application\Totp\TotpAuthentication;
 use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailed;
 use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Domain\Identity\User;
 use Heidi\Core\Domain\Session\AuthenticationSession;
 use Heidi\Core\Domain\Session\PendingLogin;
 use Heidi\Core\Domain\Session\RequestContext;
@@ -16,7 +14,6 @@ use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
 
 /**
@@ -34,8 +31,8 @@ final readonly class LoginCompletion
         private UserRepositoryInterface $users,
         private TotpAuthentication $authentication,
         private SessionOpener $opener,
+        private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
-        private EventDispatcherInterface $events,
     ) {
     }
 
@@ -52,33 +49,20 @@ final readonly class LoginCompletion
     ): AuthenticationSession {
         $user = $this->users->find($login->userId);
         if ($user === null || ! $user->tenant->equals($tenant)) {
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::UnknownUser, $login->userId->toRfc4122(), null);
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::UnknownUser,
+                TotpCredential::method(),
+                $login->userId->toRfc4122(),
+                null,
+            );
         }
         if ($login->isExpired($this->clock->now())) {
-            throw $this->failure($tenant, $context, AuthenticationFailureReason::ExpiredLogin, $user->username, $user);
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::ExpiredLogin, TotpCredential::method(), $user->username, $user);
         }
         $method = $this->authentication->authenticate($user, $code, $context);
 
         return $this->opener->open($tenant, $user, [...$login->methods, $method], $context);
-    }
-
-    private function failure(
-        Tenant $tenant,
-        RequestContext $context,
-        AuthenticationFailureReason $reason,
-        string $identifier,
-        ?User $user,
-    ): AuthenticationFailedException {
-        $this->events->dispatch(new AuthenticationFailed(
-            $this->clock->now(),
-            $tenant,
-            $context,
-            TotpCredential::method(),
-            $reason,
-            $identifier,
-            $user,
-        ));
-
-        return new AuthenticationFailedException($reason);
     }
 }

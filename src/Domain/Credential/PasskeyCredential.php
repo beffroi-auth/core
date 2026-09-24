@@ -25,7 +25,7 @@ use Webauthn\TrustPath\EmptyTrustPath;
  * The provider holds the public key only: the private key never leaves the authenticator, and a passkey
  * has no member the provider could leak.
  */
-final class PasskeyCredential extends Credential implements RevocableCredentialInterface, ExternallyIdentifiedCredentialInterface, ProvingCredentialInterface
+final class PasskeyCredential extends RevocableCredential implements ExternallyIdentifiedCredentialInterface, ProvingCredentialInterface
 {
     public const int NAME_MAX_LENGTH = 255;
 
@@ -41,8 +41,6 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
     public private(set) bool $backupEligible;
 
     public private(set) bool $backedUp;
-
-    public private(set) ?DateTimeImmutable $revokedAt = null;
 
     /**
      * The credential ID (WebAuthn Level 3 §6.3.2), as the authenticator issued it: what a party presents
@@ -171,10 +169,7 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
             return [];
         }
 
-        return [
-            new AuthenticationMethod($this->backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY),
-            new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE),
-        ];
+        return [self::keyMethod($this->backupEligible), new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE)];
     }
 
     /**
@@ -189,7 +184,7 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
      */
     public function methods(AuthenticatorData $data): array
     {
-        $methods = [new AuthenticationMethod($data->isBackupEligible() ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY)];
+        $methods = [self::keyMethod($data->isBackupEligible())];
         if ($data->isUserPresent()) {
             $methods[] = new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE);
         }
@@ -228,19 +223,13 @@ final class PasskeyCredential extends Credential implements RevocableCredentialI
     }
 
     /**
-     * The row stays for the audit trail.
+     * Where the key lives, as an "amr" value (RFC 8176 §2): "swk" for a synced passkey, the BE flag set
+     * (WebAuthn Level 3 §6.1.3), "hwk" for one bound to its authenticator. Read from the stored flag when
+     * the question is what this passkey may prove, and from the assertion when it is what one just proved.
      */
-    public function revoke(DateTimeImmutable $now): void
+    private static function keyMethod(bool $backupEligible): AuthenticationMethod
     {
-        if ($this->revokedAt !== null) {
-            return;
-        }
-        $this->revokedAt = $now;
-    }
-
-    public function isRevoked(): bool
-    {
-        return $this->revokedAt !== null;
+        return new AuthenticationMethod($backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY);
     }
 
     private static function normalizeName(string $name): string

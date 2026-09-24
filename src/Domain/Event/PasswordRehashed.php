@@ -21,6 +21,6 @@ final readonly class PasswordRehashed implements DomainEventInterface
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
     ) {
-        $this->tenant = $credential->user->tenant;
+        $this->tenant = $credential->tenant;
     }
 }

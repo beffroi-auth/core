@@ -30,7 +30,9 @@ use function sprintf;
 final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicKeySetProviderInterface, SigningKeyProviderInterface
 {
     /**
-     * @var array<string, UnsealedKey> by kid
+     * @var array<string, UnsealedKey> by tenant and kid: a "kid" is the thumbprint of the public key
+     * (RFC 7638), so two tenants that hold the same material name it the same, and an envelope opened
+     * for one is never the answer for the other. What the KMS binds to a tenant, this binds too.
      */
     private array $opened = [];
 
@@ -47,9 +49,9 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
             throw new KeyNotFoundException(sprintf('Tenant "%s" has no active %s signing key.', $tenant->slug, $algorithm->name()));
         }
         self::assertUse($key, KeyUse::Signature);
-        foreach ($this->opened as $kid => $opened) {
-            if ($kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm->name() === $algorithm->name()) {
-                unset($this->opened[$kid]);
+        foreach ($this->opened as $index => $opened) {
+            if ($opened->key->kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm->name() === $algorithm->name()) {
+                unset($this->opened[$index]);
             }
         }
 
@@ -63,7 +65,7 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
             throw new KeyNotFoundException(sprintf('Tenant "%s" publishes no key "%s".', $tenant->slug, $kid));
         }
         if (! $key->isPublished()) {
-            unset($this->opened[$kid]);
+            unset($this->opened[self::index($tenant, $kid)]);
 
             throw new KeyNotFoundException(sprintf(
                 'The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.',
@@ -86,7 +88,12 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
      */
     private function open(Tenant $tenant, TenantKey $key): UnsealedKey
     {
-        return $this->opened[$key->kid] ??= new UnsealedKey($key, $this->sealer->unseal($tenant, $key->sealedPrivateJwk));
+        return $this->opened[self::index($tenant, $key->kid)] ??= new UnsealedKey($key, $this->sealer->unseal($tenant, $key->sealedPrivateJwk));
+    }
+
+    private static function index(Tenant $tenant, string $kid): string
+    {
+        return $tenant->id->toRfc4122() . '/' . $kid;
     }
 
     /**

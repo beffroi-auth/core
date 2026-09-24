@@ -21,7 +21,7 @@ use Symfony\Component\Uid\Uuid;
  * (§5.1: thirty seconds, six digits, HMAC-SHA-1) and are not a choice. While one is active, the password
  * of the user signs nobody in on its own (SecondFactorCredentialInterface).
  */
-final class TotpCredential extends Credential implements SecondFactorCredentialInterface, ProvingCredentialInterface
+final class TotpCredential extends RevocableCredential implements SecondFactorCredentialInterface, ProvingCredentialInterface
 {
     /**
      * RFC 6238 §5.2: thirty seconds.
@@ -48,8 +48,6 @@ final class TotpCredential extends Credential implements SecondFactorCredentialI
      * @var list<BackupCode>
      */
     public private(set) array $backupCodes;
-
-    public private(set) ?DateTimeImmutable $revokedAt = null;
 
     /**
      * @param string $sealedSecret the envelope the SecretSealerInterface wrote, opaque bytes
@@ -132,21 +130,5 @@ final class TotpCredential extends Credential implements SecondFactorCredentialI
         $code = $this->backupCodes[$index] ?? throw new InvalidArgumentException(sprintf('There is no backup code at position %d.', $index));
         $this->backupCodes[$index] = $code->spend($now);
         $this->markUsed($now);
-    }
-
-    /**
-     * The row stays for the audit trail.
-     */
-    public function revoke(DateTimeImmutable $now): void
-    {
-        if ($this->revokedAt !== null) {
-            return;
-        }
-        $this->revokedAt = $now;
-    }
-
-    public function isRevoked(): bool
-    {
-        return $this->revokedAt !== null;
     }
 }
