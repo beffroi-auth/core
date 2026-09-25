@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Heidi\Core\Domain\Event;
+
+use DateTimeImmutable;
+use Heidi\Core\Domain\Session\RequestContext;
+use Heidi\Core\Domain\Tenant\Tenant;
+
+/**
+ * A request was refused because a budget that bounds a load is spent (decision 0014): the audit sees
+ * the refusal as it happens, and not through the callers it turned away. What it carries is the budget
+ * that refused, the route that was asked for and the client when one was authenticated; the origin of
+ * the request is in the context every event carries (architecture §3.5). No secret, no assertion, no
+ * token, and nothing of what the request was asking for.
+ */
+final readonly class LoadBudgetSpent implements DomainEventInterface
+{
+    /**
+     * @param string $budget the budget that refused, which names itself
+     * @param string $route the route the request had been matched to
+     * @param string|null $client the client the budget was counted on, null for the budget of an origin
+     */
+    public function __construct(
+        public DateTimeImmutable $occurredAt,
+        public Tenant $tenant,
+        public RequestContext $context,
+        public string $budget,
+        public string $route,
+        public ?string $client,
+    ) {
+    }
+}
