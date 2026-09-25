@@ -9,7 +9,6 @@ use Heidi\Core\Exception\LogicException;
 use function implode;
 use function ord;
 use function preg_replace;
-use function random_bytes;
 use SensitiveParameter;
 use function str_split;
 use function strtoupper;
@@ -36,14 +35,16 @@ final readonly class BackupCode
     }
 
     /**
-     * A fresh code in clear, in two groups of five for the eye ("K7Q2M-X9PL4"); what the user writes down.
-     * One random byte per character, its low five bits picking one of the thirty-two: no bias, 256 being a
-     * multiple of 32.
+     * The code in clear the drawn bytes spell, in two groups of five for the eye ("K7Q2M-X9PL4"); what the
+     * user writes down. One byte per character, its low five bits picking one of the thirty-two: no bias,
+     * 256 being a multiple of 32.
+     *
+     * @param string $bytes LENGTH bytes, drawn where every secret of this provider is (RandomnessInterface)
      */
-    public static function generate(): string
+    public static function spelledBy(#[SensitiveParameter] string $bytes): string
     {
         $characters = '';
-        foreach (str_split(random_bytes(self::LENGTH)) as $byte) {
+        foreach (str_split($bytes) as $byte) {
             $characters .= self::ALPHABET[ord($byte) & 0x1F];
         }
 

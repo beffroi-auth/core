@@ -6,8 +6,8 @@ namespace Heidi\Core\Application\Authentication;
 
 use Heidi\Core\Domain\Credential\PasswordHash;
 use Heidi\Core\Port\PasswordHasherInterface;
+use Heidi\Core\Port\UuidGeneratorInterface;
 use SensitiveParameter;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * The hash a refused password is verified against when no hash of the user could be: the user does not
@@ -23,6 +23,7 @@ final class DecoyHash
 
     public function __construct(
         private readonly PasswordHasherInterface $hasher,
+        private readonly UuidGeneratorInterface $uuids,
     ) {
     }
 
@@ -31,6 +32,6 @@ final class DecoyHash
      */
     public function verify(#[SensitiveParameter] string $password): void
     {
-        $this->hasher->verify($this->hash ??= $this->hasher->hash(Uuid::v4()->toRfc4122()), $password);
+        $this->hasher->verify($this->hash ??= $this->hasher->hash($this->uuids->opaque()->toRfc4122()), $password);
     }
 }

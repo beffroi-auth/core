@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Heidi\Core\Domain\Credential;
 
 use Heidi\Core\Exception\InvalidArgumentException;
-use function random_bytes;
 use SensitiveParameter;
 use function sprintf;
 use function strlen;
@@ -31,10 +30,5 @@ final readonly class TotpSecret
         if (strlen($bytes) < self::MIN_LENGTH) {
             throw new InvalidArgumentException(sprintf('A TOTP secret is at least %d bytes long (RFC 4226 §4).', self::MIN_LENGTH));
         }
-    }
-
-    public static function generate(): self
-    {
-        return new self(random_bytes(self::LENGTH));
     }
 }

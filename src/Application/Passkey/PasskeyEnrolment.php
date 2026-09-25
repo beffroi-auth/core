@@ -13,6 +13,7 @@ use Heidi\Core\Exception\CredentialEnrolmentFailedException;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\PasskeyCeremonyFailedException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\RandomnessInterface;
 use Heidi\Core\Port\UuidGeneratorInterface;
 use Heidi\Core\Port\PasskeyRegistrarInterface;
 use Psr\Clock\ClockInterface;
@@ -29,6 +30,7 @@ final readonly class PasskeyEnrolment
     public function __construct(
         private CredentialRepositoryInterface $credentials,
         private UuidGeneratorInterface $uuids,
+        private RandomnessInterface $randomness,
         private PasskeyRegistrarInterface $registrar,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
@@ -42,7 +44,7 @@ final readonly class PasskeyEnrolment
     public function begin(User $user): PublicKeyCredentialCreationOptions
     {
         $passkeys = $this->credentials->findByUser($user, PasskeyCredential::class);
-        $userHandle = $passkeys === [] ? PasskeyUserHandle::generate() : $passkeys[0]->userHandle;
+        $userHandle = $passkeys === [] ? new PasskeyUserHandle($this->randomness->bytes(PasskeyUserHandle::LENGTH)) : $passkeys[0]->userHandle;
 
         return $this->registrar->creationOptions($user, $userHandle, $passkeys);
     }

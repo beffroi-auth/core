@@ -6,7 +6,6 @@ namespace Heidi\Core\Domain\Credential;
 
 use function hash_equals;
 use Heidi\Core\Exception\InvalidArgumentException;
-use function random_bytes;
 use function sprintf;
 use function strlen;
 
@@ -25,11 +24,6 @@ final readonly class PasskeyUserHandle
         if (strlen($value) !== self::LENGTH) {
             throw new InvalidArgumentException(sprintf('A passkey user handle is %d bytes long.', self::LENGTH));
         }
-    }
-
-    public static function generate(): self
-    {
-        return new self(random_bytes(self::LENGTH));
     }
 
     public function equals(self $other): bool

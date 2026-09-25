@@ -16,6 +16,7 @@ use Heidi\Core\Exception\CredentialEnrolmentFailedException;
 use Heidi\Core\Exception\InvalidArgumentException;
 use Heidi\Core\Exception\KmsUnavailableException;
 use Heidi\Core\Port\CredentialRepositoryInterface;
+use Heidi\Core\Port\RandomnessInterface;
 use Heidi\Core\Port\UuidGeneratorInterface;
 use Heidi\Core\Port\PasswordHasherInterface;
 use Heidi\Core\Port\SecretSealerInterface;
@@ -37,6 +38,7 @@ final readonly class TotpEnrolment
     public function __construct(
         private CredentialRepositoryInterface $credentials,
         private UuidGeneratorInterface $uuids,
+        private RandomnessInterface $randomness,
         private ActiveTotp $activeTotp,
         private TotpAlgorithmInterface $algorithm,
         private TotpCodeMatcher $matcher,
@@ -57,10 +59,10 @@ final readonly class TotpEnrolment
     public function begin(User $user): TotpProvisioning
     {
         $this->refuseASecondOne($user);
-        $secret = TotpSecret::generate();
+        $secret = new TotpSecret($this->randomness->bytes(TotpSecret::LENGTH));
         $backupCodes = [];
         for ($i = 0; $i < TotpCredential::BACKUP_CODES; ++$i) {
-            $backupCodes[] = BackupCode::generate();
+            $backupCodes[] = BackupCode::spelledBy($this->randomness->bytes(BackupCode::LENGTH));
         }
 
         return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $backupCodes);
