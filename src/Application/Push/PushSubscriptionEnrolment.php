@@ -53,15 +53,23 @@ final readonly class PushSubscriptionEnrolment
     ): PushSubscription {
         $kid = $this->keys->activeApplicationServerKey($user->tenant, $algorithm)->kid;
         $existing = $this->subscriptions->findByEndpoint($user, $endpoint);
+        if ($existing !== null) {
+            // the row it has is what changes, and it is the row itself that changes: a second object over
+            // one identity is not a second browser, and a store that holds the first one refuses it
+            $existing->resubscribedWith($publicKey, $authSecret, $kid, $label);
+            $this->subscriptions->save($existing);
+
+            return $existing;
+        }
         $subscription = new PushSubscription(
-            $existing->id ?? $this->uuids->timeOrdered(),
+            $this->uuids->timeOrdered(),
             $user,
             $endpoint,
             $publicKey,
             $authSecret,
             $kid,
             $label,
-            $existing->createdAt ?? $this->clock->now(),
+            $this->clock->now(),
         );
         $this->subscriptions->save($subscription);
 

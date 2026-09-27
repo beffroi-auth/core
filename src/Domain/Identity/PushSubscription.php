@@ -71,15 +71,50 @@ final class PushSubscription
         public private(set) Uuid $id,
         public readonly User $user,
         public readonly string $endpoint,
-        public readonly string $publicKey,
-        public readonly string $authSecret,
-        public readonly string $applicationServerKid,
-        public readonly ?string $label,
+        public private(set) string $publicKey,
+        public private(set) string $authSecret,
+        public private(set) string $applicationServerKid,
+        public private(set) ?string $label,
         public readonly DateTimeImmutable $createdAt,
     ) {
         if (! str_starts_with($endpoint, self::ENDPOINT_SCHEME)) {
             throw new InvalidArgumentException('A push subscription is delivered to over HTTPS (RFC 8030 section 2).');
         }
+        self::assertWhatABrowserHandsOver($publicKey, $authSecret, $applicationServerKid);
+        $this->tenant = $user->tenant;
+        $this->endpointHash = self::digestOf($endpoint);
+    }
+
+    /**
+     * The same browser, subscribing again (Push API §4). It hands back the endpoint it already had, which
+     * is what says it is this browser, so this row is what changes rather than a second row beside it.
+     *
+     * What changes is what it handed with it: a browser draws its two keys afresh at every subscription
+     * (RFC 8291 §3.1), the application server key is the one it was just handed, which a rotation may have
+     * moved since it last subscribed (architecture §3.3), and the name is what its user typed this time. A
+     * browser the user had taken out is reachable again, having just said so; when it was pushed to last is
+     * a fact about this browser and this provider, and stays.
+     *
+     * @throws InvalidArgumentException when it is not what a browser hands over
+     */
+    public function resubscribedWith(string $publicKey, string $authSecret, string $applicationServerKid, ?string $label): void
+    {
+        self::assertWhatABrowserHandsOver($publicKey, $authSecret, $applicationServerKid);
+        $this->publicKey = $publicKey;
+        $this->authSecret = $authSecret;
+        $this->applicationServerKid = $applicationServerKid;
+        $this->label = $label;
+        $this->revokedAt = null;
+    }
+
+    /**
+     * What a browser hands over, whether it is subscribing for the first time or again: written once, so
+     * that the second way in cannot record what the first refuses.
+     *
+     * @throws InvalidArgumentException
+     */
+    private static function assertWhatABrowserHandsOver(string $publicKey, string $authSecret, string $applicationServerKid): void
+    {
         foreach ([
             'public key' => $publicKey,
             'authentication secret' => $authSecret,
@@ -91,8 +126,6 @@ final class PushSubscription
         if ($applicationServerKid === '') {
             throw new InvalidArgumentException('A push subscription names the application server key it was made under (RFC 8292 section 3.2).');
         }
-        $this->tenant = $user->tenant;
-        $this->endpointHash = self::digestOf($endpoint);
     }
 
     /**
