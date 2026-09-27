@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Heidi\Core\Bridge\Key;
 
+use Heidi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
 use Heidi\Core\Domain\Key\KeyUse;
 use Heidi\Core\Domain\Key\PublicKeySet;
 use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
@@ -11,6 +12,7 @@ use Heidi\Core\Domain\Key\TenantKey;
 use Heidi\Core\Domain\Key\UnsealedKey;
 use Heidi\Core\Domain\Tenant\Tenant;
 use Heidi\Core\Exception\KeyNotFoundException;
+use Heidi\Core\Port\ApplicationServerKeyProviderInterface;
 use Heidi\Core\Port\DecryptionKeyProviderInterface;
 use Heidi\Core\Port\KeySealerInterface;
 use Heidi\Core\Port\PublicKeySetProviderInterface;
@@ -22,12 +24,22 @@ use function sprintf;
  * Opens a key of a tenant with the KMS once and keeps it in memory; which key is the one asked for is read
  * from the repository on each call, so that a rotation, and a retirement, are seen at once.
  *
- * The three capabilities of a key store are three ports here, and a caller holds the one it uses: what
- * signs asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
- * header names, what publishes asks for the set. A key that signs is never handed out to open a JWE, nor
- * one that opens a JWE to sign: the use is asserted here and not deduced from the caller (RFC 7517 §4.2).
+ * The capabilities of a key store are a port each here, and a caller holds the one it uses: what signs
+ * asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
+ * header names, what publishes asks for the set, what pushes to a browser asks for the key that browser
+ * was handed. A key that signs is never handed out to open a JWE, nor one that opens a JWE to sign: the
+ * use is asserted here and not deduced from the caller (RFC 7517 §4.2).
+ *
+ * The JWK Set is what the tenant publishes to whoever reads its issuer, so the keys it hands out itself
+ * are not in it (ApplicationServerAlgorithmInterface): the browser that is given one is given it by the
+ * page it subscribes on, and a relying party reading the set would find a key no token of this provider
+ * will ever name.
  */
-final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicKeySetProviderInterface, SigningKeyProviderInterface
+final class SealedKeyProvider implements
+    ApplicationServerKeyProviderInterface,
+    DecryptionKeyProviderInterface,
+    PublicKeySetProviderInterface,
+    SigningKeyProviderInterface
 {
     /**
      * @var array<string, UnsealedKey> by tenant and kid: a "kid" is the thumbprint of the public key
@@ -80,7 +92,48 @@ final class SealedKeyProvider implements DecryptionKeyProviderInterface, PublicK
 
     public function publicKeys(Tenant $tenant): PublicKeySet
     {
-        return new PublicKeySet($this->keys->findPublished($tenant));
+        $published = [];
+        foreach ($this->keys->findPublished($tenant) as $key) {
+            if (! $key->algorithm instanceof ApplicationServerAlgorithmInterface) {
+                $published[] = $key;
+            }
+        }
+
+        return new PublicKeySet($published);
+    }
+
+    public function activeApplicationServerKey(Tenant $tenant, ApplicationServerAlgorithmInterface $algorithm): TenantKey
+    {
+        return (
+            $this->keys->findActive($tenant, $algorithm) ?? throw new KeyNotFoundException(sprintf(
+                'Tenant "%s" has no active %s key to hand out.',
+                $tenant->slug,
+                $algorithm->name(),
+            ))
+        );
+    }
+
+    public function applicationServerKey(Tenant $tenant, string $kid): UnsealedKey
+    {
+        $key = $this->keys->find($tenant, $kid);
+        if ($key === null || ! $key->isPublished()) {
+            unset($this->opened[self::index($tenant, $kid)]);
+
+            throw new KeyNotFoundException(sprintf(
+                'Tenant "%s" hands out no key "%s" any more: what was bound to it is worth nothing.',
+                $tenant->slug,
+                $kid,
+            ));
+        }
+        if (! $key->algorithm instanceof ApplicationServerAlgorithmInterface) {
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" is published in its JWK Set; it is not a key it hands out.',
+                $kid,
+                $tenant->slug,
+            ));
+        }
+
+        return $this->open($tenant, $key);
     }
 
     /**
