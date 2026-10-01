@@ -22,8 +22,18 @@ final readonly class KmsKeyId
 
     public function of(Tenant $tenant): string
     {
+        return $this->forSlug($tenant->slug);
+    }
+
+    /**
+     * The same identifier from the slug alone, for the one caller that has no tenant to hand over: a data
+     * key store is built for the tenant a scope names, and a scope carries a slug and not a row
+     * (decision 0018).
+     */
+    public function forSlug(string $slug): string
+    {
         return strtr($this->pattern, [
-            self::TENANT_PLACEHOLDER => $tenant->slug,
+            self::TENANT_PLACEHOLDER => $slug,
         ]);
     }
 }
