@@ -19,6 +19,32 @@ final class User
 {
     public private(set) ?DateTimeImmutable $disabledAt = null;
 
+    /**
+     * The blind index of the username, which is what a lookup matches on once the column is sealed:
+     * encryption is randomized by design, so two encryptions of one username differ and `WHERE username =
+     * ?` matches nothing. The search moves to a keyed tag of the value, held in a sibling column and
+     * matched exactly, and the unique constraint of the tenant moves with it (decision 0011).
+     *
+     * It sits on an entity that knows nothing of a database for one reason: a column is written by the
+     * mapping of a property, and the tag has to be written in the same statement as the value it indexes.
+     * A row that exists with a tag that does not match what it holds is a row no search returns, and that
+     * is the failure the whole arrangement exists to avoid.
+     *
+     * Nothing of the domain derives it, and nothing can: the key a tag is derived under belongs to the
+     * tenant and is unwrapped by its KMS. What fills it is the storage, on every write.
+     */
+    public private(set) string $usernameIndex = '';
+
+    /**
+     * The blind index of the email address, filled the same way, and null for a user who gave none.
+     *
+     * Nothing looks an address up today: the repository has no such lookup and no unique constraint says
+     * two users of a tenant may not share one. The column is here because the table is empty today, and a
+     * blind index added later is a reindex, which means reading and unsealing every row of every tenant;
+     * added now it is a column of a migration. Decision 0011 names it for the console of a tenant.
+     */
+    public private(set) ?string $emailIndex = null;
+
     public function __construct(
         public private(set) Uuid $id,
         public readonly Tenant $tenant,
