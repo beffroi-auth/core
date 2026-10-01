@@ -21,6 +21,20 @@ final class LinkedIdentity
     public readonly Tenant $tenant;
 
     /**
+     * The blind indexes of the provider and of the subject, which is what the unique constraint of this
+     * table is held on and what a federated login will match an identity by: both columns are sealed, and a
+     * sealed column holds a different ciphertext for every write of the same value, so neither a constraint
+     * nor a lookup on them would do anything at all (decision 0011).
+     *
+     * They sit on an entity that knows nothing of a database for the reason the two of `User` do: a column
+     * is written by the mapping of a property, and a tag has to be written in the same statement as the
+     * value it indexes. Nothing of the domain derives them, and nothing can.
+     */
+    public private(set) string $providerIndex = '';
+
+    public private(set) string $subjectIndex = '';
+
+    /**
      * @param array<string, mixed> $claims
      */
     public function __construct(
