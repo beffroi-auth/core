@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Webauthn;
+namespace Beffroi\Core\Bridge\Webauthn;
 
-use Heidi\Core\Exception\RuntimeException;
-use Heidi\Core\Port\MetadataBlobStoreInterface;
+use Beffroi\Core\Exception\RuntimeException;
+use Beffroi\Core\Port\MetadataBlobStoreInterface;
 use function sprintf;
 use function strtolower;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;

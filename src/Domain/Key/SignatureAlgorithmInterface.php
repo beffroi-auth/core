@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * One JWS algorithm the provider signs with (RFC 7518 §3). What the provider signs with and what it

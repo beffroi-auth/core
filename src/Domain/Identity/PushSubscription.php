@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Identity;
+namespace Beffroi\Core\Domain\Identity;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Tenant\Tenant;
 use function hash;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
 use function str_starts_with;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 
 /**
  * Where the FIDO metadata the provider trusts is kept (architecture §3.4): the payload of a Metadata BLOB

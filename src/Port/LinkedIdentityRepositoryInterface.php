@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Identity\LinkedIdentity;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Identity\LinkedIdentity;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * The identities a user of a tenant has at an upstream provider (decision 0002), recognised by the provider

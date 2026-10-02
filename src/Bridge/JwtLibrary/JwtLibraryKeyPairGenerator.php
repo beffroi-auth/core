@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\GeneratedKeyPair;
-use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
-use Heidi\Core\Port\KeyPairGeneratorInterface;
+use Beffroi\Core\Domain\Key\GeneratedKeyPair;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
+use Beffroi\Core\Port\KeyPairGeneratorInterface;
 use function is_string;
 use Jose\Component\Core\JWK;
 

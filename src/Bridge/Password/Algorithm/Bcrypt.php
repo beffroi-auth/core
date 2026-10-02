@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password\Algorithm;
+namespace Beffroi\Core\Bridge\Password\Algorithm;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 
 /**
  * bcrypt, verified and re-hashed: what most of the providers a deployment imports from have stored for twenty years.

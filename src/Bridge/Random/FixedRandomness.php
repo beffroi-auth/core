@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Random;
+namespace Beffroi\Core\Bridge\Random;
 
 use function array_shift;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Port\RandomnessInterface;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\RandomnessInterface;
 use function pack;
 use function sprintf;
 use function str_pad;

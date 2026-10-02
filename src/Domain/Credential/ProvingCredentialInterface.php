@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
-use Heidi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
 
 /**
  * A credential a user can authenticate with, which says what such an authentication may prove, as "amr"

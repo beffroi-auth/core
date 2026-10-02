@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
 use Symfony\Component\Uid\Uuid;
 
 /**

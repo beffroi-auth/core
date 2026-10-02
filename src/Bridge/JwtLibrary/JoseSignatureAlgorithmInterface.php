@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
+use Beffroi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 
 /**

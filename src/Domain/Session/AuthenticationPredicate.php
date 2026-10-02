@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 use function array_any;
 use function count;

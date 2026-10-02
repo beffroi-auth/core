@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 use function array_all;
 use function array_any;
@@ -10,7 +10,7 @@ use function array_filter;
 use function array_map;
 use function array_values;
 use function count;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function sprintf;
 

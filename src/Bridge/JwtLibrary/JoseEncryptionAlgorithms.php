@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
 use Jose\Component\Core\AlgorithmManager;
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\KeyUse;
-use Heidi\Core\Domain\Key\VerifiedJws;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidJwsException;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
-use Heidi\Core\Port\JwsVerifierInterface;
-use Heidi\Core\Port\PublicKeySetProviderInterface;
+use Beffroi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Domain\Key\VerifiedJws;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidJwsException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Port\JwsVerifierInterface;
+use Beffroi\Core\Port\PublicKeySetProviderInterface;
 use function is_string;
 use Jose\Component\Core\JWK;
 use Jose\Component\Signature\JWSVerifier;

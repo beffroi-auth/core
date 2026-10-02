@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
 use function hash_equals;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 use function strlen;
 

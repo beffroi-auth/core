@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Event;
+namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Session\SessionEnd;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\LogicException;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Session\SessionEnd;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\LogicException;
 
 final readonly class AuthenticationSessionEnded implements DomainEventInterface
 {

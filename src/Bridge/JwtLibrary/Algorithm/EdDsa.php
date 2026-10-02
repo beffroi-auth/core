@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
+namespace Beffroi\Core\Bridge\JwtLibrary\Algorithm;
 
-use Heidi\Core\Bridge\JwtLibrary\JoseSignatureAlgorithmInterface;
-use Heidi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Bridge\JwtLibrary\JoseSignatureAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeyUse;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\EdDSA as JoseEdDsa;

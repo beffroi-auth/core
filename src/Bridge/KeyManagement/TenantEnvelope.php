@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\KeyManagement;
+namespace Beffroi\Core\Bridge\KeyManagement;
 
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Tenant\Tenant;
 use SensitiveParameter;
 use function sprintf;
 use Symfony\Component\KeyManagement\Envelope;

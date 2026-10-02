@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * The life of a key of a tenant (architecture §3.3, OIDC Core §10.1.1): published before it is used,

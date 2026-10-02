@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\ContentEncryptionAlgorithmInterface;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Domain\Key\ContentEncryptionAlgorithmInterface;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
 /**
  * The JWE content encryption algorithms the wiring gives the provider: what it opens a payload with and

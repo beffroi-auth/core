@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Totp;
+namespace Beffroi\Core\Application\Totp;
 
-use Heidi\Core\Application\Authentication\AuthenticationFailedException;
-use Heidi\Core\Application\Authentication\AuthenticationRefusal;
-use Heidi\Core\Domain\Credential\BackupCode;
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Domain\Event\TotpUsed;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Exception\KmsUnavailableException;
-use Heidi\Core\Port\CodeAttemptLimiterInterface;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\PasswordHasherInterface;
-use Heidi\Core\Port\SecretSealerInterface;
+use Beffroi\Core\Application\Authentication\AuthenticationFailedException;
+use Beffroi\Core\Application\Authentication\AuthenticationRefusal;
+use Beffroi\Core\Domain\Credential\BackupCode;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Credential\TotpSecret;
+use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Domain\Event\TotpUsed;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Port\CodeAttemptLimiterInterface;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\SecretSealerInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;

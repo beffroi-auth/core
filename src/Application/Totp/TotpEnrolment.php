@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Totp;
+namespace Beffroi\Core\Application\Totp;
 
 use function array_map;
-use Heidi\Core\Domain\Credential\BackupCode;
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Credential\TotpProvisioning;
-use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Domain\Event\CredentialEnrolled;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Exception\CredentialEnrolmentFailedException;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\KmsUnavailableException;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\RandomnessInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
-use Heidi\Core\Port\PasswordHasherInterface;
-use Heidi\Core\Port\SecretSealerInterface;
-use Heidi\Core\Port\TotpAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\BackupCode;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Credential\TotpProvisioning;
+use Beffroi\Core\Domain\Credential\TotpSecret;
+use Beffroi\Core\Domain\Event\CredentialEnrolled;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\RandomnessInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\SecretSealerInterface;
+use Beffroi\Core\Port\TotpAlgorithmInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 

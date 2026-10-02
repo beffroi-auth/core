@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
 /**
  * The algorithms of the keys the tenant hands out itself, the one source of truth over them: what the key

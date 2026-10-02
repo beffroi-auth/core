@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
 /**
  * The password algorithms the wiring gives the provider, the one source of truth over them: what a new

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
-use Heidi\Core\Domain\Key\UnsealedKey;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Domain\Key\SignatureAlgorithmInterface;
+use Beffroi\Core\Domain\Key\UnsealedKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Exception\KmsUnavailableException;
 
 /**
  * What signs: the active key of the tenant for one signature algorithm, opened by the KMS.

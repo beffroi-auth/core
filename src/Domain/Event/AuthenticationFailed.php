@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Event;
+namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 final readonly class AuthenticationFailed implements DomainEventInterface
 {

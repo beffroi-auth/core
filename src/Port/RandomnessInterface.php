@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
 /**
  * Where the randomness of a drawn value comes from. A use case is given its clock (PSR-20) rather than

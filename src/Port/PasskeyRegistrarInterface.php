@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Credential\PasskeyCredential;
-use Heidi\Core\Domain\Credential\PasskeyUserHandle;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Domain\Credential\PasskeyCredential;
+use Beffroi\Core\Domain\Credential\PasskeyUserHandle;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
 use Webauthn\CredentialRecord;
 use Webauthn\PublicKeyCredentialCreationOptions;
 

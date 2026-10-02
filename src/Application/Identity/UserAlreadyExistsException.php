@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Identity;
+namespace Beffroi\Core\Application\Identity;
 
-use Heidi\Core\Exception\ExceptionInterface;
+use Beffroi\Core\Exception\ExceptionInterface;
 use RuntimeException;
 use function sprintf;
 

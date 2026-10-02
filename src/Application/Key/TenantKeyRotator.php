@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Key;
+namespace Beffroi\Core\Application\Key;
 
 use DateInterval;
 use DateTimeImmutable;
-use Heidi\Core\Domain\Event\TenantKeyRetired;
-use Heidi\Core\Domain\Event\TenantKeyRotated;
-use Heidi\Core\Domain\Event\TenantKeyStaged;
-use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
-use Heidi\Core\Domain\Key\KeyStatus;
-use Heidi\Core\Domain\Key\KeyUse;
-use Heidi\Core\Domain\Key\RetirementReason;
-use Heidi\Core\Domain\Key\TenantKey;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Exception\LogicException;
-use Heidi\Core\Exception\RetirementNotDueException;
-use Heidi\Core\Port\KeyBoundArtifactInterface;
-use Heidi\Core\Port\KeyPairGeneratorInterface;
-use Heidi\Core\Port\KeySealerInterface;
-use Heidi\Core\Port\TenantKeyRepositoryInterface;
+use Beffroi\Core\Domain\Event\TenantKeyRetired;
+use Beffroi\Core\Domain\Event\TenantKeyRotated;
+use Beffroi\Core\Domain\Event\TenantKeyStaged;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeyStatus;
+use Beffroi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Domain\Key\RetirementReason;
+use Beffroi\Core\Domain\Key\TenantKey;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Exception\RetirementNotDueException;
+use Beffroi\Core\Port\KeyBoundArtifactInterface;
+use Beffroi\Core\Port\KeyPairGeneratorInterface;
+use Beffroi\Core\Port\KeySealerInterface;
+use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use function sprintf;

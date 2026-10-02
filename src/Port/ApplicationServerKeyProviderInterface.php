@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
-use Heidi\Core\Domain\Key\TenantKey;
-use Heidi\Core\Domain\Key\UnsealedKey;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
+use Beffroi\Core\Domain\Key\TenantKey;
+use Beffroi\Core\Domain\Key\UnsealedKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Exception\KmsUnavailableException;
 
 /**
  * What hands out a key of the tenant and what signs with it afterwards (RFC 8292 §2): the public half of

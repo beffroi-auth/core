@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Webauthn;
+namespace Beffroi\Core\Bridge\Webauthn;
 
 use Webauthn\Counter\CounterChecker;
 use Webauthn\CredentialRecord;

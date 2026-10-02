@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
 use function is_string;
 use SensitiveParameter;
 use function sprintf;

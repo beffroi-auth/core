@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password\Algorithm;
+namespace Beffroi\Core\Bridge\Password\Algorithm;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 
 /**
  * Argon2i (RFC 9106 §4), verified and re-hashed: what a provider that chose the side-channel-resistant variant left behind.

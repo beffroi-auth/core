@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Tenant;
+namespace Beffroi\Core\Domain\Tenant;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Session\AuthenticationContextPolicy;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Domain\Session\AuthenticationContextPolicy;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;

@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Passkey;
+namespace Beffroi\Core\Application\Passkey;
 
-use Heidi\Core\Domain\Credential\PasskeyCredential;
-use Heidi\Core\Domain\Credential\PasskeyUserHandle;
-use Heidi\Core\Domain\Event\CredentialEnrolled;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Exception\CredentialEnrolmentFailedException;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\PasskeyCeremonyFailedException;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\RandomnessInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
-use Heidi\Core\Port\PasskeyRegistrarInterface;
+use Beffroi\Core\Domain\Credential\PasskeyCredential;
+use Beffroi\Core\Domain\Credential\PasskeyUserHandle;
+use Beffroi\Core\Domain\Event\CredentialEnrolled;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\RandomnessInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Port\PasskeyRegistrarInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Webauthn\PublicKeyCredentialCreationOptions;

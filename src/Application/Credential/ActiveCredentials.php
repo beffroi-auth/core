@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Credential;
+namespace Beffroi\Core\Application\Credential;
 
 use function array_filter;
 use function array_values;
-use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\RevocableCredentialInterface;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\RevocableCredentialInterface;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
 
 /**
  * The credentials a user can still authenticate with: the repository keeps a revoked one for the audit

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Totp;
+namespace Beffroi\Core\Application\Totp;
 
-use Heidi\Core\Application\Credential\ActiveCredentials;
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Application\Credential\ActiveCredentials;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Identity\User;
 
 /**
  * The TOTP a user holds and may use: one active per user (architecture §3.1), the revoked ones staying

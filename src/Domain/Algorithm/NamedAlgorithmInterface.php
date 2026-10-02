@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Algorithm;
+namespace Beffroi\Core\Domain\Algorithm;
 
 /**
  * An algorithm the provider is wired with, under the name it is known by: the "alg" or the "enc" of a

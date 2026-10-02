@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Webauthn;
+namespace Beffroi\Core\Bridge\Webauthn;
 
 use function array_map;
-use Heidi\Core\Domain\Credential\PasskeyCredential;
-use Heidi\Core\Domain\Credential\VerifiedPasskeyAssertion;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\PasskeyCeremonyFailedException;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\PasskeyAuthenticatorInterface;
+use Beffroi\Core\Domain\Credential\PasskeyCredential;
+use Beffroi\Core\Domain\Credential\VerifiedPasskeyAssertion;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasskeyAuthenticatorInterface;
 use function random_bytes;
 use function sprintf;
 use Throwable;

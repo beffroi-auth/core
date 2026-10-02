@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Exception;
+namespace Beffroi\Core\Exception;
 
 final class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
+namespace Beffroi\Core\Bridge\JwtLibrary\Algorithm;
 
-use Heidi\Core\Bridge\JwtLibrary\JoseKeyEncryptionAlgorithmInterface;
-use Heidi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Bridge\JwtLibrary\JoseKeyEncryptionAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeyUse;
 use Jose\Component\Core\JWK;
 use Jose\Component\Encryption\Algorithm\KeyEncryption\ECDHESA256KW as JoseEcdhEsA256Kw;
 use Jose\Component\Encryption\Algorithm\KeyEncryptionAlgorithm as JoseAlgorithm;

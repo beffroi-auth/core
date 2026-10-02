@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
 /**
  * A credential a party presents by an identifier of its own before anything is verified: the credential

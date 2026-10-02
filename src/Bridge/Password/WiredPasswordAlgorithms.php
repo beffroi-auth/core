@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password;
+namespace Beffroi\Core\Bridge\Password;
 
-use Heidi\Core\Bridge\Algorithm\WiredAlgorithms;
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
-use Heidi\Core\Port\PasswordAlgorithmsInterface;
+use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Port\PasswordAlgorithmsInterface;
 use function implode;
 use function sprintf;
 

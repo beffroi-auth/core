@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Exception;
+namespace Beffroi\Core\Exception;
 
 final class RuntimeException extends \RuntimeException implements ExceptionInterface
 {

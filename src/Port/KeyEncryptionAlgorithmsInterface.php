@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\KeyEncryptionAlgorithmInterface;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Domain\Key\KeyEncryptionAlgorithmInterface;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
 /**
  * The JWE key management algorithms the wiring gives the provider, the one source of truth over them: the

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
 use DateInterval;
-use Heidi\Core\Domain\Key\KeyUse;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * A kind of artifact bound to a key of the tenant and how long one stays usable; the rotation dates a

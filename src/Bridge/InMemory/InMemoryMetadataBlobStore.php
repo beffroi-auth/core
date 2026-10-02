@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Port\MetadataBlobStoreInterface;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\MetadataBlobStoreInterface;
 use function ksort;
 use function preg_match;
 use function sprintf;

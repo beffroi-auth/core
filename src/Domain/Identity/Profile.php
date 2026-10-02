@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Identity;
+namespace Beffroi\Core\Domain\Identity;
 
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
 

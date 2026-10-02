@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Webauthn;
+namespace Beffroi\Core\Bridge\Webauthn;
 
 use function array_is_list;
-use Heidi\Core\Exception\MetadataBlobRefusedException;
+use Beffroi\Core\Exception\MetadataBlobRefusedException;
 use function is_array;
 use function is_string;
 use Jose\Component\Core\AlgorithmManager;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Null;
+namespace Beffroi\Core\Bridge\Null;
 
-use Heidi\Core\Domain\Session\Device;
-use Heidi\Core\Port\UserAgentParserInterface;
+use Beffroi\Core\Domain\Session\Device;
+use Beffroi\Core\Port\UserAgentParserInterface;
 
 final class NullUserAgentParser implements UserAgentParserInterface
 {

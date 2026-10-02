@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Event;
+namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * The data keys of a tenant are wrapped by another master key, or by another KMS, from now on. No sealed

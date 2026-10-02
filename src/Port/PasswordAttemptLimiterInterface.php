@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\User;
 
 /**
  * How many passwords may be tried on a user in a window: a password is guessed online one attempt at a

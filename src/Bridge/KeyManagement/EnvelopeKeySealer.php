@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\KeyManagement;
+namespace Beffroi\Core\Bridge\KeyManagement;
 
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\RuntimeException;
-use Heidi\Core\Port\KeySealerInterface;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\RuntimeException;
+use Beffroi\Core\Port\KeySealerInterface;
 use function is_array;
 use function is_string;
 use function json_decode;
@@ -30,7 +30,7 @@ final readonly class EnvelopeKeySealer implements KeySealerInterface
      * and it does not change: every envelope sealed before the encryption keys of issue #164 opens under
      * it, and nothing rewraps an envelope (architecture §3.3).
      */
-    private const string AAD = 'heidi:signing-key:v2:';
+    private const string AAD = 'beffroi:signing-key:v2:';
 
     private TenantEnvelope $envelope;
 

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Event;
+namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 final readonly class UserAuthenticated implements DomainEventInterface
 {

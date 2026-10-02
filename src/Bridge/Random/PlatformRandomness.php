@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Random;
+namespace Beffroi\Core\Bridge\Random;
 
-use Heidi\Core\Port\RandomnessInterface;
+use Beffroi\Core\Port\RandomnessInterface;
 use function random_bytes;
 
 /**

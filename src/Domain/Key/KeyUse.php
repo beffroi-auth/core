@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * What a key of a tenant is published for (RFC 7517 §4.2): the "use" member of the JWK. The registry of

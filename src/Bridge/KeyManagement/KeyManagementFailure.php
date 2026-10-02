@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\KeyManagement;
+namespace Beffroi\Core\Bridge\KeyManagement;
 
-use Heidi\Core\Exception\KmsUnavailableException;
-use Heidi\Core\Exception\RuntimeException;
+use Beffroi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Exception\RuntimeException;
 use Symfony\Component\KeyManagement\Exception\DataKeyNotFoundException;
 use Symfony\Component\KeyManagement\Exception\DecryptionFailedException;
 use Symfony\Component\KeyManagement\Exception\RuntimeException as KeyManagementRuntimeException;

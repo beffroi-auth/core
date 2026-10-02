@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
-use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Exception\ExceptionInterface;
+use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Exception\ExceptionInterface;
 use RuntimeException;
 
 /**

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Identity\PushSubscription;
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\PushSubscription;
+use Beffroi\Core\Domain\Identity\User;
 use Symfony\Component\Uid\Uuid;
 
 /**

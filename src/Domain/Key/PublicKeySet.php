@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 use function array_map;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
 /**

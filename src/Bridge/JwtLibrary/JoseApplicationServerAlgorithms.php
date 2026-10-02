@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Bridge\Algorithm\WiredAlgorithms;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
-use Heidi\Core\Port\ApplicationServerAlgorithmsInterface;
+use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Port\ApplicationServerAlgorithmsInterface;
 use function implode;
 use function sprintf;
 

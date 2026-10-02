@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidJweException;
-use Heidi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidJweException;
+use Beffroi\Core\Exception\KmsUnavailableException;
 
 interface JweDecrypterInterface
 {

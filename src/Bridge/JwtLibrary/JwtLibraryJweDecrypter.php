@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidJweException;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
-use Heidi\Core\Port\DecryptionKeyProviderInterface;
-use Heidi\Core\Port\JweDecrypterInterface;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidJweException;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Port\DecryptionKeyProviderInterface;
+use Beffroi\Core\Port\JweDecrypterInterface;
 use function is_string;
 use Jose\Component\Core\JWK;
 use Jose\Component\Encryption\JWEDecrypter;

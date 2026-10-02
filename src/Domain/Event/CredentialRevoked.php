@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Event;
+namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\RevocableCredentialInterface;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\RevocableCredentialInterface;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * The credential never authenticates again; its row stays.

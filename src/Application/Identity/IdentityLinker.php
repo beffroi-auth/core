@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Identity;
+namespace Beffroi\Core\Application\Identity;
 
-use Heidi\Core\Domain\Identity\LinkedIdentity;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Port\LinkedIdentityRepositoryInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Domain\Identity\LinkedIdentity;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 
 /**

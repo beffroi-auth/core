@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
+namespace Beffroi\Core\Bridge\JwtLibrary\Algorithm;
 
-use Heidi\Core\Bridge\JwtLibrary\JoseContentEncryptionAlgorithmInterface;
+use Beffroi\Core\Bridge\JwtLibrary\JoseContentEncryptionAlgorithmInterface;
 use Jose\Component\Encryption\Algorithm\ContentEncryption\A256GCM as JoseA256Gcm;
 use Jose\Component\Encryption\Algorithm\ContentEncryptionAlgorithm as JoseAlgorithm;
 

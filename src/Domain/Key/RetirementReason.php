@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * Why a key left the JWK Set, for the audit trail (architecture §3.3).

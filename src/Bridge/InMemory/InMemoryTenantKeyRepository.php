@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
-use Heidi\Core\Domain\Key\TenantKey;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\TenantKeyRepositoryInterface;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
+use Beffroi\Core\Domain\Key\TenantKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use function usort;
 
 final class InMemoryTenantKeyRepository implements TenantKeyRepositoryInterface

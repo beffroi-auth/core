@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary\Algorithm;
+namespace Beffroi\Core\Bridge\JwtLibrary\Algorithm;
 
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
 /**

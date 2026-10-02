@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
 use function array_map;
-use Heidi\Core\Bridge\Algorithm\WiredAlgorithms;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
-use Heidi\Core\Port\SignatureAlgorithmsInterface;
+use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Port\SignatureAlgorithmsInterface;
 use function implode;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;

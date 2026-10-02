@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Identity\PushSubscription;
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\PushSubscription;
+use Beffroi\Core\Domain\Identity\User;
 use function hash_equals;
-use Heidi\Core\Port\PushSubscriptionRepositoryInterface;
+use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**

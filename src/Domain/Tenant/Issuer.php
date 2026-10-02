@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Tenant;
+namespace Beffroi\Core\Domain\Tenant;
 
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function is_string;
 use function parse_url;

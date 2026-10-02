@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Push;
+namespace Beffroi\Core\Application\Push;
 
-use Heidi\Core\Domain\Identity\PushSubscription;
-use Heidi\Core\Port\PushSubscriptionRepositoryInterface;
+use Beffroi\Core\Domain\Identity\PushSubscription;
+use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
 use Psr\Clock\ClockInterface;
 
 /**

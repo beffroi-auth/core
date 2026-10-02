@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
-use Heidi\Core\Application\Totp\TotpAuthentication;
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\PendingLogin;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KmsUnavailableException;
-use Heidi\Core\Port\UserRepositoryInterface;
+use Beffroi\Core\Application\Totp\TotpAuthentication;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\PendingLogin;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 

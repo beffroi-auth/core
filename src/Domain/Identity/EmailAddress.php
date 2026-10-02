@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Identity;
+namespace Beffroi\Core\Domain\Identity;
 
 use const FILTER_FLAG_EMAIL_UNICODE;
 use const FILTER_VALIDATE_EMAIL;
 use function filter_var;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 use Stringable;
 

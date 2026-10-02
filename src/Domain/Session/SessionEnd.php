@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 /**
  * Who or what ended a session.

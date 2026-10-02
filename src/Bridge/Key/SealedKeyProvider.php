@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Key;
+namespace Beffroi\Core\Bridge\Key;
 
-use Heidi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
-use Heidi\Core\Domain\Key\KeyUse;
-use Heidi\Core\Domain\Key\PublicKeySet;
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
-use Heidi\Core\Domain\Key\TenantKey;
-use Heidi\Core\Domain\Key\UnsealedKey;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Port\ApplicationServerKeyProviderInterface;
-use Heidi\Core\Port\DecryptionKeyProviderInterface;
-use Heidi\Core\Port\KeySealerInterface;
-use Heidi\Core\Port\PublicKeySetProviderInterface;
-use Heidi\Core\Port\SigningKeyProviderInterface;
-use Heidi\Core\Port\TenantKeyRepositoryInterface;
+use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Domain\Key\PublicKeySet;
+use Beffroi\Core\Domain\Key\SignatureAlgorithmInterface;
+use Beffroi\Core\Domain\Key\TenantKey;
+use Beffroi\Core\Domain\Key\UnsealedKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
+use Beffroi\Core\Port\DecryptionKeyProviderInterface;
+use Beffroi\Core\Port\KeySealerInterface;
+use Beffroi\Core\Port\PublicKeySetProviderInterface;
+use Beffroi\Core\Port\SigningKeyProviderInterface;
+use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use function sprintf;
 
 /**

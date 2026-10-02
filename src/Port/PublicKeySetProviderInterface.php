@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\PublicKeySet;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Key\PublicKeySet;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * What the tenant publishes: the JWK Set endpoint serves it whole, a verifier asks it for the keys that

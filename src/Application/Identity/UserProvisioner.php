@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Identity;
+namespace Beffroi\Core\Application\Identity;
 
-use Heidi\Core\Domain\Credential\PasswordCredential;
-use Heidi\Core\Domain\Credential\PlainPassword;
-use Heidi\Core\Domain\Identity\Address;
-use Heidi\Core\Domain\Identity\EmailAddress;
-use Heidi\Core\Domain\Identity\Profile;
-use Heidi\Core\Domain\Identity\Subject;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
-use Heidi\Core\Port\PasswordHasherInterface;
-use Heidi\Core\Port\UserRepositoryInterface;
+use Beffroi\Core\Domain\Credential\PasswordCredential;
+use Beffroi\Core\Domain\Credential\PlainPassword;
+use Beffroi\Core\Domain\Identity\Address;
+use Beffroi\Core\Domain\Identity\EmailAddress;
+use Beffroi\Core\Domain\Identity\Profile;
+use Beffroi\Core\Domain\Identity\Subject;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 use function trim;

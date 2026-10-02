@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Identity\Subject;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\UserRepositoryInterface;
+use Beffroi\Core\Domain\Identity\Subject;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\UserRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**

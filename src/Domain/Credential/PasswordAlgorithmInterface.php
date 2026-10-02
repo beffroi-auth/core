@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
-use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
+use Beffroi\Core\Domain\Algorithm\NamedAlgorithmInterface;
 
 /**
  * One algorithm a password hash may have been made with, under the name the hash carries (decision 0002):

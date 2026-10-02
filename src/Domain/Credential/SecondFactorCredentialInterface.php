@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
 /**
  * A credential that completes a password login rather than replacing it: a TOTP. A password alone does

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Session\GeoLocation;
+use Beffroi\Core\Domain\Session\GeoLocation;
 
 /**
  * Turns an IP address into an approximate location. Called asynchronously, never on the request path.

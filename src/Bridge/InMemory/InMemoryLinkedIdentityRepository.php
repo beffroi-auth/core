@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
-use Heidi\Core\Domain\Identity\LinkedIdentity;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\LinkedIdentityRepositoryInterface;
+use Beffroi\Core\Domain\Identity\LinkedIdentity;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
 
 /**
  * For tests and for the examples: nothing here survives the process.

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Credential;
+namespace Beffroi\Core\Application\Credential;
 
-use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\RevocableCredentialInterface;
-use Heidi\Core\Domain\Event\CredentialRevoked;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\RevocableCredentialInterface;
+use Beffroi\Core\Domain\Event\CredentialRevoked;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 

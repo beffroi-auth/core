@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 use function array_keys;
 use function array_map;
 use function count;
 use DateTimeImmutable;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function max;
 
 /**

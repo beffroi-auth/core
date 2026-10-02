@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Totp;
+namespace Beffroi\Core\Application\Totp;
 
 use DateTimeImmutable;
 use function hash_equals;
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Port\TotpAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Credential\TotpSecret;
+use Beffroi\Core\Port\TotpAlgorithmInterface;
 use function intdiv;
 use function preg_match;
 use function preg_replace;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * One algorithm a key pair the tenant hands out itself is generated for, rather than one it publishes in

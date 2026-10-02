@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Push;
+namespace Beffroi\Core\Application\Push;
 
-use Heidi\Core\Domain\Identity\PushSubscription;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Port\ApplicationServerKeyProviderInterface;
-use Heidi\Core\Port\PushSubscriptionRepositoryInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Domain\Identity\PushSubscription;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
+use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 
 /**

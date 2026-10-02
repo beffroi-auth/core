@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Identity;
+namespace Beffroi\Core\Domain\Identity;
 
 /**
  * The OIDC Core §5.1.1 address claim; an address with no field at all is not an address.

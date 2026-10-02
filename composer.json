@@ -1,5 +1,5 @@
 {
-    "name": "heidi/core",
+    "name": "beffroi/core",
     "description": "Identity core of the IdP: tenants, users, credentials, linked identities, groups, authentication sessions, keys. Pure PHP.",
     "type": "library",
     "license": "MIT",
@@ -27,12 +27,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Heidi\\Core\\": "src/"
+            "Beffroi\\Core\\": "src/"
         }
     },
     "extra": {
         "thanks": {
-            "name": "heidi/framework"
+            "name": "beffroi/framework"
         }
     }
 }

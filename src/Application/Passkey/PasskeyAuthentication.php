@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Passkey;
+namespace Beffroi\Core\Application\Passkey;
 
-use Heidi\Core\Application\Authentication\AuthenticationFailedException;
-use Heidi\Core\Application\Authentication\AuthenticationRefusal;
-use Heidi\Core\Application\Credential\ActiveCredentials;
-use Heidi\Core\Application\Authentication\SessionOpener;
-use Heidi\Core\Domain\Credential\PasskeyCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Domain\Event\PasskeyUsed;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\PasskeyCeremonyFailedException;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\PasskeyAuthenticatorInterface;
+use Beffroi\Core\Application\Authentication\AuthenticationFailedException;
+use Beffroi\Core\Application\Authentication\AuthenticationRefusal;
+use Beffroi\Core\Application\Credential\ActiveCredentials;
+use Beffroi\Core\Application\Authentication\SessionOpener;
+use Beffroi\Core\Domain\Credential\PasskeyCredential;
+use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Domain\Event\PasskeyUsed;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasskeyAuthenticatorInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Webauthn\PublicKeyCredentialRequestOptions;

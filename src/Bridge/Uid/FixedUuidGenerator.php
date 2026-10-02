@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Uid;
+namespace Beffroi\Core\Bridge\Uid;
 
 use function array_shift;
-use Heidi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;
 

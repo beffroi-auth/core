@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Domain\Credential\TotpSecret;
+use Beffroi\Core\Exception\InvalidArgumentException;
 
 /**
  * RFC 6238 over a secret, with the parameters of TotpCredential: the code at a time step, and the URI an

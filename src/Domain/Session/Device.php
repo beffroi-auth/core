@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 /**
  * What a user agent string says, coarse enough for a session list ("Firefox on Linux, desktop").

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
-use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
+use Beffroi\Core\Domain\Algorithm\NamedAlgorithmInterface;
 
 /**
  * One JWE content encryption algorithm the provider opens a payload with (RFC 7518 §5): the "enc" of the

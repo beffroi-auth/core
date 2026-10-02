@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Key;
+namespace Beffroi\Core\Domain\Key;
 
 /**
  * One JWE key management algorithm the provider is encrypted to (RFC 7518 §4): the "alg" that wraps, or

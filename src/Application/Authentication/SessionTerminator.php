@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
-use Heidi\Core\Domain\Event\AuthenticationSessionEnded;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Session\SessionEnd;
-use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Beffroi\Core\Domain\Event\AuthenticationSessionEnded;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Session\SessionEnd;
+use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
 use DateInterval;
-use Heidi\Core\Domain\Event\UserAuthenticated;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\AuthenticationProofs;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Domain\Event\UserAuthenticated;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Session\AuthenticationProofs;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 

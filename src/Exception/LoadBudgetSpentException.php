@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Exception;
+namespace Beffroi\Core\Exception;
 
 use RuntimeException;
 use function sprintf;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
 use function array_map;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use function implode;
-use Heidi\Core\Port\KeyAlgorithmsInterface;
+use Beffroi\Core\Port\KeyAlgorithmsInterface;
 
 /**
  * Every algorithm a key pair may be generated for, the registries of one use read as one: what the key

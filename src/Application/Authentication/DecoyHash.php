@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
-use Heidi\Core\Domain\Credential\PasswordHash;
-use Heidi\Core\Port\PasswordHasherInterface;
-use Heidi\Core\Port\UuidGeneratorInterface;
+use Beffroi\Core\Domain\Credential\PasswordHash;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\UuidGeneratorInterface;
 use SensitiveParameter;
 
 /**

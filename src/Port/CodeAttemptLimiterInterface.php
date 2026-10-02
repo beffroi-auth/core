@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\User;
 
 /**
  * How many codes a user may try in a window: a six-digit code is guessable, so the check is limited

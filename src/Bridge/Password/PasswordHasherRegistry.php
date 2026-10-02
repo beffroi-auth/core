@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password;
+namespace Beffroi\Core\Bridge\Password;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
-use Heidi\Core\Domain\Credential\PasswordHash;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
-use Heidi\Core\Port\AlgorithmPasswordHasherInterface;
-use Heidi\Core\Port\PasswordAlgorithmsInterface;
-use Heidi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordHash;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Port\AlgorithmPasswordHasherInterface;
+use Beffroi\Core\Port\PasswordAlgorithmsInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
 use SensitiveParameter;
 use function sprintf;
 

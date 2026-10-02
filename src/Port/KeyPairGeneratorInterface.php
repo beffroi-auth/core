@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\GeneratedKeyPair;
-use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
-use Heidi\Core\Exception\UnsupportedAlgorithmException;
+use Beffroi\Core\Domain\Key\GeneratedKeyPair;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
 interface KeyPairGeneratorInterface
 {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password;
+namespace Beffroi\Core\Bridge\Password;
 
-use Heidi\Core\Bridge\Password\Algorithm\Argon2i;
-use Heidi\Core\Bridge\Password\Algorithm\Argon2id;
-use Heidi\Core\Bridge\Password\Algorithm\Bcrypt;
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
-use Heidi\Core\Domain\Credential\PasswordHash;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
-use Heidi\Core\Port\AlgorithmPasswordHasherInterface;
+use Beffroi\Core\Bridge\Password\Algorithm\Argon2i;
+use Beffroi\Core\Bridge\Password\Algorithm\Argon2id;
+use Beffroi\Core\Bridge\Password\Algorithm\Bcrypt;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordHash;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Port\AlgorithmPasswordHasherInterface;
 use function in_array;
 use const PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
 use const PASSWORD_ARGON2_DEFAULT_THREADS;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\SignatureAlgorithmInterface;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\JwsSignerInterface;
-use Heidi\Core\Port\SigningKeyProviderInterface;
+use Beffroi\Core\Domain\Key\SignatureAlgorithmInterface;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\JwsSignerInterface;
+use Beffroi\Core\Port\SigningKeyProviderInterface;
 use Jose\Component\Core\JWK;
 use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\Serializer\CompactSerializer;

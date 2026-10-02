@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\UnsealedKey;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\KeyNotFoundException;
-use Heidi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Domain\Key\UnsealedKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\KeyNotFoundException;
+use Beffroi\Core\Exception\KmsUnavailableException;
 
 /**
  * What opens a JWE a client encrypted to the provider: the published encryption key the JOSE header names,

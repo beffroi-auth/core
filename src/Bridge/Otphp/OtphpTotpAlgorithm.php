@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Otphp;
+namespace Beffroi\Core\Bridge\Otphp;
 
-use Heidi\Core\Domain\Credential\TotpCredential;
-use Heidi\Core\Domain\Credential\TotpSecret;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Port\TotpAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Credential\TotpSecret;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\TotpAlgorithmInterface;
 use function intdiv;
 use OTPHP\TOTP;
 use ParagonIE\ConstantTime\Base32;

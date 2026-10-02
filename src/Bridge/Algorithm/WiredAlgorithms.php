@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Algorithm;
+namespace Beffroi\Core\Bridge\Algorithm;
 
 use function array_values;
-use Heidi\Core\Domain\Algorithm\NamedAlgorithmInterface;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Domain\Algorithm\NamedAlgorithmInterface;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
 /**

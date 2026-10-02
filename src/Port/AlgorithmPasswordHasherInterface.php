@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
-use Heidi\Core\Domain\Credential\PasswordHash;
-use Heidi\Core\Exception\LogicException;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordHash;
+use Beffroi\Core\Exception\LogicException;
 use SensitiveParameter;
 
 /**

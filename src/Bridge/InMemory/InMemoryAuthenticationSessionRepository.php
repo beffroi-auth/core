@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
 use DateTimeImmutable;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
 final class InMemoryAuthenticationSessionRepository implements AuthenticationSessionRepositoryInterface

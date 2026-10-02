@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Credential;
+namespace Beffroi\Core\Domain\Credential;
 
 use function count;
 use DateTimeImmutable;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Exception\InvalidArgumentException;
-use Heidi\Core\Exception\LogicException;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;
 

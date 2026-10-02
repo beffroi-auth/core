@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\InMemory;
+namespace Beffroi\Core\Bridge\InMemory;
 
 use function hash_equals;
-use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\ExternallyIdentifiedCredentialInterface;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\ExternallyIdentifiedCredentialInterface;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 use function usort;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Password\Algorithm;
+namespace Beffroi\Core\Bridge\Password\Algorithm;
 
-use Heidi\Core\Domain\Credential\PasswordAlgorithmInterface;
+use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 
 /**
  * PBKDF2 over HMAC-SHA-256 (RFC 8018 §5.2), a name an import may bring. The provider reads such a hash back and names it; whether it can verify one is up to the hashers wired beside it.

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\KeyManagement;
+namespace Beffroi\Core\Bridge\KeyManagement;
 
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\SecretSealerInterface;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\SecretSealerInterface;
 use SensitiveParameter;
 use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
@@ -19,7 +19,7 @@ use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
  */
 final readonly class EnvelopeSecretSealer implements SecretSealerInterface
 {
-    private const string AAD = 'heidi:shared-secret:v1:';
+    private const string AAD = 'beffroi:shared-secret:v1:';
 
     private TenantEnvelope $envelope;
 

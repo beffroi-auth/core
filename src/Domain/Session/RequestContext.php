@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Domain\Session;
+namespace Beffroi\Core\Domain\Session;
 
 use DateTimeImmutable;
 use const FILTER_VALIDATE_IP;
 use function filter_var;
-use Heidi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function mb_substr;
 use function sprintf;
 use function trim;

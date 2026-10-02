@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\Webauthn;
+namespace Beffroi\Core\Bridge\Webauthn;
 
 use Cose\Algorithm\Manager;
 use Cose\Algorithm\Signature\ECDSA\ES256;
 use Cose\Algorithm\Signature\RSA\RS256;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
 use Psr\Clock\ClockInterface;
 use function sprintf;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;

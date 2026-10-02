@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
 use function array_any;
-use Heidi\Core\Application\Credential\ActiveCredentials;
-use Heidi\Core\Domain\Credential\Credential;
-use Heidi\Core\Domain\Credential\SecondFactorCredentialInterface;
-use Heidi\Core\Domain\Identity\User;
+use Beffroi\Core\Application\Credential\ActiveCredentials;
+use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\SecondFactorCredentialInterface;
+use Beffroi\Core\Domain\Identity\User;
 
 /**
  * Whether a password alone signs a user in (architecture §3.2): it does not while the user holds an

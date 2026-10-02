@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Port;
+namespace Beffroi\Core\Port;
 
-use Heidi\Core\Domain\Key\KeyAlgorithmInterface;
-use Heidi\Core\Domain\Key\TenantKey;
-use Heidi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
+use Beffroi\Core\Domain\Key\TenantKey;
+use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
  * The keys of a tenant, whatever they are published for: one store, one lifecycle, one set of commands.

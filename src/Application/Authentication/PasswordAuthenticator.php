@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Application\Authentication;
+namespace Beffroi\Core\Application\Authentication;
 
-use Heidi\Core\Domain\Credential\PasswordCredential;
-use Heidi\Core\Domain\Event\AuthenticationFailureReason;
-use Heidi\Core\Domain\Event\PasswordRehashed;
-use Heidi\Core\Domain\Identity\User;
-use Heidi\Core\Domain\Session\AuthenticationMethod;
-use Heidi\Core\Domain\Session\AuthenticationSession;
-use Heidi\Core\Domain\Session\PendingLogin;
-use Heidi\Core\Domain\Session\RequestContext;
-use Heidi\Core\Domain\Tenant\Tenant;
-use Heidi\Core\Port\CredentialRepositoryInterface;
-use Heidi\Core\Port\PasswordAttemptLimiterInterface;
-use Heidi\Core\Port\PasswordHasherInterface;
-use Heidi\Core\Port\UserRepositoryInterface;
+use Beffroi\Core\Domain\Credential\PasswordCredential;
+use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Domain\Event\PasswordRehashed;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\PendingLogin;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasswordAttemptLimiterInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;

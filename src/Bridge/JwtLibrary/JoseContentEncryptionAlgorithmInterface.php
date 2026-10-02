@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Heidi\Core\Bridge\JwtLibrary;
+namespace Beffroi\Core\Bridge\JwtLibrary;
 
-use Heidi\Core\Domain\Key\ContentEncryptionAlgorithmInterface;
+use Beffroi\Core\Domain\Key\ContentEncryptionAlgorithmInterface;
 use Jose\Component\Encryption\Algorithm\ContentEncryptionAlgorithm as JoseAlgorithm;
 
 /**
