@@ -22,12 +22,15 @@ final readonly class Birthdate extends ProfileClaim
     }
 
     /**
-     * A line of text and not a date box, on purpose: OIDC Core §5.1 provides for a year alone, and "0000"
-     * for a year nobody knows, neither of which an HTML date input can express. So what the browser checks
-     * is the pattern the profile itself refuses anything else by, and the page shows an example.
+     * A date, which a browser offers a calendar for (issue #479). The pattern comes with it, for a browser
+     * that renders a line of text instead and for which it is then the only check; it is the pattern the
+     * profile itself refuses anything else by, which is wider than a date input, OIDC Core §5.1 providing
+     * for a year alone and for "0000" when nobody knows it. A birthdate held in that wider shape is
+     * offered as a line of text rather than erased by a calendar that cannot render it
+     * (`ClaimField::forHolding()`).
      */
     public function field(): ClaimField
     {
-        return ClaimField::text('\\d{4}(-\\d{2}-\\d{2})?', 'profile.birthdate.example');
+        return ClaimField::date('\\d{4}(-\\d{2}-\\d{2})?', 'profile.birthdate.example');
     }
 }
