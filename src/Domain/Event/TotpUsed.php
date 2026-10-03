@@ -6,6 +6,7 @@ namespace Beffroi\Core\Domain\Event;
 
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
@@ -13,8 +14,13 @@ use Beffroi\Core\Domain\Tenant\Tenant;
  * A code of the TOTP credential was accepted: one the authenticator computed, or one of the backup codes,
  * which is told here because a backup code spent is a code the user no longer has.
  */
-final readonly class TotpUsed implements DomainEventInterface
+final readonly class TotpUsed implements ConcernsAPersonInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'totp.used';
+
     public Tenant $tenant;
 
     public function __construct(
@@ -24,5 +30,15 @@ final readonly class TotpUsed implements DomainEventInterface
         public bool $backupCode,
     ) {
         $this->tenant = $credential->tenant;
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
+    }
+
+    public function subject(): Subject
+    {
+        return $this->credential->user->subject;
     }
 }

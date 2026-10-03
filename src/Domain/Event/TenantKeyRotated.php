@@ -14,6 +14,11 @@ use Beffroi\Core\Domain\Tenant\Tenant;
  */
 final readonly class TenantKeyRotated implements DomainEventInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'tenant.key_rotated';
+
     public Tenant $tenant;
 
     public function __construct(
@@ -23,5 +28,10 @@ final readonly class TenantKeyRotated implements DomainEventInterface
         public RequestContext $context,
     ) {
         $this->tenant = $activated->tenant;
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }

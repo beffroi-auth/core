@@ -7,11 +7,17 @@ namespace Beffroi\Core\Domain\Event;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationMethod;
+use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
-final readonly class AuthenticationFailed implements DomainEventInterface
+final readonly class AuthenticationFailed implements ConcernsAPersonInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'authentication.failed';
+
     /**
      * @param AuthenticationMethod|null $method what the attempt claimed, null when a ceremony refused a passkey before naming one
      * @param string|null $identifier kept as typed, for the audit trail; null when nothing was typed (a passkey)
@@ -25,5 +31,15 @@ final readonly class AuthenticationFailed implements DomainEventInterface
         public ?string $identifier,
         public ?User $user,
     ) {
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
+    }
+
+    public function subject(): ?Subject
+    {
+        return $this->user?->subject;
     }
 }

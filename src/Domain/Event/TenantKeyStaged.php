@@ -14,6 +14,11 @@ use Beffroi\Core\Domain\Tenant\Tenant;
  */
 final readonly class TenantKeyStaged implements DomainEventInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'tenant.key_staged';
+
     public Tenant $tenant;
 
     public function __construct(
@@ -22,5 +27,10 @@ final readonly class TenantKeyStaged implements DomainEventInterface
         public RequestContext $context,
     ) {
         $this->tenant = $staged->tenant;
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }

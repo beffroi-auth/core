@@ -18,6 +18,11 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 final readonly class TenantDataKeysDestroyed implements DomainEventInterface
 {
     /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'tenant.data_keys_destroyed';
+
+    /**
      * @param int $keys how many wrapped keys were erased
      * @param int $scopes over how many scopes, which is how many families of columns the tenant had sealed
      */
@@ -28,5 +33,10 @@ final readonly class TenantDataKeysDestroyed implements DomainEventInterface
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
     ) {
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }

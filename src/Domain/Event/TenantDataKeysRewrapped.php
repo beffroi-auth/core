@@ -19,6 +19,11 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 final readonly class TenantDataKeysRewrapped implements DomainEventInterface
 {
     /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'tenant.data_keys_rewrapped';
+
+    /**
      * @param int $keys how many wrapped keys moved
      * @param int $scopes over how many scopes, which is how many families of columns the tenant had sealed
      * @param string|null $from the client that wrapped them until now, null when the run moved whatever it
@@ -36,5 +41,10 @@ final readonly class TenantDataKeysRewrapped implements DomainEventInterface
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
     ) {
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }

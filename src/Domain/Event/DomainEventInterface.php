@@ -19,6 +19,14 @@ use Beffroi\Core\Domain\Tenant\Tenant;
  */
 interface DomainEventInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454): a stable label an event
+     * gives itself, as a credential names its own kind, and never a class name read by reflection. The
+     * interface is what forces it: an event added to either package cannot reach the journal nameless, and
+     * renaming a class rewrites no history.
+     */
+    public function name(): string;
+
     public DateTimeImmutable $occurredAt { get; }
 
     public Tenant $tenant { get; }

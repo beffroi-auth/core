@@ -15,11 +15,21 @@ use Beffroi\Core\Domain\Tenant\Tenant;
  */
 final readonly class KmsUnavailable implements DomainEventInterface
 {
+    /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'kms.unavailable';
+
     public function __construct(
         public DateTimeImmutable $occurredAt,
         public Tenant $tenant,
         public RequestContext $context,
         public string $reason,
     ) {
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }

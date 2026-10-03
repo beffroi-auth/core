@@ -18,6 +18,11 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 final readonly class LoadBudgetSpent implements DomainEventInterface
 {
     /**
+     * The name of the act, which is what the journal writes down (issue #454).
+     */
+    public const string NAME = 'load.budget_spent';
+
+    /**
      * @param string $budget the budget that refused, which names itself
      * @param string $route the route the request had been matched to
      * @param string|null $client the client the budget was counted on, null for the budget of an origin
@@ -30,5 +35,10 @@ final readonly class LoadBudgetSpent implements DomainEventInterface
         public string $route,
         public ?string $client,
     ) {
+    }
+
+    public function name(): string
+    {
+        return self::NAME;
     }
 }
