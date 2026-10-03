@@ -20,8 +20,8 @@ use Symfony\Component\Uid\Uuid;
  * most dangerous row of this schema and why three rules hold it.
  *
  * - **It is sealed at rest like everything else** (decision 0011). The column is sealed under the data key
- *   of the tenant, in a scope of its own, and it carries no exemption: a file that gathers what eleven
- *   families seal separately cannot be the one thing a dump reads.
+ *   of the tenant, in a scope of its own, and it carries no exemption: a file that gathers what every
+ *   other family seals separately cannot be the one thing a dump reads.
  * - **It expires, and the duration is not configurable.** Every day it exists is a day that file exists,
  *   so a deployment is not offered the chance to keep it for a year (decision 0006). A week is what a
  *   person who asked on a Friday has.
@@ -45,6 +45,12 @@ final class PersonalArchive
      * commonly used and machine readable.
      */
     public const string MEDIA_TYPE = 'application/json';
+
+    /**
+     * The extension the plain file carries. A container that wraps it names its own (issue #483,
+     * ArchiveContainerInterface), and the name itself is built here either way.
+     */
+    public const string EXTENSION = 'json';
 
     /**
      * Restated from the person, as everything that hangs off a user restates it (decision 0002).
@@ -104,9 +110,12 @@ final class PersonalArchive
     /**
      * The name of the file a person downloads: the archive and never the person, a file name travelling in
      * a header that proxies and browsers write down.
+     *
+     * @param string $extension what the file is, the plain document unless a container wrapped it (issue
+     *                          #483): the name is one rule and not one per form of the file
      */
-    public function fileName(): string
+    public function fileName(string $extension = self::EXTENSION): string
     {
-        return sprintf('archive-%s.json', $this->id->toRfc4122());
+        return sprintf('archive-%s.%s', $this->id->toRfc4122(), $extension);
     }
 }
