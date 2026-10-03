@@ -34,6 +34,12 @@ interface ClaimInterface
     public function of(User $user): ?string;
 
     /**
+     * What kind of field this claim is offered as (issue #476): a page renders what the claim says, so a
+     * claim added says it too and no page is edited.
+     */
+    public function field(): ClaimField;
+
+    /**
      * The person once they have said this of themselves; null takes back what they had said.
      *
      * @throws InvalidArgumentException when the value is not one this claim holds

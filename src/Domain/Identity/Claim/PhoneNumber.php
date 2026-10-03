@@ -32,4 +32,9 @@ final readonly class PhoneNumber implements ClaimInterface
     {
         $user->changePhoneNumber($value, false, $now);
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::telephone();
+    }
 }

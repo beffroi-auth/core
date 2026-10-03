@@ -20,4 +20,9 @@ final readonly class Nickname extends ProfileClaim
     {
         return $user->profile->nickname;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::text();
+    }
 }

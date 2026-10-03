@@ -20,4 +20,9 @@ final readonly class WebsiteUrl extends ProfileClaim
     {
         return $user->profile->websiteUrl;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::url();
+    }
 }

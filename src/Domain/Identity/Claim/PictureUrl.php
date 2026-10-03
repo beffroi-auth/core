@@ -20,4 +20,9 @@ final readonly class PictureUrl extends ProfileClaim
     {
         return $user->profile->pictureUrl;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::url();
+    }
 }

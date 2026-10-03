@@ -20,4 +20,9 @@ final readonly class PreferredUsername extends ProfileClaim
     {
         return $user->profile->preferredUsername;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::text();
+    }
 }

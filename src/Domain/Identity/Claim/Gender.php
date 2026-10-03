@@ -20,4 +20,9 @@ final readonly class Gender extends ProfileClaim
     {
         return $user->profile->gender;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::text();
+    }
 }

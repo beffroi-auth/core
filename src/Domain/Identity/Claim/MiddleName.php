@@ -20,4 +20,9 @@ final readonly class MiddleName extends ProfileClaim
     {
         return $user->profile->middleName;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::text();
+    }
 }

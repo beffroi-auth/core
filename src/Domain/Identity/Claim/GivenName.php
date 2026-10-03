@@ -20,4 +20,9 @@ final readonly class GivenName extends ProfileClaim
     {
         return $user->profile->givenName;
     }
+
+    public function field(): ClaimField
+    {
+        return ClaimField::text();
+    }
 }
