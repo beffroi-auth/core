@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Beffroi\Core\Application\Archive\Chapter;
+
+use Beffroi\Core\Domain\Archive\ArchivedFacts;
+use Beffroi\Core\Domain\Identity\Address;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Port\ArchiveChapterInterface;
+
+/**
+ * The record itself, in the archive a person asks for (issue #453): the account this provider keeps for
+ * them and everything they have said about themselves.
+ *
+ * **The names are those of OIDC Core §5.1**, which is what RGPD article 20 means by a commonly used
+ * format: a person who takes this file to another provider hands it a document that provider already
+ * reads. What is not a claim of the specification keeps the name this provider gives it: the username they
+ * sign in with, the dates of the record, and the day the account was disabled if it was.
+ *
+ * **It reads the record and not what is wired.** A claim a deployment does not offer on any page is a
+ * claim this provider holds all the same, and article 15 asks for what is held.
+ */
+final readonly class ProfileChapter implements ArchiveChapterInterface
+{
+    public function name(): string
+    {
+        return 'profile';
+    }
+
+    public function of(User $user): array
+    {
+        $profile = $user->profile;
+
+        return [
+            [
+                'sub' => $user->subject->value,
+                'username' => $user->username,
+                'name' => $profile->name,
+                'given_name' => $profile->givenName,
+                'family_name' => $profile->familyName,
+                'middle_name' => $profile->middleName,
+                'nickname' => $profile->nickname,
+                'preferred_username' => $profile->preferredUsername,
+                'profile' => $profile->profileUrl,
+                'picture' => $profile->pictureUrl,
+                'website' => $profile->websiteUrl,
+                'email' => $user->email?->value,
+                'email_verified' => $user->email === null ? null : $user->emailVerified,
+                'gender' => $profile->gender,
+                'birthdate' => $profile->birthdate,
+                'zoneinfo' => $profile->zoneinfo,
+                'locale' => $profile->locale,
+                'phone_number' => $user->phoneNumber,
+                'phone_number_verified' => $user->phoneNumber === null ? null : $user->phoneNumberVerified,
+                'address' => self::address($user->address),
+                'created_at' => ArchivedFacts::moment($user->createdAt),
+                'updated_at' => ArchivedFacts::moment($user->updatedAt),
+                'disabled_at' => ArchivedFacts::moment($user->disabledAt),
+            ],
+        ];
+    }
+
+    /**
+     * OIDC Core §5.1.1, member by member, an address this provider holds none of being none.
+     *
+     * @return array<string, string|null>|null
+     */
+    private static function address(?Address $address): ?array
+    {
+        if ($address === null) {
+            return null;
+        }
+
+        return [
+            'formatted' => $address->formatted,
+            'street_address' => $address->streetAddress,
+            'locality' => $address->locality,
+            'region' => $address->region,
+            'postal_code' => $address->postalCode,
+            'country' => $address->country,
+        ];
+    }
+}
