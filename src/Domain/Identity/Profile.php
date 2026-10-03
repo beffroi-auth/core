@@ -40,4 +40,32 @@ final readonly class Profile
     {
         return new self();
     }
+
+    /**
+     * The same profile, read in another language (issue #471): what the person said of themselves is
+     * untouched, the "locale" claim alone being replaced. A copy and not a setter, a profile being held
+     * whole by whoever holds it, and the rule of the claim living where the claim does.
+     */
+    public function readIn(string $locale): self
+    {
+        if ($locale === '') {
+            throw new InvalidArgumentException('The language a profile is read in is either absent or non-empty.');
+        }
+
+        return new self(
+            $this->name,
+            $this->givenName,
+            $this->familyName,
+            $this->middleName,
+            $this->nickname,
+            $this->preferredUsername,
+            $this->profileUrl,
+            $this->pictureUrl,
+            $this->websiteUrl,
+            $this->gender,
+            $this->birthdate,
+            $this->zoneinfo,
+            $locale,
+        );
+    }
 }
