@@ -6,10 +6,13 @@ namespace Beffroi\Core\Application\Identity;
 
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
 use Beffroi\Core\Domain\Identity\Claim\ClaimInterface;
+use Beffroi\Core\Domain\Identity\ClaimChange;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\ClaimHistoryInterface;
 use Beffroi\Core\Port\UserRepositoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
@@ -23,11 +26,18 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  *
  * It announces the act and not the value (PersonDescribedThemselves), the value living in the row of that
  * person and nowhere else.
+ *
+ * **What the claim used to say is written here and not on the lane** (issue #482, ClaimChange). The row of
+ * the person and the history of its change commit together or the record changed and its history did not,
+ * which is a hole in the one thing a history is for; so this writes both, in the unit of work it already
+ * has. Nothing is written when nothing changed: saying again what a claim already said is an act, which
+ * the journal has, and not a change.
  */
 final readonly class SelfDescription
 {
     public function __construct(
         private UserRepositoryInterface $users,
+        private ClaimHistoryInterface $history,
         private EventDispatcherInterface $events,
         private ClockInterface $clock,
     ) {
@@ -41,8 +51,15 @@ final readonly class SelfDescription
     {
         $user->tenant->selfServedClaims->assertOpens($claim->name());
         $now = $this->clock->now();
+        $was = $claim->of($user);
         $claim->describe($user, $value, $now);
+        $became = $claim->of($user);
         $this->users->save($user);
-        $this->events->dispatch(new PersonDescribedThemselves($user, $claim->name(), $value === null, $now, $context));
+        // nothing is written when nothing changed: saying again what a claim already said is an act and
+        // not a change, so the journal has it and the history does not
+        if ($was !== $became) {
+            $this->history->record(new ClaimChange(Uuid::v7(), $user, $claim->name(), $was, $became, $now, $context));
+        }
+        $this->events->dispatch(new PersonDescribedThemselves($user, $claim->name(), $became === null, $now, $context));
     }
 }
