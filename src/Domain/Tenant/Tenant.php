@@ -23,7 +23,14 @@ final class Tenant
     public private(set) AuthenticationContextPolicy $authenticationContextPolicy;
 
     /**
+     * What the pages show of this tenant besides its name (issue #449); nothing, for a tenant that
+     * declared none.
+     */
+    public private(set) TenantLook $look;
+
+    /**
      * @param AuthenticationContextPolicy|null $authenticationContextPolicy the default policy of decision 0010 when null
+     * @param TenantLook|null $look nothing when null, which renders the pages as a deployment that declares no look
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -32,6 +39,7 @@ final class Tenant
         public private(set) string $name,
         public readonly DateTimeImmutable $createdAt,
         ?AuthenticationContextPolicy $authenticationContextPolicy = null,
+        ?TenantLook $look = null,
     ) {
         if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
@@ -41,6 +49,7 @@ final class Tenant
         }
         $this->rename($name);
         $this->authenticationContextPolicy = $authenticationContextPolicy ?? AuthenticationContextPolicy::default();
+        $this->look = $look ?? TenantLook::none();
     }
 
     /**
@@ -49,6 +58,15 @@ final class Tenant
     public function adoptAuthenticationContextPolicy(AuthenticationContextPolicy $policy): void
     {
         $this->authenticationContextPolicy = $policy;
+    }
+
+    /**
+     * The tenant replaces what its pages show of it, its logo and its colours (issue #449); its name is
+     * renamed, being what everything else of the provider calls it.
+     */
+    public function adoptLook(TenantLook $look): void
+    {
+        $this->look = $look;
     }
 
     public function rename(string $name): void
