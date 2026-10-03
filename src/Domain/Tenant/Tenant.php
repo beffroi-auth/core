@@ -29,8 +29,14 @@ final class Tenant
     public private(set) TenantLook $look;
 
     /**
+     * What a person may change of themselves here (issue #452); nothing, until this tenant says otherwise.
+     */
+    public private(set) SelfServedClaims $selfServedClaims;
+
+    /**
      * @param AuthenticationContextPolicy|null $authenticationContextPolicy the default policy of decision 0010 when null
      * @param TenantLook|null $look nothing when null, which renders the pages as a deployment that declares no look
+     * @param SelfServedClaims|null $selfServedClaims nothing when null, which lets a person change nothing of themselves
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -40,6 +46,7 @@ final class Tenant
         public readonly DateTimeImmutable $createdAt,
         ?AuthenticationContextPolicy $authenticationContextPolicy = null,
         ?TenantLook $look = null,
+        ?SelfServedClaims $selfServedClaims = null,
     ) {
         if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
@@ -50,6 +57,7 @@ final class Tenant
         $this->rename($name);
         $this->authenticationContextPolicy = $authenticationContextPolicy ?? AuthenticationContextPolicy::default();
         $this->look = $look ?? TenantLook::none();
+        $this->selfServedClaims = $selfServedClaims ?? SelfServedClaims::none();
     }
 
     /**
@@ -67,6 +75,15 @@ final class Tenant
     public function adoptLook(TenantLook $look): void
     {
         $this->look = $look;
+    }
+
+    /**
+     * The tenant replaces what its people may change of themselves (issue #452), as it replaces its "acr"
+     * vocabulary and its look: whole, and never one claim at a time.
+     */
+    public function adoptSelfServedClaims(SelfServedClaims $claims): void
+    {
+        $this->selfServedClaims = $claims;
     }
 
     public function rename(string $name): void
