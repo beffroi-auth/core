@@ -31,7 +31,8 @@ use function sprintf;
  * Rotation without an outage (OIDC Core §10.1.1, architecture §3.3): stage() publishes a key before it is
  * used, activate() puts it to work and starts retiring the previous one, retireDue() removes a key once
  * everything bound to it has expired. rotate() does the first two steps at once; activateDue() does the
- * second one when the staging window has ended.
+ * second one when the staging window has ended, and stageSuccessorsDue() is what starts a rotation nobody
+ * asked for, when a key has worked for the age a deployment gives one (issue #455).
  *
  * The same four steps for a key that signs and for a key a client encrypts to: what changes between the
  * two is only how long the retirement window lasts, and that is read from the kinds of artifact that name
@@ -42,6 +43,7 @@ final readonly class TenantKeyRotator
     /**
      * @param iterable<KeyBoundArtifactInterface> $artifacts the longest lifetime among those of the use of a key dates its retirement
      * @param DateInterval $stagingDelay how long a staged key stays published before it is used: what a relying party needs to see it
+     * @param DateInterval $age how long a key works before a successor is staged for it, counted from its activation
      */
     public function __construct(
         private TenantKeyRepositoryInterface $keys,
@@ -49,6 +51,7 @@ final readonly class TenantKeyRotator
         private KeySealerInterface $sealer,
         private iterable $artifacts,
         private DateInterval $stagingDelay,
+        private DateInterval $age,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -111,6 +114,49 @@ final readonly class TenantKeyRotator
         $now = $this->clock->now();
 
         return $this->takeOver($this->publish($tenant, $algorithm, $context, $now, $now), $context, compromised: true);
+    }
+
+    /**
+     * The timed step that starts a rotation nobody asked for (issue #455): an active key that has worked
+     * for the age of a key gets a successor of its own algorithm, staged and not activated.
+     *
+     * **Staged and not rotated**, because that is the whole point of the staging window: a relying party
+     * sees the new "kid" in the JWK Set before anything is signed with it, and the two steps that already
+     * exist finish the work, activateDue() when the window ends and retireDue() when the old key has
+     * nothing left alive. A step that rotated would make a rotation without an outage out of a rotation
+     * nobody watched.
+     *
+     * **Idempotent by what it looks at and not by a flag**: a key gets a successor only when its
+     * algorithm has no staged key, so the tick that follows finds the one this call staged and stages
+     * nothing. The reading is one pass over the published keys, the staged ones included.
+     *
+     * @return list<TenantKey> the successors staged by this call
+     *
+     * @throws LogicException if the age is not longer than the retirement window of what the key is for:
+     *                        each successor would then start retiring before the previous key had
+     *                        retired, and the JWK Set would grow with every rotation
+     */
+    public function stageSuccessorsDue(Tenant $tenant, RequestContext $context): array
+    {
+        $now = $this->clock->now();
+        $published = $this->keys->findPublished($tenant);
+        $awaited = [];
+        foreach ($published as $key) {
+            if ($key->isStaged()) {
+                $awaited[$key->algorithm->name()] = true;
+            }
+        }
+        $staged = [];
+        foreach ($published as $key) {
+            if (! $key->hasReachedItsAge($now, $this->age) || isset($awaited[$key->algorithm->name()])) {
+                continue;
+            }
+            $this->assertTheAgeOutlasts($tenant, $key, $now);
+            $staged[] = $this->publish($tenant, $key->algorithm, $context, $now, $now->add($this->stagingDelay));
+            $awaited[$key->algorithm->name()] = true;
+        }
+
+        return $staged;
     }
 
     /**
@@ -219,6 +265,28 @@ final readonly class TenantKeyRotator
         }
 
         return $due;
+    }
+
+    /**
+     * The age has to outlast what a key of that use holds back, and the comparison is made here because
+     * here is the one place both numbers exist: the age is the deployment's and the window is the tenant's,
+     * read from the kinds of artifact that name the use. A deployment that got it wrong hears it on the
+     * first tick rather than finding its JWK Set grown a quarter later.
+     *
+     * @throws LogicException
+     */
+    private function assertTheAgeOutlasts(Tenant $tenant, TenantKey $key, DateTimeImmutable $now): void
+    {
+        $window = $this->retirementDue($tenant, $key->algorithm->keyUse(), $now);
+        if ($now->add($this->age) > $window) {
+            return;
+        }
+        throw new LogicException(sprintf(
+            'A key of the "%s" use works for %s and what it holds back lives until %s: the age of a key is longer than that window, or every rotation leaves a key behind in the JWK Set.',
+            $key->algorithm->keyUse()->value,
+            $now->add($this->age)->format(DateTimeImmutable::RFC3339),
+            $window->format(DateTimeImmutable::RFC3339),
+        ));
     }
 
     private function findOrFail(Tenant $tenant, string $kid): TenantKey

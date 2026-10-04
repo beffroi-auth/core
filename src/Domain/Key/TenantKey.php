@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Key;
 
+use DateInterval;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
@@ -153,5 +154,21 @@ final class TenantKey
     public function isDue(DateTimeImmutable $now): bool
     {
         return $this->status === KeyStatus::Retiring && $this->retirementDueAt !== null && $this->retirementDueAt <= $now;
+    }
+
+    /**
+     * Active and working for longer than the age a deployment gives a key (issue #455): what a successor
+     * is staged for. The age is counted from the activation and not from the creation, because what it
+     * bounds is how long this key has been the one in use: a key that waited a week in the staging window
+     * has not worked for that week.
+     *
+     * It is read here rather than computed by whoever asks, so that the step of the planning, the command
+     * that reports and a test all ask the key the same question. How long the age is is the deployment's
+     * and comes in as a parameter, as the moment does: a key carries the dates of its own life and not a
+     * duration somebody configured.
+     */
+    public function hasReachedItsAge(DateTimeImmutable $now, DateInterval $age): bool
+    {
+        return $this->status === KeyStatus::Active && $this->activatedAt !== null && $this->activatedAt->add($age) <= $now;
     }
 }
