@@ -20,6 +20,7 @@ final readonly class JoseKeyAlgorithms implements KeyAlgorithmsInterface
         private JoseSignatureAlgorithms $signature,
         private JoseKeyEncryptionAlgorithms $keyEncryption,
         private JoseApplicationServerAlgorithms $applicationServer,
+        private JoseMessageSealingAlgorithms $messageSealing,
     ) {
     }
 
@@ -28,13 +29,13 @@ final readonly class JoseKeyAlgorithms implements KeyAlgorithmsInterface
      */
     public function all(): array
     {
-        return [...$this->signature->all(), ...$this->keyEncryption->all(), ...$this->applicationServer->all()];
+        return [...$this->signature->all(), ...$this->keyEncryption->all(), ...$this->applicationServer->all(), ...$this->messageSealing->all()];
     }
 
     public function named(string $name): JoseKeyAlgorithmInterface
     {
         $refusals = [];
-        foreach ([$this->signature, $this->keyEncryption, $this->applicationServer] as $registry) {
+        foreach ([$this->signature, $this->keyEncryption, $this->applicationServer, $this->messageSealing] as $registry) {
             try {
                 return $registry->named($name);
             } catch (UnsupportedAlgorithmException $refusal) {

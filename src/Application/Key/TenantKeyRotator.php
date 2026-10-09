@@ -84,7 +84,7 @@ final readonly class TenantKeyRotator
     {
         $now = $this->clock->now();
         $activated = [];
-        foreach ($this->keys->findPublished($tenant) as $key) {
+        foreach ($this->keys->findInService($tenant) as $key) {
             if ($key->isDueForActivation($now)) {
                 $activated[] = $this->takeOver($key, $context, compromised: false);
             }
@@ -128,7 +128,7 @@ final readonly class TenantKeyRotator
      *
      * **Idempotent by what it looks at and not by a flag**: a key gets a successor only when its
      * algorithm has no staged key, so the tick that follows finds the one this call staged and stages
-     * nothing. The reading is one pass over the published keys, the staged ones included.
+     * nothing. The reading is one pass over the keys in service, the staged ones included.
      *
      * @return list<TenantKey> the successors staged by this call
      *
@@ -139,15 +139,15 @@ final readonly class TenantKeyRotator
     public function stageSuccessorsDue(Tenant $tenant, RequestContext $context): array
     {
         $now = $this->clock->now();
-        $published = $this->keys->findPublished($tenant);
+        $inService = $this->keys->findInService($tenant);
         $awaited = [];
-        foreach ($published as $key) {
+        foreach ($inService as $key) {
             if ($key->isStaged()) {
                 $awaited[$key->algorithm->name()] = true;
             }
         }
         $staged = [];
-        foreach ($published as $key) {
+        foreach ($inService as $key) {
             if (! $key->hasReachedItsAge($now, $this->age) || isset($awaited[$key->algorithm->name()])) {
                 continue;
             }
@@ -168,7 +168,7 @@ final readonly class TenantKeyRotator
     {
         $now = $this->clock->now();
         $retired = [];
-        foreach ($this->keys->findPublished($tenant) as $key) {
+        foreach ($this->keys->findInService($tenant) as $key) {
             if (! $key->isDue($now)) {
                 continue;
             }

@@ -6,6 +6,7 @@ namespace Beffroi\Core\Bridge\Key;
 
 use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeyUse;
+use Beffroi\Core\Domain\Key\MessageSealingAlgorithmInterface;
 use Beffroi\Core\Domain\Key\PublicKeySet;
 use Beffroi\Core\Domain\Key\SignatureAlgorithmInterface;
 use Beffroi\Core\Domain\Key\TenantKey;
@@ -15,6 +16,7 @@ use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
 use Beffroi\Core\Port\DecryptionKeyProviderInterface;
 use Beffroi\Core\Port\KeySealerInterface;
+use Beffroi\Core\Port\MessageKeyProviderInterface;
 use Beffroi\Core\Port\PublicKeySetProviderInterface;
 use Beffroi\Core\Port\SigningKeyProviderInterface;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
@@ -27,17 +29,21 @@ use function sprintf;
  * The capabilities of a key store are a port each here, and a caller holds the one it uses: what signs
  * asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
  * header names, what publishes asks for the set, what pushes to a browser asks for the key that browser
- * was handed. A key that signs is never handed out to open a JWE, nor one that opens a JWE to sign: the
- * use is asserted here and not deduced from the caller (RFC 7517 §4.2).
+ * was handed, what writes to a transport asks for the key the tenant seals to. A key that signs is never
+ * handed out to open a JWE, nor one that opens a JWE to sign: the use is asserted here and not deduced
+ * from the caller (RFC 7517 §4.2), and a family of keys is never answered to the caller of another.
  *
- * The JWK Set is what the tenant publishes to whoever reads its issuer, so the keys it hands out itself
- * are not in it (ApplicationServerAlgorithmInterface): the browser that is given one is given it by the
- * page it subscribes on, and a relying party reading the set would find a key no token of this provider
- * will ever name.
+ * The JWK Set is what the tenant publishes to whoever reads its issuer, so the keys it keeps are not in
+ * it and are never answered to a reader of it: the key the browser is given is given by the page it
+ * subscribes on, and the key a message body is sealed to would make that body forgeable by anyone who
+ * read the set (decision 0020). Which keys those are is read from the algorithm
+ * (PublishedKeyAlgorithmInterface) and not enumerated here, so a family added to either side needs no
+ * line in this class.
  */
 final class SealedKeyProvider implements
     ApplicationServerKeyProviderInterface,
     DecryptionKeyProviderInterface,
+    MessageKeyProviderInterface,
     PublicKeySetProviderInterface,
     SigningKeyProviderInterface
 {
@@ -76,11 +82,18 @@ final class SealedKeyProvider implements
         if ($key === null) {
             throw new KeyNotFoundException(sprintf('Tenant "%s" publishes no key "%s".', $tenant->slug, $kid));
         }
-        if (! $key->isPublished()) {
+        if (! $key->isInService()) {
             unset($this->opened[self::index($tenant, $kid)]);
 
             throw new KeyNotFoundException(sprintf(
                 'The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.',
+                $kid,
+                $tenant->slug,
+            ));
+        }
+        if (! $key->isPublished()) {
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" is one it keeps; it is not a key a client encrypts to.',
                 $kid,
                 $tenant->slug,
             ));
@@ -90,16 +103,43 @@ final class SealedKeyProvider implements
         return $this->open($tenant, $key);
     }
 
-    public function publicKeys(Tenant $tenant): PublicKeySet
+    public function activeMessageKey(Tenant $tenant, MessageSealingAlgorithmInterface $algorithm): TenantKey
     {
-        $published = [];
-        foreach ($this->keys->findPublished($tenant) as $key) {
-            if (! $key->algorithm instanceof ApplicationServerAlgorithmInterface) {
-                $published[] = $key;
-            }
+        return (
+            $this->keys->findActive($tenant, $algorithm) ?? throw new KeyNotFoundException(sprintf(
+                'Tenant "%s" has no active %s key: nothing it writes to a transport can be sealed.',
+                $tenant->slug,
+                $algorithm->name(),
+            ))
+        );
+    }
+
+    public function messageKey(Tenant $tenant, string $kid): UnsealedKey
+    {
+        $key = $this->keys->find($tenant, $kid);
+        if ($key === null || ! $key->isInService()) {
+            unset($this->opened[self::index($tenant, $kid)]);
+
+            throw new KeyNotFoundException(sprintf(
+                'Tenant "%s" seals nothing to "%s" any more: a body sealed to it is not opened.',
+                $tenant->slug,
+                $kid,
+            ));
+        }
+        if (! $key->algorithm instanceof MessageSealingAlgorithmInterface) {
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" is not one it seals what leaves the process to.',
+                $kid,
+                $tenant->slug,
+            ));
         }
 
-        return new PublicKeySet($published);
+        return $this->open($tenant, $key);
+    }
+
+    public function publicKeys(Tenant $tenant): PublicKeySet
+    {
+        return PublicKeySet::published($this->keys->findInService($tenant));
     }
 
     public function activeApplicationServerKey(Tenant $tenant, ApplicationServerAlgorithmInterface $algorithm): TenantKey
@@ -116,7 +156,7 @@ final class SealedKeyProvider implements
     public function applicationServerKey(Tenant $tenant, string $kid): UnsealedKey
     {
         $key = $this->keys->find($tenant, $kid);
-        if ($key === null || ! $key->isPublished()) {
+        if ($key === null || ! $key->isInService()) {
             unset($this->opened[self::index($tenant, $kid)]);
 
             throw new KeyNotFoundException(sprintf(

@@ -22,6 +22,10 @@ use function sprintf;
  * a key of a key encryption algorithm opens a JWE, and the "use" its JWK publishes is asserted against
  * the algorithm rather than trusted (RFC 7517 §4.2). The two lives are the same life, so there is one
  * class, one repository and one set of commands for both.
+ *
+ * Whether the tenant publishes the key is another question than whether it still holds it, and the two
+ * are read apart: isInService() is the status, isPublished() is the JWK Set, which carries the keys in
+ * service of the algorithms the tenant publishes for (PublishedKeyAlgorithmInterface) and no other.
  */
 final class TenantKey
 {
@@ -135,9 +139,22 @@ final class TenantKey
         return $this->status === KeyStatus::Active;
     }
 
+    /**
+     * Staged, active or retiring: the tenant still holds it, whether or not it publishes it.
+     */
+    public function isInService(): bool
+    {
+        return $this->status->isInService();
+    }
+
+    /**
+     * In the JWK Set of the tenant: in service, and of an algorithm the tenant publishes for. A key it
+     * keeps is never published, whatever its status (decision 0020): the one it hands out to browsers
+     * itself and the one it seals what leaves the process to.
+     */
     public function isPublished(): bool
     {
-        return $this->status->isPublished();
+        return $this->status->isInService() && $this->algorithm instanceof PublishedKeyAlgorithmInterface;
     }
 
     /**

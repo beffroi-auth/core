@@ -22,11 +22,13 @@ interface TenantKeyRepositoryInterface
     public function findActive(Tenant $tenant, KeyAlgorithmInterface $algorithm): ?TenantKey;
 
     /**
-     * Staged, active and retiring keys, in creation order.
+     * Staged, active and retiring keys, in creation order: what the tenant still holds, the keys it keeps
+     * included. What it publishes is narrower (PublicKeySet::published(), decision 0020), and a lifecycle
+     * step walks this list rather than that one: a key the tenant never publishes rotates like the others.
      *
      * @return list<TenantKey>
      */
-    public function findPublished(Tenant $tenant): array;
+    public function findInService(Tenant $tenant): array;
 
     /**
      * Every key the tenant ever had, the retired ones included, in creation order.

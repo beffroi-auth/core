@@ -10,7 +10,11 @@ namespace Beffroi\Core\Domain\Key;
  * an algorithm that gives forward secrecy or an RSA-OAEP one, which is why the two wired here are
  * "ECDH-ES+A256KW" over P-256 (§4.6) and "RSA-OAEP-256" (§4.3); RSA1_5 is refused everywhere
  * (RFC 8725 §3.4) and "dir" would mean a shared secret, which a provider published key is not.
+ *
+ * A key of such an algorithm is one the tenant publishes: a client reads its JWK Set to know what to
+ * encrypt to. What the provider seals its own messages to is a key it keeps and never publishes
+ * (MessageSealingAlgorithmInterface, decision 0020).
  */
-interface KeyEncryptionAlgorithmInterface extends KeyAlgorithmInterface
+interface KeyEncryptionAlgorithmInterface extends PublishedKeyAlgorithmInterface
 {
 }
