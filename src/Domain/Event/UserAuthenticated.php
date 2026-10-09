@@ -9,8 +9,9 @@ use Beffroi\Core\Domain\Session\AuthenticationSession;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Symfony\Component\Uid\Uuid;
 
-final readonly class UserAuthenticated implements ConcernsAPersonInterface
+final readonly class UserAuthenticated implements ConcernsAPersonInterface, SessionProvenanceInterface
 {
     /**
      * The name of the act, which is what the journal writes down (issue #454).
@@ -39,5 +40,10 @@ final readonly class UserAuthenticated implements ConcernsAPersonInterface
     public function subject(): Subject
     {
         return $this->session->user->subject;
+    }
+
+    public function sessionId(): Uuid
+    {
+        return $this->session->id;
     }
 }
