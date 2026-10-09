@@ -33,7 +33,7 @@ final class AuthenticationSession
         public readonly User $user,
         public readonly DateTimeImmutable $establishedAt,
         AuthenticationProofs $proofs,
-        public readonly RequestContext $createdFrom,
+        public private(set) RequestContext $createdFrom,
         public private(set) DateTimeImmutable $expiresAt,
     ) {
         if (! $user->belongsTo($tenant)) {
@@ -89,6 +89,22 @@ final class AuthenticationSession
         $this->proofs = $this->proofs->with($method, $context->receivedAt);
         $this->lastSeenFrom = $context;
         $this->lastSeenAt = $context->receivedAt;
+    }
+
+    /**
+     * The places the enrichment found for the two provenances of this session (issue #473). It happens
+     * after the request that opened the session and never in it (architecture §3.5), so this is the one
+     * thing on a session that is written long after the fact, and it is written on an ended session too:
+     * a message that arrives after a logout is late, not wrong.
+     *
+     * **It takes the places and not the provenances**: what a request carried, the address, the user agent
+     * and the moment it reached this provider, is what reached this provider, and nothing that runs later
+     * rewrites it.
+     */
+    public function locate(?GeoLocation $createdIn, ?GeoLocation $lastSeenIn): void
+    {
+        $this->createdFrom = $this->createdFrom->withLocation($createdIn);
+        $this->lastSeenFrom = $this->lastSeenFrom->withLocation($lastSeenIn);
     }
 
     /**
