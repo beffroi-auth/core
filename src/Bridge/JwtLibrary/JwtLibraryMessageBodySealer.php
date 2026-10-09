@@ -43,7 +43,7 @@ final readonly class JwtLibraryMessageBodySealer implements MessageBodySealerInt
     public function seal(Tenant $tenant, string $body): string
     {
         $algorithm = $this->algorithms->defaultAlgorithm();
-        $key = $this->keys->activeMessageKey($tenant, $algorithm);
+        $key = $this->keys->sealingKey($tenant, $algorithm);
         $alg = $algorithm->keyEncryption()->name();
 
         try {

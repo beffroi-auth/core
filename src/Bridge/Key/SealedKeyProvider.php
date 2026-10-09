@@ -103,15 +103,22 @@ final class SealedKeyProvider implements
         return $this->open($tenant, $key);
     }
 
-    public function activeMessageKey(Tenant $tenant, MessageSealingAlgorithmInterface $algorithm): TenantKey
+    public function sealingKey(Tenant $tenant, MessageSealingAlgorithmInterface $algorithm): TenantKey
     {
-        return (
-            $this->keys->findActive($tenant, $algorithm) ?? throw new KeyNotFoundException(sprintf(
-                'Tenant "%s" has no active %s key: nothing it writes to a transport can be sealed.',
-                $tenant->slug,
-                $algorithm->name(),
-            ))
-        );
+        $sealing = null;
+        // the newest in service and not the active one: the keys come in creation order, and a key the
+        // tenant never publishes has nobody to wait through a staging window for (issue #548)
+        foreach ($this->keys->findInService($tenant) as $key) {
+            if ($key->algorithm->name() === $algorithm->name()) {
+                $sealing = $key;
+            }
+        }
+
+        return $sealing ?? throw new KeyNotFoundException(sprintf(
+            'Tenant "%s" holds no %s key: it is the first key a tenant is given, and nothing it writes to a transport leaves the process before it exists.',
+            $tenant->slug,
+            $algorithm->name(),
+        ));
     }
 
     public function messageKey(Tenant $tenant, string $kid): UnsealedKey
