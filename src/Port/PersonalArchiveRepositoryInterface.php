@@ -35,6 +35,13 @@ interface PersonalArchiveRepositoryInterface
     public function save(PersonalArchive $archive): void;
 
     /**
+     * Drops one archive, because the person it is of asked for it to be dropped (ArchiveDisposal). The row
+     * goes and leaves nothing behind: an archive is the one file where every sealed column stands in clear
+     * at once, so what is kept of it once its owner is done with it is nothing.
+     */
+    public function forget(PersonalArchive $archive): void;
+
+    /**
      * Forgets the archives of this tenant that expired before the moment given, and says how many it
      * forgot. Bounded by the implementation, so a backlog is worked through over several runs.
      */

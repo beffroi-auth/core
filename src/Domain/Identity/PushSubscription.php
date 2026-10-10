@@ -8,9 +8,11 @@ use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use function hash;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use function mb_strlen;
 use function preg_match;
 use function sprintf;
 use function str_starts_with;
+use function trim;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -42,6 +44,13 @@ final class PushSubscription
      * alphabet is.
      */
     private const string BASE64URL_PATTERN = '/^[A-Za-z0-9_-]+$/D';
+
+    /**
+     * What a user may call one of their browsers, the length of the column that holds it. The rule is
+     * here, where the label is held, and not where a form is read: a label this object would refuse is
+     * refused whoever hands it over.
+     */
+    public const int LABEL_MAX_LENGTH = 255;
 
     /**
      * Restated from the user (decision 0002).
@@ -105,6 +114,28 @@ final class PushSubscription
         $this->applicationServerKid = $applicationServerKid;
         $this->label = $label;
         $this->revokedAt = null;
+    }
+
+    /**
+     * The user names this browser, and names it again (architecture §5.2): what tells one of their
+     * browsers from another is a name they wrote, so correcting it is their own act. Nothing of the
+     * subscription moves, the endpoint, the two keys and the key it is bound to being what the browser
+     * handed over, and nothing of it is read by a push.
+     *
+     * **A label that is not one is refused here and dropped at a subscription**, where the same rule reads
+     * the same constant. The two answers are the two acts: a browser subscribing has just proven it can be
+     * reached, which is worth recording under no name at all, and a person typing a name into the line
+     * they read it in is doing nothing else.
+     *
+     * @throws InvalidArgumentException when the label is empty or longer than the column holds
+     */
+    public function rename(string $label): void
+    {
+        $label = trim($label);
+        if ($label === '' || mb_strlen($label) > self::LABEL_MAX_LENGTH) {
+            throw new InvalidArgumentException(sprintf('The name of a browser is 1 to %d characters long.', self::LABEL_MAX_LENGTH));
+        }
+        $this->label = $label;
     }
 
     /**

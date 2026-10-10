@@ -46,6 +46,11 @@ final class InMemoryPersonalArchiveRepository implements PersonalArchiveReposito
         $this->archives[$archive->id->toRfc4122()] = $archive;
     }
 
+    public function forget(PersonalArchive $archive): void
+    {
+        unset($this->archives[$archive->id->toRfc4122()]);
+    }
+
     public function forgetExpired(Tenant $tenant, DateTimeImmutable $moment): int
     {
         $forgotten = 0;
