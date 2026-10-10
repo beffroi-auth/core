@@ -29,6 +29,11 @@ use Symfony\Component\Uid\Uuid;
  *   row always carries the date it goes away on, whatever happened to the build: one that never ran is
  *   forgotten on the same date as one that did.
  *
+ * **A build is given a delay and no more** (BUILT_WITHIN_MINUTES). Nothing comes back to say a build threw
+ * or that nobody was consuming the lane, so a row past that delay and still empty is a row this provider
+ * says it is not building: what a page may not do is show a week of "being built" for work nobody is
+ * doing, and what a person may not be is stuck behind it.
+ *
  * It names itself by its identifier and never by the person, because what a person downloads carries that
  * name in a header a proxy writes to a log.
  */
@@ -39,6 +44,13 @@ final class PersonalArchive
      * a Friday has, and a figure in code rather than an option: see above.
      */
     public const int KEPT_FOR_DAYS = 7;
+
+    /**
+     * How long a build is given before this provider says it did not come back. The lane gives up on a
+     * message in under a minute of tries, so a quarter of an hour is a build that failed and not a build
+     * that is slow, and the figure is in code for the reason the duration above is.
+     */
+    public const int BUILT_WITHIN_MINUTES = 15;
 
     /**
      * What a person downloads, which is what RGPD article 20 asks for: a format that is structured,
@@ -105,6 +117,17 @@ final class PersonalArchive
     public function hasExpired(DateTimeImmutable $now): bool
     {
         return $now >= $this->expiresAt;
+    }
+
+    /**
+     * Asked for, still empty, and the delay a build is given has passed: nobody is building this one.
+     *
+     * A row that has expired is nothing to a reader whether or not its build ever ran, so a caller reads
+     * hasExpired() first, as ArchivePage and ArchiveRequest do.
+     */
+    public function hasStalled(DateTimeImmutable $now): bool
+    {
+        return ! $this->isReady() && $now >= $this->askedAt->modify(sprintf('+%d minutes', self::BUILT_WITHIN_MINUTES));
     }
 
     /**

@@ -23,6 +23,11 @@ use Symfony\Component\Uid\Uuid;
  * **Asking again while one is being built gives that one back**, so a second click is not a second build
  * and nobody fills a queue by holding a button. Asking once one is ready starts a new one: what a person
  * asks for is what this provider holds now, and a file built last Tuesday is not that.
+ *
+ * **A build that did not come back is replaced and not waited on** (PersonalArchive::hasStalled()). The
+ * row a build never filled holds nothing and nothing will fill it, so asking again takes it away and
+ * opens one of its own: a person whose build threw is a person asking for their data again, not a person
+ * who has to wait out the week the row was going to be kept.
  */
 final readonly class ArchiveRequest
 {
@@ -38,7 +43,10 @@ final readonly class ArchiveRequest
         $now = $this->clock->now();
         $pending = $this->archives->latestOf($user);
         if ($pending !== null && ! $pending->isReady() && ! $pending->hasExpired($now)) {
-            return $pending;
+            if (! $pending->hasStalled($now)) {
+                return $pending;
+            }
+            $this->archives->forget($pending);
         }
         $archive = PersonalArchive::asked(Uuid::v7(), $user, $now);
         $this->archives->save($archive);

@@ -23,8 +23,11 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * **There is no identifier to pass**, as in ArchiveHandout: what this drops is the last archive of the
  * person who asks, so the archive of somebody else is not refused here, it is not reachable from here.
  *
- * **A file still being built is not dropped.** There is nothing to drop yet, and the build is on its way
- * to a row it would then not find; asking for one again once it is ready is what replaces it.
+ * **What is dropped is the request, in whatever state it is in.** A person who asked and changed their
+ * mind, and a person whose build did not come back, both have one row and one thing to say about it, so
+ * the state of that row decides nothing here: a build on its way to a row that went away under it finds
+ * none and writes nothing (ArchiveAssembly::assemble()), which is what makes a request something a person
+ * can take back.
  */
 final readonly class ArchiveDisposal
 {
@@ -36,13 +39,13 @@ final readonly class ArchiveDisposal
     }
 
     /**
-     * Says whether there was a file to drop, so that the page of the account can tell the person who
+     * Says whether there was a request to drop, so that the page of the account can tell the person who
      * clicked twice from the person whose file went away under them.
      */
     public function droppedBy(User $user, RequestContext $context): bool
     {
         $archive = $this->archives->latestOf($user);
-        if ($archive === null || ! $archive->isReady()) {
+        if ($archive === null) {
             return false;
         }
         $this->archives->forget($archive);
