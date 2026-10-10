@@ -118,6 +118,26 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
     }
 
     /**
+     * Another set of backup codes, drawn because the person asked for one (architecture §3.1): the codes
+     * they had are gone, spent or not, which is what asking for new ones means. What the authenticator
+     * proves is untouched, so this is not the enrolment of a second credential, and the date of the last
+     * use is a fact about this one and stays.
+     *
+     * @param list<BackupCode> $backupCodes
+     *
+     * @throws InvalidArgumentException when they are not as many as a credential of this kind holds
+     * @throws LogicException when the credential is revoked: it proves nothing to renew codes for
+     */
+    public function renewBackupCodes(array $backupCodes): void
+    {
+        $this->refuseIfRevoked();
+        if (count($backupCodes) !== self::BACKUP_CODES) {
+            throw new InvalidArgumentException(sprintf('A TOTP credential holds %d backup codes.', self::BACKUP_CODES));
+        }
+        $this->backupCodes = $backupCodes;
+    }
+
+    /**
      * The code at that position of the list is spent and the credential used.
      */
     public function spendBackupCode(int $index, DateTimeImmutable $now): void

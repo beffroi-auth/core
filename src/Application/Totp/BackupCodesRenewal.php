@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Beffroi\Core\Application\Totp;
+
+use Beffroi\Core\Domain\Credential\BackupCode;
+use Beffroi\Core\Domain\Credential\TotpCredential;
+use Beffroi\Core\Domain\Event\BackupCodesRenewed;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Beffroi\Core\Port\RandomnessInterface;
+use Psr\Clock\ClockInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+
+/**
+ * Another set of backup codes for the second factor a person already holds (architecture §3.1): the ones
+ * they had stop working at that instant, spent or not, which is what asking for new ones means.
+ *
+ * **It is not an enrolment.** The authenticator and what it proves are untouched, so nothing is scanned
+ * again and no code is asked for: what a person who lost their list needs is a list, not a ceremony.
+ *
+ * **The codes are given back in the clear once, to the caller who asked**, as the enrolment gives them,
+ * and what is stored is the hash of each one, as a password is.
+ */
+final readonly class BackupCodesRenewal
+{
+    public function __construct(
+        private CredentialRepositoryInterface $credentials,
+        private RandomnessInterface $randomness,
+        private PasswordHasherInterface $hasher,
+        private ClockInterface $clock,
+        private EventDispatcherInterface $events,
+    ) {
+    }
+
+    /**
+     * @return list<string> the codes as they are spelled to the person, shown this once
+     *
+     * @throws InvalidArgumentException when the credential does not take the set that was drawn
+     * @throws LogicException when the credential is revoked: it proves nothing to renew codes for
+     */
+    public function renew(TotpCredential $totp, RequestContext $context): array
+    {
+        $spelled = [];
+        $drawn = [];
+        for ($code = 0; $code < TotpCredential::BACKUP_CODES; ++$code) {
+            $one = BackupCode::spelledBy($this->randomness->bytes(BackupCode::LENGTH));
+            $spelled[] = $one;
+            $drawn[] = new BackupCode($this->hasher->hash(BackupCode::normalize($one)));
+        }
+        $totp->renewBackupCodes($drawn);
+        $this->credentials->save($totp);
+        $this->events->dispatch(new BackupCodesRenewed($totp, $this->clock->now(), $context));
+
+        return $spelled;
+    }
+}

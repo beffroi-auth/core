@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Beffroi\Core\Application\Credential;
+
+use Beffroi\Core\Domain\Credential\PasswordChangeRefusal;
+use Beffroi\Core\Domain\Credential\PasswordCredential;
+use Beffroi\Core\Domain\Credential\PlainPassword;
+use Beffroi\Core\Domain\Event\PasswordChanged;
+use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Exception\PasswordChangeRefusedException;
+use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasswordHasherInterface;
+use Psr\Clock\ClockInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use SensitiveParameter;
+
+/**
+ * A person replaces their own password, from a session they already hold (architecture §3.1). Not
+ * UserProvisioner::setPassword(), which is an operator writing a password for somebody: here the person
+ * proves the one in use before the one they pose is written.
+ *
+ * **The password in use is typed again and verified.** A session is not a proof that whoever holds it
+ * knows the password, which is exactly what matters here: a session somebody else took over does not get
+ * to replace the password it signed in with and lock its owner out.
+ *
+ * **What the guess costs is not counted against the login.** The attempts of a password login are
+ * counted per user (PasswordAttempts), and counting these there would let whoever holds a session spend
+ * the budget of the person whose session it is, which is the owner locked out by the form meant to
+ * protect them. What bounds a guess here is that one has to be signed in as that person to make it.
+ *
+ * **What happens to the other sessions is the caller's policy**, as it is for every act on a credential:
+ * this writes the password and says so.
+ */
+final readonly class PasswordChange
+{
+    public function __construct(
+        private CredentialRepositoryInterface $credentials,
+        private PasswordHasherInterface $hasher,
+        private ClockInterface $clock,
+        private EventDispatcherInterface $events,
+    ) {
+    }
+
+    /**
+     * @param string $inUse what was typed as the password in use, which is never what is stored
+     * @param PlainPassword $posed what the person wants instead, built where what a password has to be is
+     *                             checked
+     *
+     * @throws PasswordChangeRefusedException when the password in use was not typed, when the one posed is
+     *                                        the one already held, or when this person holds none
+     * @throws LogicException when no hasher of this deployment handles the algorithm the stored hash names
+     */
+    public function change(
+        User $user,
+        #[SensitiveParameter]
+        string $inUse,
+        #[SensitiveParameter]
+        PlainPassword $posed,
+        RequestContext $context,
+    ): void {
+        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
+        if (! $credential instanceof PasswordCredential) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::NoPasswordHeld,
+                'The user holds no password; there is nothing to replace.',
+            );
+        }
+        if (! $this->hasher->verify($credential->hash, $inUse)) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::WrongPassword,
+                'What was typed is not the password in use.',
+            );
+        }
+        if ($this->hasher->verify($credential->hash, $posed->value)) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::SameAsBefore,
+                'The password posed is the one already held.',
+            );
+        }
+        $now = $this->clock->now();
+        $credential->changePassword($this->hasher->hash($posed->value), $now);
+        $this->credentials->save($credential);
+        $this->events->dispatch(new PasswordChanged($credential, $now, $context));
+    }
+}
