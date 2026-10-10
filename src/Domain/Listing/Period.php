@@ -57,4 +57,13 @@ final readonly class Period
             $to?->setTime(23, 59, 59, 999_999),
         );
     }
+
+    /**
+     * Whether a moment is inside this stretch of time: an end nobody named holds everything on that side.
+     * What a store compares is one clock and not two, the ends being instants by the time they are here.
+     */
+    public function holds(DateTimeImmutable $moment): bool
+    {
+        return ($this->from === null || $moment >= $this->from) && ($this->to === null || $moment <= $this->to);
+    }
 }

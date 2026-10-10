@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\InMemory;
 
+use function array_values;
+use function array_filter;
+use Beffroi\Core\Domain\Listing\Period;
 use function hash_equals;
 use Beffroi\Core\Domain\Credential\Credential;
 use Beffroi\Core\Domain\Credential\ExternallyIdentifiedCredentialInterface;
@@ -28,9 +31,15 @@ final class InMemoryCredentialRepository implements CanPageCredentialsInterface,
      *
      * @return Listing<Credential>
      */
-    public function pageOfCredentials(User $user, string $kind, Pagination $pagination): Listing
+    public function pageOfCredentials(User $user, string $kind, Pagination $pagination, ?Period $period = null): Listing
     {
-        return Listing::of($this->findByUser($user, $kind), $pagination);
+        return Listing::of(
+            array_values(array_filter(
+                $this->findByUser($user, $kind),
+                static fn (Credential $credential): bool => $period?->holds($credential->createdAt) !== false,
+            )),
+            $pagination,
+        );
     }
 
     public function findByUser(User $user, string $kind = Credential::class): array

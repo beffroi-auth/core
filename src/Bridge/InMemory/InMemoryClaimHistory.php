@@ -40,10 +40,7 @@ final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, Ch
     {
         $theirs = array_values(array_filter(
             $this->ofTheirs($user),
-            static fn (ClaimChange $change): bool => (
-                ($period?->from === null || $change->changedAt >= $period->from)
-                && ($period?->to === null || $change->changedAt <= $period->to)
-            ),
+            static fn (ClaimChange $change): bool => $period?->holds($change->changedAt) !== false,
         ));
         usort($theirs, static fn (ClaimChange $a, ClaimChange $b): int => $b->id->compare($a->id));
 
