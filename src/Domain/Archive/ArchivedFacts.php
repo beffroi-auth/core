@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Archive;
 
+use Beffroi\Core\Domain\Encoding\Base64Url;
 use Beffroi\Core\Domain\Session\RequestContext;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -16,12 +17,25 @@ use DateTimeInterface;
  * A moment is written in the shape of RFC 3339, which is what RGPD article 20 means by machine readable.
  * Dates are held in UTC in this schema, so what a person reads here is UTC whatever their own clock says;
  * the pages of their account are where a date is shown in their time zone and their language (issue #469).
+ *
+ * A document is JSON, so a fact that is not text passes through here on its way in: a chapter never hands
+ * raw octets to the encoder, which is the one way a chapter can leave a person with no document at all.
  */
 final readonly class ArchivedFacts
 {
     public static function moment(?DateTimeImmutable $moment): ?string
     {
         return $moment?->format(DateTimeInterface::ATOM);
+    }
+
+    /**
+     * Raw octets a fact holds (a credential ID as a WebAuthn authenticator issued it), base64url, which is
+     * the alphabet the column holding them uses: what the row says and what the archive says of it are one
+     * text, and a reader comparing the two compares the same thing.
+     */
+    public static function octets(?string $octets): ?string
+    {
+        return $octets === null ? null : Base64Url::encode($octets);
     }
 
     /**

@@ -23,6 +23,10 @@ use Beffroi\Core\Port\CredentialRepositoryInterface;
  * What a kind declares it can do, it says by an interface: a credential that can be revoked carries the
  * day it was, and one a party presents by an identifier of its own carries that identifier, which the
  * browser holds already.
+ *
+ * **That identifier is raw octets** (a credential ID as a WebAuthn authenticator issued it), so it is
+ * written in the alphabet the column holding it uses, base64url: a document a person downloads is JSON,
+ * and bytes that are not text are what would make it no document at all.
  */
 final readonly class CredentialsChapter implements ArchiveChapterInterface
 {
@@ -44,7 +48,7 @@ final readonly class CredentialsChapter implements ArchiveChapterInterface
                 'kind' => $credential->kind(),
                 'id' => $credential->id->toRfc4122(),
                 'name' => $credential->label(),
-                'external_id' => $credential instanceof ExternallyIdentifiedCredentialInterface ? $credential->externalId : null,
+                'external_id' => $credential instanceof ExternallyIdentifiedCredentialInterface ? ArchivedFacts::octets($credential->externalId) : null,
                 'created_at' => ArchivedFacts::moment($credential->createdAt),
                 'last_used_at' => ArchivedFacts::moment($credential->lastUsedAt),
                 'revoked_at' => $credential instanceof RevocableCredentialInterface ? ArchivedFacts::moment($credential->revokedAt) : null,
