@@ -24,7 +24,10 @@ use Webauthn\TrustPath\EmptyTrustPath;
  * The provider holds the public key only: the private key never leaves the authenticator, and a passkey
  * has no member the provider could leak.
  */
-final class PasskeyCredential extends RevocableCredential implements ExternallyIdentifiedCredentialInterface, ProvingCredentialInterface
+final class PasskeyCredential extends RevocableCredential implements
+    ExternallyIdentifiedCredentialInterface,
+    NameableCredentialInterface,
+    ProvingCredentialInterface
 {
     public const int NAME_MAX_LENGTH = 255;
 
@@ -148,6 +151,15 @@ final class PasskeyCredential extends RevocableCredential implements ExternallyI
     public function kind(): string
     {
         return 'passkey';
+    }
+
+    /**
+     * The name its holder gave it, which is theirs to correct: the same rule as the one it was enrolled
+     * under, so a name this object would not have accepted then is not accepted now.
+     */
+    public function rename(string $name): void
+    {
+        $this->name = self::normalizeName($name);
     }
 
     public function label(): string
