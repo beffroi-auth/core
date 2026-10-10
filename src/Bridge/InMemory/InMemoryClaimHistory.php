@@ -9,10 +9,13 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
+use Beffroi\Core\Domain\Listing\Period;
 use Beffroi\Core\Port\CanPageChangesOfAPersonInterface;
 use Beffroi\Core\Port\ChangesOfAPersonInterface;
 use Beffroi\Core\Port\ClaimHistoryInterface;
+use function array_filter;
 use function array_slice;
+use function array_values;
 use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
 use function usort;
@@ -33,9 +36,15 @@ final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, Ch
     /**
      * @return Listing<ClaimChange>
      */
-    public function pageOfChanges(User $user, Pagination $pagination): Listing
+    public function pageOfChanges(User $user, Pagination $pagination, ?Period $period = null): Listing
     {
-        $theirs = $this->ofTheirs($user);
+        $theirs = array_values(array_filter(
+            $this->ofTheirs($user),
+            static fn (ClaimChange $change): bool => (
+                ($period?->from === null || $change->changedAt >= $period->from)
+                && ($period?->to === null || $change->changedAt <= $period->to)
+            ),
+        ));
         usort($theirs, static fn (ClaimChange $a, ClaimChange $b): int => $b->id->compare($a->id));
 
         return Listing::of($theirs, $pagination);
