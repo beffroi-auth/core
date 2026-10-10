@@ -7,6 +7,9 @@ namespace Beffroi\Core\Bridge\InMemory;
 use Beffroi\Core\Domain\Identity\ClaimChange;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Listing\Listing;
+use Beffroi\Core\Domain\Listing\Pagination;
+use Beffroi\Core\Port\CanPageChangesOfAPersonInterface;
 use Beffroi\Core\Port\ChangesOfAPersonInterface;
 use Beffroi\Core\Port\ClaimHistoryInterface;
 use function array_slice;
@@ -20,12 +23,23 @@ use function usort;
  * It bounds no run of the retention, having no table to hold: what the contract of the port means by
  * bounded is a store that would otherwise delete a year of rows in one statement.
  */
-final class InMemoryClaimHistory implements ChangesOfAPersonInterface, ClaimHistoryInterface
+final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, ChangesOfAPersonInterface, ClaimHistoryInterface
 {
     /**
      * @var array<string, ClaimChange>
      */
     private array $changes = [];
+
+    /**
+     * @return Listing<ClaimChange>
+     */
+    public function pageOfChanges(User $user, Pagination $pagination): Listing
+    {
+        $theirs = $this->ofTheirs($user);
+        usort($theirs, static fn (ClaimChange $a, ClaimChange $b): int => $b->id->compare($a->id));
+
+        return Listing::of($theirs, $pagination);
+    }
 
     public function record(ClaimChange $change): void
     {

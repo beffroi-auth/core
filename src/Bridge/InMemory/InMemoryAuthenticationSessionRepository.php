@@ -7,10 +7,13 @@ namespace Beffroi\Core\Bridge\InMemory;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Listing\Listing;
+use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Beffroi\Core\Port\CanPageActiveSessionsInterface;
 use Symfony\Component\Uid\Uuid;
 
-final class InMemoryAuthenticationSessionRepository implements AuthenticationSessionRepositoryInterface
+final class InMemoryAuthenticationSessionRepository implements AuthenticationSessionRepositoryInterface, CanPageActiveSessionsInterface
 {
     /**
      * @var array<string, AuthenticationSession>
@@ -25,6 +28,14 @@ final class InMemoryAuthenticationSessionRepository implements AuthenticationSes
     public function find(Uuid $id): ?AuthenticationSession
     {
         return $this->sessions[$id->toRfc4122()] ?? null;
+    }
+
+    /**
+     * @return Listing<AuthenticationSession>
+     */
+    public function pageOfActiveSessions(User $user, DateTimeImmutable $now, Pagination $pagination): Listing
+    {
+        return Listing::of($this->findActiveByUser($user, $now), $pagination);
     }
 
     public function findActiveByUser(User $user, DateTimeImmutable $now): array

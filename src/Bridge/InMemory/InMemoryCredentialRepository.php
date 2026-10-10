@@ -9,16 +9,29 @@ use Beffroi\Core\Domain\Credential\Credential;
 use Beffroi\Core\Domain\Credential\ExternallyIdentifiedCredentialInterface;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Domain\Listing\Listing;
+use Beffroi\Core\Domain\Listing\Pagination;
+use Beffroi\Core\Port\CanPageCredentialsInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 use function usort;
 
-final class InMemoryCredentialRepository implements CredentialRepositoryInterface
+final class InMemoryCredentialRepository implements CanPageCredentialsInterface, CredentialRepositoryInterface
 {
     /**
      * @var array<string, Credential>
      */
     private array $credentials = [];
+
+    /**
+     * @param class-string<Credential> $kind
+     *
+     * @return Listing<Credential>
+     */
+    public function pageOfCredentials(User $user, string $kind, Pagination $pagination): Listing
+    {
+        return Listing::of($this->findByUser($user, $kind), $pagination);
+    }
 
     public function findByUser(User $user, string $kind = Credential::class): array
     {

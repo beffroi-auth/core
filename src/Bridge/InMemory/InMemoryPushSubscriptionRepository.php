@@ -7,18 +7,29 @@ namespace Beffroi\Core\Bridge\InMemory;
 use Beffroi\Core\Domain\Identity\PushSubscription;
 use Beffroi\Core\Domain\Identity\User;
 use function hash_equals;
+use Beffroi\Core\Domain\Listing\Listing;
+use Beffroi\Core\Domain\Listing\Pagination;
+use Beffroi\Core\Port\CanPageActiveSubscriptionsInterface;
 use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * The push subscriptions in memory, for the tests and for a deployment that keeps nothing.
  */
-final class InMemoryPushSubscriptionRepository implements PushSubscriptionRepositoryInterface
+final class InMemoryPushSubscriptionRepository implements CanPageActiveSubscriptionsInterface, PushSubscriptionRepositoryInterface
 {
     /**
      * @var array<string, PushSubscription> by identifier, in the order they were saved
      */
     private array $subscriptions = [];
+
+    /**
+     * @return Listing<PushSubscription>
+     */
+    public function pageOfActiveSubscriptions(User $user, Pagination $pagination): Listing
+    {
+        return Listing::of($this->findActiveByUser($user), $pagination);
+    }
 
     public function findActiveByUser(User $user): array
     {
