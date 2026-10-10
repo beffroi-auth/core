@@ -12,6 +12,7 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Exception\PasswordChangeRefusedException;
+use Beffroi\Core\Exception\PasswordRefusedException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Psr\Clock\ClockInterface;
@@ -34,12 +35,18 @@ use SensitiveParameter;
  *
  * **What happens to the other sessions is the caller's policy**, as it is for every act on a credential:
  * this writes the password and says so.
+ *
+ * **What a list of compromised passwords says of the one posed is asked last**, after the two refusals
+ * this provider pronounces on its own: a person who mistyped the password they use now is answered
+ * without a prefix of anything leaving, and a password this provider will not hold is not sent out to be
+ * counted either.
  */
 final readonly class PasswordChange
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
         private PasswordHasherInterface $hasher,
+        private BreachedPasswordRefusal $breaches,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -52,6 +59,8 @@ final readonly class PasswordChange
      *
      * @throws PasswordChangeRefusedException when the password in use was not typed, when the one posed is
      *                                        the one already held, or when this person holds none
+     * @throws PasswordRefusedException when a list of compromised passwords counts the one posed, or could
+     *                                 not be asked
      * @throws LogicException when no hasher of this deployment handles the algorithm the stored hash names
      */
     public function change(
@@ -81,8 +90,14 @@ final readonly class PasswordChange
                 'The password posed is the one already held.',
             );
         }
+        // last of the refusals, because it is the only one that leaves this process: a person who typed
+        // the wrong password in use, or the one they already hold, is told so without anybody being asked
+        $count = $this->breaches->count($posed);
         $now = $this->clock->now();
         $credential->changePassword($this->hasher->hash($posed->value), $now);
+        if ($count->wasAsked()) {
+            $credential->notFoundInABreach($now);
+        }
         $this->credentials->save($credential);
         $this->events->dispatch(new PasswordChanged($credential, $now, $context));
     }

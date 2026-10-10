@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use DateInterval;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationMethod;
@@ -14,7 +15,28 @@ use Symfony\Component\Uid\Uuid;
  */
 final class PasswordCredential extends Credential implements ProvingCredentialInterface
 {
+    /**
+     * How long a password goes before the list of compromised passwords is asked about it again.
+     *
+     * Thirty days, because the lists are published in batches and a password that was clean yesterday is
+     * not found tomorrow by asking faster: one lookup a month per person who signs in is what the range
+     * endpoint is sized for, and a login that asked every time would be a login that waits on somebody
+     * else's service to say what it already knew.
+     */
+    public const string LOOKUP_AGAIN_AFTER = 'P30D';
+
     public private(set) DateTimeImmutable $hashChangedAt;
+
+    /**
+     * When the list of compromised passwords was last asked about this one, null while it never was.
+     */
+    public private(set) ?DateTimeImmutable $breachCheckedAt = null;
+
+    /**
+     * When it was found there, null while it was not. It outlives the login that found it, which is the
+     * point: a person is told on the pages of their account and not in the one request that noticed.
+     */
+    public private(set) ?DateTimeImmutable $breachFoundAt = null;
 
     public function __construct(
         Uuid $id,
@@ -47,7 +69,8 @@ final class PasswordCredential extends Credential implements ProvingCredentialIn
     }
 
     /**
-     * A stronger hash of the same password.
+     * A stronger hash of the same password. What the lists say of it is unchanged, the password being
+     * unchanged.
      */
     public function rehash(PasswordHash $hash, DateTimeImmutable $now): void
     {
@@ -57,10 +80,51 @@ final class PasswordCredential extends Credential implements ProvingCredentialIn
 
     /**
      * Another password; what happens to the sessions is the caller's policy.
+     *
+     * **What the lists said is forgotten here**, because they said it of the password that is gone: a new
+     * password carries no mark, and the use case that wrote it says what it had asked about this one.
      */
     public function changePassword(PasswordHash $hash, DateTimeImmutable $now): void
     {
         $this->hash = $hash;
         $this->hashChangedAt = $now;
+        $this->breachCheckedAt = null;
+        $this->breachFoundAt = null;
+    }
+
+    /**
+     * The list was asked and does not hold this password.
+     */
+    public function notFoundInABreach(DateTimeImmutable $now): void
+    {
+        $this->breachCheckedAt = $now;
+        $this->breachFoundAt = null;
+    }
+
+    /**
+     * The list holds it: somebody else has the plaintext of the password this user signs in with.
+     */
+    public function foundInABreach(DateTimeImmutable $now): void
+    {
+        $this->breachCheckedAt = $now;
+        $this->breachFoundAt = $now;
+    }
+
+    public function isBreached(): bool
+    {
+        return $this->breachFoundAt !== null;
+    }
+
+    /**
+     * Whether a list is to be asked about this password now: one that never was, or one whose last answer
+     * is older than the delay above. A login does not ask again what was asked yesterday.
+     */
+    public function dueForABreachLookup(DateTimeImmutable $now): bool
+    {
+        if ($this->breachCheckedAt === null) {
+            return true;
+        }
+
+        return $this->breachCheckedAt->add(new DateInterval(self::LOOKUP_AGAIN_AFTER)) <= $now;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Identity;
 
+use Beffroi\Core\Application\Credential\BreachedPasswordRefusal;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Credential\PlainPassword;
 use Beffroi\Core\Domain\Identity\Address;
@@ -13,6 +14,7 @@ use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\PasswordRefusedException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
@@ -31,6 +33,7 @@ final readonly class UserProvisioner
         private UserRepositoryInterface $users,
         private CredentialRepositoryInterface $credentials,
         private PasswordHasherInterface $hasher,
+        private BreachedPasswordRefusal $breaches,
         private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
     ) {
@@ -75,11 +78,18 @@ final readonly class UserProvisioner
     }
 
     /**
-     * What a password has to be is the PlainPassword's, checked where one is built; this hashes what it
-     * is given and stores it.
+     * What a password has to be on its own is the PlainPassword's, checked where one is built; what a list
+     * of compromised passwords says of it is asked here, before anything is hashed, because a lookup is
+     * input and output and a value object does none.
+     *
+     * The answer is written on the credential when there was one, so that the first login does not ask
+     * again what was just asked.
+     *
+     * @throws PasswordRefusedException when a list counts this password, or could not be asked
      */
     public function setPassword(User $user, #[SensitiveParameter] PlainPassword $password): PasswordCredential
     {
+        $count = $this->breaches->count($password);
         $now = $this->clock->now();
         $hash = $this->hasher->hash($password->value);
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
@@ -87,6 +97,9 @@ final readonly class UserProvisioner
             $credential = new PasswordCredential($this->uuids->timeOrdered(), $user, $hash, $now);
         } else {
             $credential->changePassword($hash, $now);
+        }
+        if ($count->wasAsked()) {
+            $credential->notFoundInABreach($now);
         }
         $this->credentials->save($credential);
 
