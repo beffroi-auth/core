@@ -12,6 +12,7 @@ use Beffroi\Core\Domain\Event\CredentialEnrolled;
 use Beffroi\Core\Domain\Event\CredentialRenamed;
 use Beffroi\Core\Domain\Event\CredentialForgotten;
 use Beffroi\Core\Domain\Event\CredentialRevoked;
+use Beffroi\Core\Domain\Event\EnrolmentTicketIssued;
 use Beffroi\Core\Domain\Event\PasskeyUsed;
 use Beffroi\Core\Domain\Event\PasswordChanged;
 use Beffroi\Core\Domain\Event\PasswordUsed;
@@ -58,6 +59,7 @@ final class ActsOfAnAccount
         CredentialEnrolled::NAME,
         CredentialRevoked::NAME,
         CredentialForgotten::NAME,
+        EnrolmentTicketIssued::NAME,
         CredentialRenamed::NAME,
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,

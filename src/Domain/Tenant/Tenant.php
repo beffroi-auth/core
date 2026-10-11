@@ -6,7 +6,8 @@ namespace Beffroi\Core\Domain\Tenant;
 
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Session\AuthenticationContextPolicy;
-use Beffroi\Core\Domain\Session\AuthenticationPredicate;
+use Beffroi\Core\Domain\Session\AuthenticationPredicateInterface;
+use Beffroi\Core\Domain\Session\SingleFactor;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
@@ -36,7 +37,7 @@ final class Tenant
 
     /**
      * What a login of this tenant proves at the least (issue #327), and therefore which credentials may
-     * prove one and be enrolled at all (AuthenticationPredicate::admits()). The single factor is every
+     * prove one and be enrolled at all (AuthenticationPredicateInterface::admits()). The single factor is every
      * login there is, so a tenant that names nothing behaves as this provider always did; a tenant that
      * names the phishing-resistant predicate signs its users in by passkey and by nothing else.
      *
@@ -44,13 +45,13 @@ final class Tenant
      * whoever administers the tenant, so that hardening is an act with a date and not a deployment
      * (TenantHardening).
      */
-    public private(set) AuthenticationPredicate $loginFloor;
+    public private(set) AuthenticationPredicateInterface $loginFloor;
 
     /**
      * @param AuthenticationContextPolicy|null $authenticationContextPolicy the default policy of decision 0010 when null
      * @param TenantLook|null $look nothing when null, which renders the pages as a deployment that declares no look
      * @param SelfServedClaims|null $selfServedClaims nothing when null, which lets a person change nothing of themselves
-     * @param AuthenticationPredicate|null $loginFloor the single factor when null, which admits every login this provider serves
+     * @param AuthenticationPredicateInterface|null $loginFloor the single factor when null, which admits every login this provider serves
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -61,7 +62,7 @@ final class Tenant
         ?AuthenticationContextPolicy $authenticationContextPolicy = null,
         ?TenantLook $look = null,
         ?SelfServedClaims $selfServedClaims = null,
-        ?AuthenticationPredicate $loginFloor = null,
+        ?AuthenticationPredicateInterface $loginFloor = null,
     ) {
         if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
@@ -73,7 +74,7 @@ final class Tenant
         $this->authenticationContextPolicy = $authenticationContextPolicy ?? AuthenticationContextPolicy::default();
         $this->look = $look ?? TenantLook::none();
         $this->selfServedClaims = $selfServedClaims ?? SelfServedClaims::none();
-        $this->loginFloor = $loginFloor ?? AuthenticationPredicate::SingleFactor;
+        $this->loginFloor = $loginFloor ?? new SingleFactor();
     }
 
     /**
@@ -107,7 +108,7 @@ final class Tenant
      * hardening does with the credentials it forbids; naming the single factor again opens the kinds back
      * up and gives nobody a credential, the ones the hardening revoked having to be posed again.
      */
-    public function adoptLoginFloor(AuthenticationPredicate $floor): void
+    public function adoptLoginFloor(AuthenticationPredicateInterface $floor): void
     {
         $this->loginFloor = $floor;
     }

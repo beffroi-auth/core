@@ -18,7 +18,7 @@ use function sprintf;
  * merely refuse the password at the door, it never holds one.
  *
  * **The question is asked of what the credential proves and never of its kind** (decision 0006, the
- * SOLID rule of the repository): the floor reads methods (AuthenticationPredicate::admits()), each kind
+ * SOLID rule of the repository): the floor reads methods (AuthenticationPredicateInterface::admits()), each kind
  * says which ones it proves (ProvingCredentialInterface::provableMethods()), and the kind is carried here
  * only to say so in the refusal. A kind added to this provider is admitted or refused by what it proves,
  * with nothing to edit here.
@@ -42,7 +42,7 @@ final readonly class EnrolmentRefusal
             'A %s proves no login of the tenant "%s", whose logins prove "%s" at the least: it is not enrolled here. What it would prove is %s.',
             $kind,
             $tenant->slug,
-            $tenant->loginFloor->value,
+            $tenant->loginFloor->name(),
             implode(', ', array_map(static fn (AuthenticationMethod $method): string => $method->value, $methods)),
         ));
     }

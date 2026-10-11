@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Beffroi\Core\Domain\Session;
+
+/**
+ * A proof of possession of a key held in hardware, "hwk" (OpenID Connect EAP ACR Values 1.0, "phrh"): a
+ * passkey bound to its authenticator, where PhishingResistant takes a synced one too.
+ */
+final readonly class PhishingResistantHardware extends AuthenticationPredicate
+{
+    public const string NAME = 'phishing_resistant_hardware';
+
+    public function name(): string
+    {
+        return self::NAME;
+    }
+
+    /**
+     * One hardware key proof is the whole of this predicate, so a login satisfies it exactly when it
+     * admits one of its proofs (PhishingResistant).
+     */
+    public function isSatisfiedBy(array $methods): bool
+    {
+        return $this->admits($methods);
+    }
+
+    protected function reads(AuthenticationMethod $method): bool
+    {
+        return $method->value === AuthenticationMethod::HARDWARE_KEY;
+    }
+}

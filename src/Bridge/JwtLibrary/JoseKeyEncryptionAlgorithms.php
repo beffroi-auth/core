@@ -7,8 +7,6 @@ namespace Beffroi\Core\Bridge\JwtLibrary;
 use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\KeyEncryptionAlgorithmsInterface;
-use function implode;
-use function sprintf;
 
 /**
  * The JWE key management algorithms the wiring gave the provider: the encryption keys it generates, the
@@ -16,7 +14,7 @@ use function sprintf;
  * announce an algorithm the decrypter refuses. A deployment nobody encrypts to wires none, and this list
  * is empty.
  */
-final readonly class JoseKeyEncryptionAlgorithms implements KeyEncryptionAlgorithmsInterface
+final readonly class JoseKeyEncryptionAlgorithms implements JoseAlgorithmRegistryInterface, KeyEncryptionAlgorithmsInterface
 {
     /**
      * @var WiredAlgorithms<JoseKeyEncryptionAlgorithmInterface>
@@ -39,20 +37,22 @@ final readonly class JoseKeyEncryptionAlgorithms implements KeyEncryptionAlgorit
         return $this->wired->algorithms;
     }
 
+    public function find(string $name): ?JoseKeyEncryptionAlgorithmInterface
+    {
+        return $this->wired->named($name);
+    }
+
     public function named(string $name): JoseKeyEncryptionAlgorithmInterface
     {
-        $algorithm = $this->wired->named($name);
-        if ($algorithm !== null) {
-            return $algorithm;
-        }
-        if ($this->wired->algorithms === []) {
-            throw new UnsupportedAlgorithmException(sprintf('This provider is encrypted to with nothing; "%s" is not read.', $name));
-        }
+        return $this->find($name) ?? throw $this->refusalOf($name);
+    }
 
-        throw new UnsupportedAlgorithmException(sprintf(
-            'This provider is not encrypted to with "%s"; it is encrypted to with %s.',
+    public function refusalOf(string $name): UnsupportedAlgorithmException
+    {
+        return $this->wired->refusalOf(
             $name,
-            implode(', ', $this->wired->names()),
-        ));
+            'This provider is not encrypted to with "%s"; it is encrypted to with %s.',
+            'This provider is encrypted to with nothing; "%s" is not read.',
+        );
     }
 }
