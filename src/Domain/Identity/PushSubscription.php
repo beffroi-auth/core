@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use function hash;
@@ -30,7 +35,7 @@ use Symfony\Component\Uid\Uuid;
  * so a rotation of that key does not move a subscription: it goes on being pushed to until the key it
  * names retires, and the browser subscribes again under the new one (architecture §3.3).
  */
-final class PushSubscription
+final class PushSubscription implements ClassifiedFieldsInterface
 {
     /**
      * Push API §4: what a browser calls the subscription is a URL of its push service, and nothing this
@@ -201,5 +206,30 @@ final class PushSubscription
     public function isBoundTo(string $kid): bool
     {
         return $this->applicationServerKid === $kid;
+    }
+
+    /**
+     * The endpoint designates a browser on a device, and by it a person, and the label is what that person typed
+     * for that device: both are sealed. The keys of the subscription are the browser's own, and the digest of the
+     * endpoint is the sibling a search matches on.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'endpoint' => new Sealed('push_subscription'),
+            'endpointHash' => new NoPersonalDatum(Reason::HASHED),
+            'publicKey' => new NoPersonalDatum(Reason::A_KEY_OF_THE_SUBSCRIPTION),
+            'authSecret' => new NoPersonalDatum(Reason::A_KEY_OF_THE_SUBSCRIPTION),
+            'applicationServerKid' => new NoPersonalDatum('names the key of the tenant a push to this browser is signed with'),
+            'label' => new Sealed('push_subscription'),
+            'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'lastPushedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'revokedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

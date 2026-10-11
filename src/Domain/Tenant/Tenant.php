@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Tenant;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Session\AuthenticationContextPolicy;
 use Beffroi\Core\Domain\Session\AuthenticationPredicateInterface;
@@ -20,7 +24,7 @@ use Symfony\Component\Uid\Uuid;
  * On every entity the identifier is private(set), not readonly: a mapper building lazy references assigns
  * it twice.
  */
-final class Tenant
+final class Tenant implements ClassifiedFieldsInterface
 {
     public private(set) AuthenticationContextPolicy $authenticationContextPolicy;
 
@@ -124,5 +128,28 @@ final class Tenant
     public function equals(self $other): bool
     {
         return $this->id->equals($other->id);
+    }
+
+    /**
+     * Every field of a tenant designates an organisation, or says what that organisation announces to everybody
+     * before anybody has signed in.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'slug' => new NoPersonalDatum(Reason::THE_TENANT),
+            'issuer' => new NoPersonalDatum(Reason::THE_TENANT),
+            'name' => new NoPersonalDatum(Reason::THE_TENANT),
+            'authenticationContextPolicy' => new NoPersonalDatum('the authentication classes the tenant announces, which name predicates and no person'),
+            'loginFloor' =>
+                new NoPersonalDatum('the predicate every login of this tenant satisfies at the least (issue #327): one of the four names this provider defines, and nothing of anybody who signs in'),
+            'look' => new NoPersonalDatum('the logo and the two colours a tenant gives its pages (issue #449), beside the name it is already named by: what every page hands to every visitor before anybody has signed in'),
+            'selfServedClaims' =>
+                new NoPersonalDatum('the names of the claims the people of this tenant may change of themselves (issue #452): names of claims, never a value and never a person'),
+            'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

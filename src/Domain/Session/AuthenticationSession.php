@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Session;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -15,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
  * Who is authenticated at the provider, since when, how and from where. Tokens point at a session, which
  * makes them revocable together at logout. "How" is a map of proofs; "acr" is read from it, never stored.
  */
-final class AuthenticationSession
+final class AuthenticationSession implements ClassifiedFieldsInterface
 {
     public private(set) AuthenticationProofs $proofs;
 
@@ -151,5 +156,29 @@ final class AuthenticationSession
     public function methodReferences(): array
     {
         return $this->proofs->methodReferences();
+    }
+
+    /**
+     * The two provenances of a session are sealed under its own family, each holding the address, the user agent,
+     * the place and the device of a moment in one field; what the session proved stays in the clear, every token
+     * issued from it carrying the same.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'establishedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'proofs' => new NoPersonalDatum(Reason::WHAT_THE_SESSION_PROVED),
+            'createdFrom' => new Sealed('authentication_session'),
+            'lastSeenFrom' => new Sealed('authentication_session'),
+            'lastSeenAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'expiresAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'endedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'endedBy' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

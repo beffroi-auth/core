@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -12,7 +16,7 @@ use Symfony\Component\Uid\Uuid;
 /**
  * A way for a user to prove who they are; a user has N of them.
  */
-abstract class Credential
+abstract class Credential implements ClassifiedFieldsInterface
 {
     /**
      * Restated from the user (decision 0002).
@@ -51,5 +55,22 @@ abstract class Credential
     public function markUsed(DateTimeImmutable $now): void
     {
         $this->lastUsedAt = $now;
+    }
+
+    /**
+     * What every credential of a person holds, whichever kind it is: the lines the tables of the three kinds share
+     * are declared here once, as their mapping is.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'lastUsedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use function array_values;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
@@ -249,5 +253,27 @@ final class PasskeyCredential extends RevocableCredential implements
         }
 
         return $name;
+    }
+
+    /**
+     * What the authenticator and the browser published is public by construction; the one value a person typed is
+     * the name they gave the key, and it is sealed.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            ...parent::classifiedFields(),
+            'name' => new Sealed('passkey_credential'),
+            'externalId' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'publicKey' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'signCount' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'transports' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'backupEligible' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'backedUp' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'aaguid' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'userHandle' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\PersonalData\BlindIndex;
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
@@ -13,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
  * The identity a user has at an upstream provider, recognised by (provider, subject); the claims are the
  * last snapshot received.
  */
-final class LinkedIdentity
+final class LinkedIdentity implements ClassifiedFieldsInterface
 {
     /**
      * Restated from the user (decision 0002).
@@ -62,5 +68,27 @@ final class LinkedIdentity
     {
         $this->claims = $claims;
         $this->lastSeenAt = $now;
+    }
+
+    /**
+     * What an upstream provider calls a person, and the snapshot it answered with, are sealed under the family of
+     * this table; the two tags beside them are what a federated login matches on.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'provider' => new Sealed('linked_identity'),
+            'providerIndex' => new BlindIndex(),
+            'subject' => new Sealed('linked_identity'),
+            'subjectIndex' => new BlindIndex(),
+            'claims' => new Sealed('linked_identity'),
+            'linkedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'lastSeenAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

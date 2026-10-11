@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Enrolment;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use Beffroi\Core\Domain\Credential\PasswordHash;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -25,7 +29,7 @@ use Symfony\Component\Uid\Uuid;
  * carries the identifier and the value, the row holds the identifier and the hash, so a store read by
  * somebody else opens nothing. The identifier is what the lookup is made by, the value being salted.
  */
-final class EnrolmentTicket
+final class EnrolmentTicket implements ClassifiedFieldsInterface
 {
     public readonly Tenant $tenant;
 
@@ -85,5 +89,24 @@ final class EnrolmentTicket
             throw new InvalidArgumentException('This enrolment ticket is spent already.');
         }
         $this->spentAt = $now;
+    }
+
+    /**
+     * Nothing a ticket holds opens: the value its URL carries is here as a digest of it, and the rest is three
+     * instants and two identifiers drawn at random.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'secret' => new NoPersonalDatum(Reason::HASHED),
+            'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'expiresAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'spentAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }

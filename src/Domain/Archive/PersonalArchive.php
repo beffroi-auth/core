@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Archive;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
@@ -37,7 +42,7 @@ use Symfony\Component\Uid\Uuid;
  * It names itself by its identifier and never by the person, because what a person downloads carries that
  * name in a header a proxy writes to a log.
  */
-final class PersonalArchive
+final class PersonalArchive implements ClassifiedFieldsInterface
 {
     /**
      * How long an archive is kept once it has been asked for. A week, which is what a person who asked on
@@ -140,5 +145,24 @@ final class PersonalArchive
     public function fileName(string $extension = self::EXTENSION): string
     {
         return sprintf('archive-%s.%s', $this->id->toRfc4122(), $extension);
+    }
+
+    /**
+     * The one field of this model where everything the other families seal stands in the clear at once, which is
+     * why it is sealed like the rest and carries no exemption: a dump that read this one would read all of it.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'askedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'expiresAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'builtAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'content' => new Sealed('personal_archive'),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'user' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+        ];
     }
 }
