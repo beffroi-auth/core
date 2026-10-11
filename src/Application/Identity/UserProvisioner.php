@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Identity;
 
 use Beffroi\Core\Application\Credential\BreachedPasswordRefusal;
+use Beffroi\Core\Application\Credential\EnrolmentRefusal;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Credential\PlainPassword;
 use Beffroi\Core\Domain\Identity\Address;
@@ -13,6 +14,7 @@ use Beffroi\Core\Domain\Identity\Profile;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\PasswordRefusedException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
@@ -34,6 +36,7 @@ final readonly class UserProvisioner
         private CredentialRepositoryInterface $credentials,
         private PasswordHasherInterface $hasher,
         private BreachedPasswordRefusal $breaches,
+        private EnrolmentRefusal $enrolments,
         private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
     ) {
@@ -86,9 +89,13 @@ final readonly class UserProvisioner
      * again what was just asked.
      *
      * @throws PasswordRefusedException when a list counts this password, or could not be asked
+     * @throws CredentialEnrolmentFailedException when the floor of the tenant admits no password (issue #327)
      */
     public function setPassword(User $user, #[SensitiveParameter] PlainPassword $password): PasswordCredential
     {
+        // before the list is asked and before anything is hashed: a tenant that holds no password has
+        // nobody to ask about this one
+        $this->enrolments->assertTheFloorAdmits($user->tenant, 'password', [PasswordCredential::method()]);
         $count = $this->breaches->count($password);
         $now = $this->clock->now();
         $hash = $this->hasher->hash($password->value);

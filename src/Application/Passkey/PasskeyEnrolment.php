@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Passkey;
 
+use Beffroi\Core\Application\Credential\EnrolmentRefusal;
 use Beffroi\Core\Domain\Credential\PasskeyCredential;
 use Beffroi\Core\Domain\Credential\PasskeyUserHandle;
 use Beffroi\Core\Domain\Event\CredentialEnrolled;
@@ -29,6 +30,7 @@ final readonly class PasskeyEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private EnrolmentRefusal $enrolments,
         private UuidGeneratorInterface $uuids,
         private RandomnessInterface $randomness,
         private PasskeyRegistrarInterface $registrar,
@@ -91,6 +93,11 @@ final readonly class PasskeyEnrolment
         } catch (InvalidArgumentException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
+        // the floor is asked here and not of the kind (issue #327): what a passkey proves is read from the
+        // flags of its attestation, "swk" for a synced key and "hwk" for one bound to its authenticator,
+        // so a tenant that requires a key held in hardware refuses a synced one and only knows which it
+        // was once the ceremony answered
+        $this->enrolments->assertTheFloorAdmits($user->tenant, 'passkey', $credential->provableMethods());
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
 

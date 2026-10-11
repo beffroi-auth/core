@@ -17,4 +17,11 @@ enum AuthenticationFailureReason: string
     case ReplayedCode = 'replayed_code';
     case TooManyAttempts = 'too_many_attempts';
     case ExpiredLogin = 'expired_login';
+
+    /**
+     * What was proven, or what was presented to prove it, is under the floor the tenant names for every
+     * login of its users (issue #327): a password posed to a tenant that signs its users in by passkey, or
+     * proofs that do not satisfy the predicate it requires.
+     */
+    case BelowTheFloor = 'below_the_floor';
 }

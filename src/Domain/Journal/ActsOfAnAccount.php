@@ -10,6 +10,7 @@ use Beffroi\Core\Domain\Event\BackupCodeUsed;
 use Beffroi\Core\Domain\Event\BackupCodesRenewed;
 use Beffroi\Core\Domain\Event\CredentialEnrolled;
 use Beffroi\Core\Domain\Event\CredentialRenamed;
+use Beffroi\Core\Domain\Event\CredentialForgotten;
 use Beffroi\Core\Domain\Event\CredentialRevoked;
 use Beffroi\Core\Domain\Event\PasskeyUsed;
 use Beffroi\Core\Domain\Event\PasswordChanged;
@@ -56,6 +57,7 @@ final class ActsOfAnAccount
         // what changed of the means of signing in
         CredentialEnrolled::NAME,
         CredentialRevoked::NAME,
+        CredentialForgotten::NAME,
         CredentialRenamed::NAME,
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,

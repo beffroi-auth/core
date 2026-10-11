@@ -53,9 +53,18 @@ final class PasswordCredential extends Credential implements ProvingCredentialIn
         return 'password';
     }
 
+    /**
+     * What a password proves, whoever holds one: the kind says it of itself, so that what a tenant admits
+     * can be asked before a credential of this kind exists (issue #327), as TotpCredential::method() is.
+     */
+    public static function method(): AuthenticationMethod
+    {
+        return AuthenticationMethod::password();
+    }
+
     public function provableMethods(): array
     {
-        return [AuthenticationMethod::password()];
+        return [self::method()];
     }
 
     /**

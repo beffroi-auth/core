@@ -40,6 +40,10 @@ use SensitiveParameter;
  * this provider pronounces on its own: a person who mistyped the password they use now is answered
  * without a prefix of anything leaving, and a password this provider will not hold is not sent out to be
  * counted either.
+ *
+ * A tenant that signs its users in without a password holds none to replace (issue #327), which is the
+ * first thing this answers: the floor of the tenant is read before a row is, so a password a hardening
+ * has not swept away yet is not replaced either.
  */
 final readonly class PasswordChange
 {
@@ -71,6 +75,15 @@ final readonly class PasswordChange
         PlainPassword $posed,
         RequestContext $context,
     ): void {
+        // a tenant that hardened holds no password of anybody (issue #327): the hardening forgot them, so
+        // this is the row a store left behind, and the person is answered what they are told when they
+        // hold none, which is what they do hold here
+        if (! $user->tenant->loginFloor->admits([PasswordCredential::method()])) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::NoPasswordHeld,
+                'The tenant signs its users in without a password; there is nothing to replace.',
+            );
+        }
         $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
         if (! $credential instanceof PasswordCredential) {
             throw new PasswordChangeRefusedException(

@@ -22,10 +22,10 @@ use SensitiveParameter;
 use function trim;
 
 /**
- * What a password proves, and the whole order of proving it (architecture §3.2, issue #130): the user is
- * named, the attempts on them are counted, the hash is verified, a disabled account is refused after the
- * password, the count is emptied, the credential is dated and rehashed if the policy has moved, and the
- * act of the password is announced. What the caller does with the proof, open a session, hold the login
+ * What a password proves, and the whole order of proving it (architecture §3.2, issue #130): the tenant is
+ * asked whether a password proves anything here at all, the user is named, the attempts on them are
+ * counted, the hash is verified, a disabled account is refused after the password, the count is emptied,
+ * the credential is dated and rehashed if the policy has moved, and the act of the password is announced. What the caller does with the proof, open a session, hold the login
  * until a code, hand a passport to a firewall, is the caller's, as it is for a code (TotpAuthentication).
  *
  * **It is the one order of a login by password**, and both paths of this provider play it: the use case
@@ -68,6 +68,22 @@ final readonly class PasswordVerification
         string $password,
         RequestContext $context,
     ): PasswordCredential {
+        // the first step of the order (issue #327): a tenant whose floor reads nothing a password proves
+        // holds none, so every password is refused the same way, before anybody is named. It pays no hash
+        // where the refusals below pay one: the answer does not depend on the account, so there is nothing
+        // for a clock to tell, and an Argon2id per request would be a cost anybody could ask this provider
+        // to pay.
+        if (! $tenant->loginFloor->admits([PasswordCredential::method()])) {
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::BelowTheFloor,
+                AuthenticationMethod::password(),
+                $identifier,
+                null,
+            );
+        }
+
         $user = $this->users->findByUsername($tenant, trim($identifier));
         if ($user === null) {
             throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::UnknownUser, $identifier, $password, null);

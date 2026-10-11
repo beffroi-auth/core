@@ -14,12 +14,13 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
+use Beffroi\Core\Port\CanForgetCredentialsInterface;
 use Beffroi\Core\Port\CanPageCredentialsInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 use function usort;
 
-final class InMemoryCredentialRepository implements CanPageCredentialsInterface, CredentialRepositoryInterface
+final class InMemoryCredentialRepository implements CanForgetCredentialsInterface, CanPageCredentialsInterface, CredentialRepositoryInterface
 {
     /**
      * @var array<string, Credential>
@@ -79,5 +80,22 @@ final class InMemoryCredentialRepository implements CanPageCredentialsInterface,
     public function save(Credential $credential): void
     {
         $this->credentials[$credential->id->toRfc4122()] = $credential;
+    }
+
+    /**
+     * @return iterable<Credential>
+     */
+    public function credentialsOf(Tenant $tenant): iterable
+    {
+        foreach ($this->credentials as $credential) {
+            if ($credential->tenant->equals($tenant)) {
+                yield $credential;
+            }
+        }
+    }
+
+    public function forget(Credential $credential): void
+    {
+        unset($this->credentials[$credential->id->toRfc4122()]);
     }
 }

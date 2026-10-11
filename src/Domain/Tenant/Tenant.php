@@ -6,14 +6,15 @@ namespace Beffroi\Core\Domain\Tenant;
 
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Session\AuthenticationContextPolicy;
+use Beffroi\Core\Domain\Session\AuthenticationPredicate;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * An issuer, with its users, its clients, its keys and its "acr" vocabulary (decision 0010). Everything in
- * the core is scoped by a tenant.
+ * An issuer, with its users, its clients, its keys, its "acr" vocabulary (decision 0010) and the floor
+ * under which none of its users signs in (issue #327). Everything in the core is scoped by a tenant.
  *
  * On every entity the identifier is private(set), not readonly: a mapper building lazy references assigns
  * it twice.
@@ -34,9 +35,22 @@ final class Tenant
     public private(set) SelfServedClaims $selfServedClaims;
 
     /**
+     * What a login of this tenant proves at the least (issue #327), and therefore which credentials may
+     * prove one and be enrolled at all (AuthenticationPredicate::admits()). The single factor is every
+     * login there is, so a tenant that names nothing behaves as this provider always did; a tenant that
+     * names the phishing-resistant predicate signs its users in by passkey and by nothing else.
+     *
+     * It is not read from the configuration, where the "acr" vocabulary is: it is written on the row by
+     * whoever administers the tenant, so that hardening is an act with a date and not a deployment
+     * (TenantHardening).
+     */
+    public private(set) AuthenticationPredicate $loginFloor;
+
+    /**
      * @param AuthenticationContextPolicy|null $authenticationContextPolicy the default policy of decision 0010 when null
      * @param TenantLook|null $look nothing when null, which renders the pages as a deployment that declares no look
      * @param SelfServedClaims|null $selfServedClaims nothing when null, which lets a person change nothing of themselves
+     * @param AuthenticationPredicate|null $loginFloor the single factor when null, which admits every login this provider serves
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -47,6 +61,7 @@ final class Tenant
         ?AuthenticationContextPolicy $authenticationContextPolicy = null,
         ?TenantLook $look = null,
         ?SelfServedClaims $selfServedClaims = null,
+        ?AuthenticationPredicate $loginFloor = null,
     ) {
         if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
@@ -58,6 +73,7 @@ final class Tenant
         $this->authenticationContextPolicy = $authenticationContextPolicy ?? AuthenticationContextPolicy::default();
         $this->look = $look ?? TenantLook::none();
         $this->selfServedClaims = $selfServedClaims ?? SelfServedClaims::none();
+        $this->loginFloor = $loginFloor ?? AuthenticationPredicate::SingleFactor;
     }
 
     /**
@@ -84,6 +100,16 @@ final class Tenant
     public function adoptSelfServedClaims(SelfServedClaims $claims): void
     {
         $this->selfServedClaims = $claims;
+    }
+
+    /**
+     * The tenant names the floor of its logins (issue #327). Raising it closes a way in and is what the
+     * hardening does with the credentials it forbids; naming the single factor again opens the kinds back
+     * up and gives nobody a credential, the ones the hardening revoked having to be posed again.
+     */
+    public function adoptLoginFloor(AuthenticationPredicate $floor): void
+    {
+        $this->loginFloor = $floor;
     }
 
     public function rename(string $name): void

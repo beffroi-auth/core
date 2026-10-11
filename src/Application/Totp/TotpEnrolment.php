@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Totp;
 
 use function array_map;
+use Beffroi\Core\Application\Credential\EnrolmentRefusal;
 use Beffroi\Core\Domain\Credential\BackupCode;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Credential\TotpProvisioning;
@@ -37,6 +38,7 @@ final readonly class TotpEnrolment
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private EnrolmentRefusal $enrolments,
         private UuidGeneratorInterface $uuids,
         private RandomnessInterface $randomness,
         private ActiveTotp $activeTotp,
@@ -105,8 +107,16 @@ final readonly class TotpEnrolment
     /**
      * @throws CredentialEnrolmentFailedException
      */
+    /**
+     * What both steps refuse before anything is drawn or written: a second TOTP, and a TOTP at all where
+     * the floor of the tenant admits none (issue #327), so that nobody is shown a secret to scan that
+     * would prove no login here.
+     *
+     * @throws CredentialEnrolmentFailedException
+     */
     private function refuseASecondOne(User $user): void
     {
+        $this->enrolments->assertTheFloorAdmits($user->tenant, 'one-time code', [TotpCredential::method()]);
         if ($this->activeTotp->of($user) !== null) {
             throw new CredentialEnrolmentFailedException('The user has a TOTP already; it is revoked before another is enrolled.');
         }
