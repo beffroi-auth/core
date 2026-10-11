@@ -19,7 +19,7 @@ use function sprintf;
  * verifies with, built from the same list: the document cannot announce an algorithm the signer refuses,
  * nor the signer accept one the document leaves out. The first wired one is the default.
  */
-final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInterface
+final readonly class JoseSignatureAlgorithms implements JoseAlgorithmRegistryInterface, SignatureAlgorithmsInterface
 {
     /**
      * @var WiredAlgorithms<JoseSignatureAlgorithmInterface> the wiring, held and looked up as in every registry
@@ -60,15 +60,27 @@ final readonly class JoseSignatureAlgorithms implements SignatureAlgorithmsInter
         return $this->algorithms;
     }
 
+    public function find(string $name): ?JoseSignatureAlgorithmInterface
+    {
+        return $this->wired->named($name);
+    }
+
     public function named(string $name): JoseSignatureAlgorithmInterface
     {
-        return (
-            $this->wired->named($name) ?? throw new UnsupportedAlgorithmException(sprintf(
-                'This provider does not sign with "%s"; it signs with %s.',
-                $name,
-                implode(', ', $this->wired->names()),
-            ))
-        );
+        return $this->find($name) ?? throw $this->refusalOf($name);
+    }
+
+    /**
+     * One sentence and no branch on an empty wiring: this registry refuses one at boot, so there is always
+     * something to list.
+     */
+    public function refusalOf(string $name): UnsupportedAlgorithmException
+    {
+        return new UnsupportedAlgorithmException(sprintf(
+            'This provider does not sign with "%s"; it signs with %s.',
+            $name,
+            implode(', ', $this->wired->names()),
+        ));
     }
 
     public function defaultAlgorithm(): JoseSignatureAlgorithmInterface

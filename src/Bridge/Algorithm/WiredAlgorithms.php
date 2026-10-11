@@ -7,13 +7,16 @@ namespace Beffroi\Core\Bridge\Algorithm;
 use function array_values;
 use Beffroi\Core\Domain\Algorithm\NamedAlgorithmInterface;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\UnsupportedAlgorithmException;
+use function implode;
 use function sprintf;
 
 /**
- * What the wiring gave a registry: the algorithms in the order they were wired, each name held once, and
- * the lookup of a name among them. Every registry of the provider is one of these plus the refusal it
- * words for its own use, so that the order of a wiring, its refusal to carry a name twice and the way a
- * name is resolved are written once for the three of them (issue #98).
+ * What the wiring gave a registry: the algorithms in the order they were wired, each name held once, the
+ * lookup of a name among them and what a refusal lists, a wiring that holds nothing included. Every
+ * registry of the provider is one of these plus the words of its own refusal, so that the order of a
+ * wiring, its refusal to carry a name twice, the way a name is resolved and the shape of a refusal are
+ * written once for all of them (issues #98, #611).
  *
  * What a registry does not find is its own to refuse: the message names what the provider signs with, is
  * encrypted to with, encrypts a payload with or hashes a password with, and only the registry of that
@@ -76,5 +79,23 @@ final readonly class WiredAlgorithms
         }
 
         return $names;
+    }
+
+    /**
+     * The refusal of a name nothing wired carries, in the words of the registry this wiring belongs to:
+     * the sentence it has for a wiring, which names what was refused and lists what is wired, or the
+     * sentence it has for a wiring that holds nothing, where there is nothing to list. Which of the two is
+     * said is answered here, so that a registry words both and reads neither.
+     *
+     * @param non-empty-string $listed  a format taking the name refused, then the names wired, comma separated
+     * @param non-empty-string $nothing a format taking the name refused
+     */
+    public function refusalOf(string $name, string $listed, string $nothing): UnsupportedAlgorithmException
+    {
+        if ($this->algorithms === []) {
+            return new UnsupportedAlgorithmException(sprintf($nothing, $name));
+        }
+
+        return new UnsupportedAlgorithmException(sprintf($listed, $name, implode(', ', $this->names())));
     }
 }
