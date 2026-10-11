@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Identity;
 
+use Beffroi\Core\Domain\Listing\RetentionWindow;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Port\ClaimHistoryInterface;
 use Psr\Clock\ClockInterface;
-use function sprintf;
 
 /**
- * How long the history of what a record used to say keeps a change, and what forgets the ones past it
- * (issue #482).
+ * What forgets the changes of what a record used to say past the window the deployment named (issue #482).
  *
  * A history of what a person used to be called is a personal datum with a duration and not a thing kept
  * for ever. The duration is the deployment's, and what it says is read here and nowhere else.
@@ -24,12 +23,12 @@ final readonly class ClaimHistoryRetention
     public function __construct(
         private ClaimHistoryInterface $history,
         private ClockInterface $clock,
-        private int $days,
+        private RetentionWindow $window,
     ) {
     }
 
     public function enforce(Tenant $tenant): int
     {
-        return $this->history->forgetBefore($tenant, $this->clock->now()->modify(sprintf('-%d days', $this->days)));
+        return $this->history->forgetBefore($tenant, $this->window->keptSince($this->clock->now()));
     }
 }
