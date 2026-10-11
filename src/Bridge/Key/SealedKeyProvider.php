@@ -15,7 +15,6 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
 use Beffroi\Core\Port\DecryptionKeyProviderInterface;
-use Beffroi\Core\Port\KeySealerInterface;
 use Beffroi\Core\Port\MessageKeyProviderInterface;
 use Beffroi\Core\Port\PublicKeySetProviderInterface;
 use Beffroi\Core\Port\SigningKeyProviderInterface;
@@ -23,8 +22,9 @@ use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use function sprintf;
 
 /**
- * Opens a key of a tenant with the KMS once and keeps it in memory; which key is the one asked for is read
- * from the repository on each call, so that a rotation, and a retirement, are seen at once.
+ * Says which key of the store answers which question: which key is the one asked for is read from the
+ * repository on each call, so that a rotation, and a retirement, are seen at once. The material opened
+ * with the KMS is held by OpenedKeys, which this tells what is no longer an answer.
  *
  * The capabilities of a key store are a port each here, and a caller holds the one it uses: what signs
  * asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
@@ -40,23 +40,16 @@ use function sprintf;
  * (PublishedKeyAlgorithmInterface) and not enumerated here, so a family added to either side needs no
  * line in this class.
  */
-final class SealedKeyProvider implements
+final readonly class SealedKeyProvider implements
     ApplicationServerKeyProviderInterface,
     DecryptionKeyProviderInterface,
     MessageKeyProviderInterface,
     PublicKeySetProviderInterface,
     SigningKeyProviderInterface
 {
-    /**
-     * @var array<string, UnsealedKey> by tenant and kid: a "kid" is the thumbprint of the public key
-     * (RFC 7638), so two tenants that hold the same material name it the same, and an envelope opened
-     * for one is never the answer for the other. What the KMS binds to a tenant, this binds too.
-     */
-    private array $opened = [];
-
     public function __construct(
-        private readonly TenantKeyRepositoryInterface $keys,
-        private readonly KeySealerInterface $sealer,
+        private TenantKeyRepositoryInterface $keys,
+        private OpenedKeys $opened,
     ) {
     }
 
@@ -67,13 +60,9 @@ final class SealedKeyProvider implements
             throw new KeyNotFoundException(sprintf('Tenant "%s" has no active %s signing key.', $tenant->slug, $algorithm->name()));
         }
         self::assertUse($key, KeyUse::Signature);
-        foreach ($this->opened as $index => $opened) {
-            if ($opened->key->kid !== $key->kid && $opened->key->tenant->equals($tenant) && $opened->key->algorithm->name() === $algorithm->name()) {
-                unset($this->opened[$index]);
-            }
-        }
+        $this->opened->forgetOthers($tenant, $key);
 
-        return $this->open($tenant, $key);
+        return $this->opened->open($tenant, $key);
     }
 
     public function decryptionKey(Tenant $tenant, string $kid): UnsealedKey
@@ -83,7 +72,7 @@ final class SealedKeyProvider implements
             throw new KeyNotFoundException(sprintf('Tenant "%s" publishes no key "%s".', $tenant->slug, $kid));
         }
         if (! $key->isInService()) {
-            unset($this->opened[self::index($tenant, $kid)]);
+            $this->opened->forget($tenant, $kid);
 
             throw new KeyNotFoundException(sprintf(
                 'The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.',
@@ -100,7 +89,7 @@ final class SealedKeyProvider implements
         }
         self::assertUse($key, KeyUse::Encryption);
 
-        return $this->open($tenant, $key);
+        return $this->opened->open($tenant, $key);
     }
 
     public function sealingKey(Tenant $tenant, MessageSealingAlgorithmInterface $algorithm): TenantKey
@@ -125,7 +114,7 @@ final class SealedKeyProvider implements
     {
         $key = $this->keys->find($tenant, $kid);
         if ($key === null || ! $key->isInService()) {
-            unset($this->opened[self::index($tenant, $kid)]);
+            $this->opened->forget($tenant, $kid);
 
             throw new KeyNotFoundException(sprintf(
                 'Tenant "%s" seals nothing to "%s" any more: a body sealed to it is not opened.',
@@ -141,7 +130,7 @@ final class SealedKeyProvider implements
             ));
         }
 
-        return $this->open($tenant, $key);
+        return $this->opened->open($tenant, $key);
     }
 
     public function publicKeys(Tenant $tenant): PublicKeySet
@@ -164,7 +153,7 @@ final class SealedKeyProvider implements
     {
         $key = $this->keys->find($tenant, $kid);
         if ($key === null || ! $key->isInService()) {
-            unset($this->opened[self::index($tenant, $kid)]);
+            $this->opened->forget($tenant, $kid);
 
             throw new KeyNotFoundException(sprintf(
                 'Tenant "%s" hands out no key "%s" any more: what was bound to it is worth nothing.',
@@ -180,20 +169,7 @@ final class SealedKeyProvider implements
             ));
         }
 
-        return $this->open($tenant, $key);
-    }
-
-    /**
-     * A key is opened once and stays open while it is the one answered with; the KMS is asked once.
-     */
-    private function open(Tenant $tenant, TenantKey $key): UnsealedKey
-    {
-        return $this->opened[self::index($tenant, $key->kid)] ??= new UnsealedKey($key, $this->sealer->unseal($tenant, $key->sealedPrivateJwk));
-    }
-
-    private static function index(Tenant $tenant, string $kid): string
-    {
-        return $tenant->id->toRfc4122() . '/' . $kid;
+        return $this->opened->open($tenant, $key);
     }
 
     /**
