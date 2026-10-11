@@ -52,8 +52,9 @@ final readonly class PasskeyAuthentication
     }
 
     /**
-     * A revoked passkey and a disabled user are refused after the signature was checked, so that a refusal
-     * costs the same as a wrong signature; a sign count that did not grow is told, not refused.
+     * An assertion whose backup eligibility is not the one of the enrolment, a revoked passkey and a
+     * disabled user are refused after the signature was checked, so that a refusal costs the same as a
+     * wrong signature; a sign count that did not grow is told, not refused.
      *
      * @throws AuthenticationFailedException
      */
@@ -68,6 +69,9 @@ final readonly class PasskeyAuthentication
         $methods = $credential->methods($assertion->authenticatorData);
         if (! $credential->tenant->equals($tenant)) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, null);
+        }
+        if ($credential->backupEligibilityChanged($assertion->authenticatorData)) {
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, $credential->user);
         }
         if ($credential->isRevoked()) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::RevokedCredential, $methods[0], null, $credential->user);

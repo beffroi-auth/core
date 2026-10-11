@@ -44,8 +44,16 @@ final class PasskeyCredential extends RevocableCredential implements
 
     public private(set) int $signCount;
 
-    public private(set) bool $backupEligible;
+    /**
+     * The BE flag the credential was created with (WebAuthn Level 3 §6.1.3): set by
+     * authenticatorMakeCredential, the same for the whole life of the credential, and the one an assertion
+     * is compared with rather than writing over it.
+     */
+    public readonly bool $backupEligible;
 
+    /**
+     * The BS flag of the latest ceremony (§6.1.4): whether the key is backed up as things stand.
+     */
     public private(set) bool $backedUp;
 
     /**
@@ -184,22 +192,23 @@ final class PasskeyCredential extends RevocableCredential implements
             return [];
         }
 
-        return [self::keyMethod($this->backupEligible), new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE)];
+        return [$this->keyMethod(), new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE)];
     }
 
     /**
-     * What an assertion proves, as "amr" values (RFC 8176 §2), read from the flags of its authenticator
-     * data (WebAuthn Level 3 §6.1): "hwk" for a key bound to its authenticator (the BE flag clear, §6.1.3),
-     * "swk" for a synced passkey (the flag set: the key lives wherever the provider of the user copies it);
-     * "user" when the authenticator tested that a user is present (UP, §6.2.4); "mfa" when it verified the
-     * user (UV, §6.2.3): the key was unlocked by a PIN or a biometric the authenticator does not name, the
-     * multi-factor cryptographic authenticator of NIST SP 800-63B §3.1.7.1.
+     * What an assertion proves, as "amr" values (RFC 8176 §2): "hwk" for a key bound to its authenticator
+     * and "swk" for a synced passkey, whose key lives wherever the provider of the user copies it, as the
+     * BE flag of the enrolment says, WebAuthn Level 3 §6.1.3 fixing it for the life of the credential so
+     * that no assertion moves it; then what this ceremony did, read in the flags of its authenticator data
+     * (§6.1): "user" when the authenticator tested that a user is present (UP, §6.2.4); "mfa" when it
+     * verified the user (UV, §6.2.3): the key was unlocked by a PIN or a biometric the authenticator does
+     * not name, the multi-factor cryptographic authenticator of NIST SP 800-63B §3.1.7.1.
      *
      * @return non-empty-list<AuthenticationMethod>
      */
     public function methods(AuthenticatorData $data): array
     {
-        $methods = [self::keyMethod($data->isBackupEligible())];
+        $methods = [$this->keyMethod()];
         if ($data->isUserPresent()) {
             $methods[] = new AuthenticationMethod(AuthenticationMethod::USER_PRESENCE);
         }
@@ -221,28 +230,47 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * WebAuthn Level 3 §7.2, step 26: the sign count and the backup state of the assertion replace the stored ones.
+     * Whether the assertion claims a backup eligibility that is not the one the credential was enrolled
+     * with: "The value of the BE flag is set during authenticatorMakeCredential operation and MUST NOT
+     * change" (WebAuthn Level 3 §6.1.3), so the stored flag is the anchor and never a fact to refresh,
+     * where the backup state is "the latest value of the BS flag from any ceremony" (§6.1.4). Asked where
+     * signCountRegresses() is asked, and refused where that one is told: a key that is suddenly bound to
+     * its authenticator, or suddenly synced, is not the key the provider enrolled.
+     */
+    public function backupEligibilityChanged(AuthenticatorData $data): bool
+    {
+        return $data->isBackupEligible() !== $this->backupEligible;
+    }
+
+    /**
+     * WebAuthn Level 3 §7.2, step 26: the sign count and the backup state of the assertion replace the
+     * stored ones. The backup eligibility is not one of them, §6.1.3 fixing it at the creation of the
+     * credential: an assertion that carries another one is refused, as one backed up without being
+     * eligible for backup is.
      */
     public function recordUse(AuthenticatorData $data, DateTimeImmutable $now): void
     {
         $this->refuseIfRevoked();
+        if ($this->backupEligibilityChanged($data)) {
+            throw new InvalidArgumentException('The backup eligibility of a passkey is the one it was enrolled with and never changes (WebAuthn Level 3 §6.1.3).');
+        }
         if ($data->isBackedUp() && ! $data->isBackupEligible()) {
             throw new InvalidArgumentException('A passkey that is not eligible for backup cannot be backed up (WebAuthn Level 3 §6.1.3).');
         }
         $this->signCount = $data->signCount;
-        $this->backupEligible = $data->isBackupEligible();
         $this->backedUp = $data->isBackedUp();
         $this->markUsed($now);
     }
 
     /**
-     * Where the key lives, as an "amr" value (RFC 8176 §2): "swk" for a synced passkey, the BE flag set
-     * (WebAuthn Level 3 §6.1.3), "hwk" for one bound to its authenticator. Read from the stored flag when
-     * the question is what this passkey may prove, and from the assertion when it is what one just proved.
+     * Where the key lives, as an "amr" value (RFC 8176 §2): "swk" for a synced passkey, the BE flag of the
+     * enrolment set (WebAuthn Level 3 §6.1.3), "hwk" for one bound to its authenticator. The one flag the
+     * provider holds answers it, before a ceremony as after one, that flag being the same for the life of
+     * the credential.
      */
-    private static function keyMethod(bool $backupEligible): AuthenticationMethod
+    private function keyMethod(): AuthenticationMethod
     {
-        return new AuthenticationMethod($backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY);
+        return new AuthenticationMethod($this->backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY);
     }
 
     private static function normalizeName(string $name): string
