@@ -10,6 +10,7 @@ use Beffroi\Core\Domain\Credential\BackupCode;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Credential\TotpSecret;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
+use Beffroi\Core\Domain\Event\BackupCodeUsed;
 use Beffroi\Core\Domain\Event\TotpUsed;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationMethod;
@@ -26,8 +27,10 @@ use SensitiveParameter;
 /**
  * Verifies a code for a user who already named themself (a second factor comes after a first one): the
  * code of the authenticator, accepted once within one step of drift (RFC 6238 §5.2), or one of the backup
- * codes, spent once. What it proves is "otp" either way; what the caller does with the proof (open the
- * session, add it to one) is the caller's. The attempts are counted before anything is verified, because
+ * codes, spent once. What it proves is "otp" either way, and that is what it hands back; which of the two
+ * was accepted is the act it announces (TotpUsed, BackupCodeUsed), a code the user no longer has not being
+ * the same line of their journal as a code their authenticator will compute again. What the caller does
+ * with the proof (open the session, add it to one) is the caller's. The attempts are counted before anything is verified, because
  * six digits are guessable: the limit is read before the secret is opened, so that no code reaches the
  * KMS past it, and the attempt is counted once the secret is open, so that a KMS that does not open it
  * costs the user nothing. Every outcome of the user is an event carrying the request context; a failure
@@ -74,19 +77,19 @@ final readonly class TotpAuthentication
             if (! $credential->acceptsStep($step)) {
                 throw $this->refuse($user, $context, AuthenticationFailureReason::ReplayedCode);
             }
-            $backupCode = false;
             $record = static fn () => $credential->recordUse($step, $now);
+            $announce = static fn (): TotpUsed => new TotpUsed($credential, $now, $context);
         } else {
             $index = $this->matchingBackupCode($credential, $code) ?? throw $this->refuse($user, $context, AuthenticationFailureReason::InvalidCredential);
-            $backupCode = true;
             $record = static fn () => $credential->spendBackupCode($index, $now);
+            $announce = static fn (): BackupCodeUsed => new BackupCodeUsed($credential, $now, $context);
         }
         if (! $user->isEnabled()) {
             throw $this->refuse($user, $context, AuthenticationFailureReason::DisabledUser);
         }
         $record();
         $this->credentials->save($credential);
-        $this->events->dispatch(new TotpUsed($credential, $now, $context, $backupCode));
+        $this->events->dispatch($announce());
 
         return TotpCredential::method();
     }

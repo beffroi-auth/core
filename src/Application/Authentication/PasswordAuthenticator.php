@@ -7,6 +7,7 @@ namespace Beffroi\Core\Application\Authentication;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
 use Beffroi\Core\Domain\Event\PasswordRehashed;
+use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationMethod;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
@@ -30,8 +31,9 @@ use function trim;
  * empties the count. A password alone signs nobody in who holds an active second factor
  * (SecondFactorRequirement, architecture §3.2): the login is then held as a PendingLogin, which
  * LoginCompletion turns into a session once the code passes; otherwise the session is opened here
- * through the SessionOpener. Every refusal is an event carrying the request context; a held login is not
- * an outcome yet and announces nothing.
+ * through the SessionOpener. Every refusal is an event carrying the request context, and so is the
+ * password accepted (PasswordUsed), which is the act and not the outcome: a login held until a code
+ * announces that the password passed and nothing of a session, there being none yet.
  */
 final readonly class PasswordAuthenticator
 {
@@ -101,6 +103,7 @@ final readonly class PasswordAuthenticator
         } else {
             $this->credentials->save($credential);
         }
+        $this->events->dispatch(new PasswordUsed($credential, $now, $context));
         if ($this->secondFactor->requiredFor($user)) {
             return PendingLogin::provenAt($user->id, [AuthenticationMethod::password()], $now);
         }

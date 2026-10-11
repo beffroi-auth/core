@@ -14,9 +14,10 @@ use function count;
  * The journal of a person, in the archive they ask for (issue #453): every act this provider wrote down
  * about them, oldest first, with what the request carried of where it came from.
  *
- * **Every act and not the sign-ins alone.** The page of their account shows them the last twenty attempts
- * because that is what a person reads at a glance (SignInsPage); the file is where the rest is, which is
- * what makes it worth asking for.
+ * **Every act and not the ones of their account alone.** The page of their account shows what happened to
+ * it, in pages of what a person reads at a glance (ActsPage, ActsOfAnAccount); this names no act at all,
+ * so the protocol is in the file beside them, a token issued in their name and a read that handed them
+ * over to an application, which is part of what makes the file worth asking for.
  *
  * **It is read in pages.** A person with years of history is not a query that holds the table: the
  * identifier of an act is a UUIDv7, which sorts chronologically, so each page is a lookup past the last

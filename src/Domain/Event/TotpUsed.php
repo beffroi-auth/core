@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Event;
 
-use DateTimeImmutable;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use DateTimeImmutable;
 
 /**
- * A code of the TOTP credential was accepted: one the authenticator computed, or one of the backup codes,
- * which is told here because a backup code spent is a code the user no longer has.
+ * A code the authenticator of this person computed was accepted. One of their backup codes is another act
+ * (BackupCodeUsed): what the two prove is the same thing, what they say of an account is not.
  */
 final readonly class TotpUsed implements ConcernsAPersonInterface
 {
@@ -27,7 +27,6 @@ final readonly class TotpUsed implements ConcernsAPersonInterface
         public TotpCredential $credential,
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
-        public bool $backupCode,
     ) {
         $this->tenant = $credential->tenant;
     }
