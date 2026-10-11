@@ -9,6 +9,8 @@ use function array_map;
 use function count;
 use DateTimeImmutable;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use function is_int;
+use function is_string;
 use function max;
 
 /**
@@ -131,5 +133,27 @@ final readonly class AuthenticationProofs
     public function toTimestamps(): array
     {
         return array_map(static fn (DateTimeImmutable $provenAt): int => $provenAt->getTimestamp(), $this->entries);
+    }
+
+    /**
+     * The proofs back, out of the document a column holds them as, which is the shape above: a method
+     * reference on the Unix timestamp it was last proven at, and nothing else.
+     *
+     * @param array<array-key, mixed> $timestamps
+     *
+     * @throws InvalidArgumentException when an entry is not a method reference on a Unix timestamp, or
+     *                                  when there is no entry at all
+     */
+    public static function fromTimestamps(array $timestamps): self
+    {
+        $entries = [];
+        foreach ($timestamps as $method => $timestamp) {
+            if (! is_string($method) || ! is_int($timestamp)) {
+                throw new InvalidArgumentException('Authentication proofs map a method reference to a Unix timestamp.');
+            }
+            $entries[$method] = new DateTimeImmutable('@' . $timestamp);
+        }
+
+        return new self($entries);
     }
 }

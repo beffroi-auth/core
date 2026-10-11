@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Tenant;
 
+use Beffroi\Core\Domain\Encoding\Document;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function sprintf;
@@ -57,6 +58,55 @@ final readonly class TenantLook
     public static function none(): self
     {
         return new self();
+    }
+
+    /**
+     * The document a column holds a look as: the URL of the logo and the two colours, each absent from it
+     * when the tenant declared none, so that what a tenant declared is what the column holds and not
+     * three nulls.
+     *
+     * A tenant that declared nothing is therefore an empty document, which PHP writes as "[]" where the
+     * default of the column is "{}"; both are read back as the same look, and nothing queries a value of
+     * that column.
+     *
+     * @return array<string, string>
+     */
+    public function toDocument(): array
+    {
+        $document = [];
+        if ($this->logoUri !== null) {
+            $document['logo_uri'] = $this->logoUri->value;
+        }
+        if ($this->primaryColor !== null) {
+            $document['primary_color'] = $this->primaryColor;
+        }
+        if ($this->primaryContentColor !== null) {
+            $document['primary_content_color'] = $this->primaryContentColor;
+        }
+
+        return $document;
+    }
+
+    /**
+     * What a look is given back is what refuses a row somebody edited by hand: a colour that is not
+     * hexadecimal and a logo that is not an absolute HTTPS URL are refused here as they are refused at
+     * the configuration.
+     *
+     * @param array<array-key, mixed> $document
+     *
+     * @throws InvalidArgumentException when a member of the document is not a string, or is not what a
+     *                                 look accepts
+     */
+    public static function fromDocument(array $document): self
+    {
+        $members = new Document($document);
+        $logoUri = $members->nullableString('logo_uri');
+
+        return new self(
+            $logoUri === null ? null : new LogoUri($logoUri),
+            $members->nullableString('primary_color'),
+            $members->nullableString('primary_content_color'),
+        );
     }
 
     /**
