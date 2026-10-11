@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Session;
 
 use function array_all;
-use function array_any;
 use function array_filter;
 use function array_map;
 use function array_values;
@@ -18,9 +17,9 @@ use function sprintf;
  * The "acr" vocabulary of a tenant (decision 0010): an ordered list of classes, each a name on one of the
  * predicates of the provider. No hierarchy: a session satisfies every class whose predicate holds, the
  * order only says which one it is answered with when nothing is requested. What decision 0006 forbids a
- * policy is refused here: "0" (OIDC Core §2 defines it as no confidence at all), "phr" or "phrh" on a
- * predicate that is not their meaning (§2 forbids a registered name in another sense), an empty policy,
- * and a policy without a class on the single factor, since every session has an "acr" (architecture §4.6).
+ * policy is refused here: "0" (OIDC Core §2 defines it as no confidence at all), a name twice, an empty
+ * policy, and a policy without a class on the single factor, since every session has an "acr"
+ * (architecture §4.6). What a name may mean is the class's own (AuthenticationContextClass).
  */
 final readonly class AuthenticationContextPolicy
 {
@@ -46,7 +45,6 @@ final readonly class AuthenticationContextPolicy
             if (in_array($class->value, $names, true)) {
                 throw new InvalidArgumentException(sprintf('An authentication context policy names "%s" once.', $class->value));
             }
-            self::assertRegisteredMeaning($class);
             $names[] = $class->value;
             $singleFactor = $singleFactor || $class->predicate === AuthenticationPredicate::SingleFactor;
         }
@@ -137,25 +135,5 @@ final readonly class AuthenticationContextPolicy
                 && $class->predicate === $other->classes[$index]->predicate
             ),
         );
-    }
-
-    /**
-     * OIDC Core §2: a registered name keeps its meaning. "phr" is any phishing-resistant proof, in
-     * hardware or not; "phrh" is the hardware one only.
-     */
-    private static function assertRegisteredMeaning(AuthenticationContextClass $class): void
-    {
-        $allowed = match ($class->value) {
-            AuthenticationContextClass::PHISHING_RESISTANT => [AuthenticationPredicate::PhishingResistant, AuthenticationPredicate::PhishingResistantHardware],
-            AuthenticationContextClass::PHISHING_RESISTANT_HARDWARE => [AuthenticationPredicate::PhishingResistantHardware],
-            default => null,
-        };
-        if ($allowed !== null && ! array_any($allowed, static fn (AuthenticationPredicate $predicate): bool => $predicate === $class->predicate)) {
-            throw new InvalidArgumentException(sprintf(
-                '"%s" is a registered name (OpenID Connect EAP ACR Values 1.0) and keeps its meaning: it cannot be named on the "%s" predicate.',
-                $class->value,
-                $class->predicate->value,
-            ));
-        }
     }
 }
