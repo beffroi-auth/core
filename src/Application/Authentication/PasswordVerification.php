@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Authentication;
 
+use Beffroi\Core\Application\Credential\ActivePassword;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
 use Beffroi\Core\Domain\Event\PasswordRehashed;
@@ -47,6 +48,7 @@ final readonly class PasswordVerification
     public function __construct(
         private UserRepositoryInterface $users,
         private CredentialRepositoryInterface $credentials,
+        private ActivePassword $activePassword,
         private PasswordHasherInterface $hasher,
         private DecoyHash $decoy,
         private PasswordAttemptLimiterInterface $attempts,
@@ -93,7 +95,7 @@ final readonly class PasswordVerification
             throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::TooManyAttempts, $identifier, $password, $user);
         }
 
-        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
+        $credential = $this->activePassword->of($user);
         if ($credential === null) {
             throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::NoSuchCredential, $identifier, $password, $user);
         }
