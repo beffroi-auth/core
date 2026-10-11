@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Session;
 
 use function array_keys;
+use Beffroi\Core\Domain\Encoding\Document;
+use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function str_contains;
 
@@ -86,6 +88,50 @@ final readonly class Device
         }
 
         return new self($type, $browser, null, $platform);
+    }
+
+    /**
+     * The document a column holds a device as, and the document the provenance of a request nests it in
+     * (RequestContext::toDocument()): one encoding, written here, so that a nested document and a column
+     * of its own cannot drift apart.
+     *
+     * @return array<string, mixed>
+     */
+    public function toDocument(): array
+    {
+        return [
+            'type' => $this->type->value,
+            'browser' => $this->browser,
+            'browser_version' => $this->browserVersion,
+            'platform' => $this->platform,
+            'platform_version' => $this->platformVersion,
+        ];
+    }
+
+    /**
+     * A device names its type: the four other members say what was recognised, and the type says what
+     * kind of thing it was, which no absence stands for.
+     *
+     * @param array<array-key, mixed> $document
+     *
+     * @throws InvalidArgumentException when the document names no type of device, or names one this
+     *                                  provider has no kind for
+     */
+    public static function fromDocument(array $document): self
+    {
+        $members = new Document($document);
+        $type = DeviceType::tryFrom($members->nullableString('type') ?? '');
+        if ($type === null) {
+            throw new InvalidArgumentException('A device names its type.');
+        }
+
+        return new self(
+            $type,
+            $members->nullableString('browser'),
+            $members->nullableString('browser_version'),
+            $members->nullableString('platform'),
+            $members->nullableString('platform_version'),
+        );
     }
 
     private static function browserOf(string $userAgent): ?string

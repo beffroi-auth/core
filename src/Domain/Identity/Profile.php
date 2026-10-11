@@ -6,6 +6,9 @@ namespace Beffroi\Core\Domain\Identity;
 
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function array_key_exists;
+use Error;
+use function get_object_vars;
+use function is_string;
 use function preg_match;
 use function sprintf;
 
@@ -40,6 +43,57 @@ final readonly class Profile
     public static function empty(): self
     {
         return new self();
+    }
+
+    /**
+     * The document a column holds a profile as. **It names no claim and no field.** The document is the
+     * properties of the object, written by their own names and read back as named arguments of its
+     * constructor, so a claim added to this object is a claim the document carries without a line: the
+     * names of §5.1 are matched with the fields that hold them in `describedWith()`, and a fourth place
+     * to be wrong is not opened here.
+     *
+     * Every property of this object is public and holds a string or nothing, which is the convention of a
+     * value object here, so what `get_object_vars()` reads is what a reader of the object sees. What a
+     * profile holds nothing of is absent from the document rather than written null, which is what the
+     * constructor already answers for.
+     *
+     * @return array<array-key, string> keyed by the names of the properties that hold a claim
+     */
+    public function toDocument(): array
+    {
+        $document = [];
+        foreach (get_object_vars($this) as $name => $claim) {
+            if (is_string($claim)) {
+                $document[$name] = $claim;
+            }
+        }
+
+        return $document;
+    }
+
+    /**
+     * A key the constructor does not answer to, or a value that is not a string, is a profile this
+     * provider did not write and never a guess.
+     *
+     * @param array<array-key, mixed> $document
+     *
+     * @throws InvalidArgumentException when the document is not what this object writes
+     */
+    public static function fromDocument(array $document): self
+    {
+        $named = [];
+        foreach ($document as $name => $claim) {
+            if (! is_string($name) || ! is_string($claim)) {
+                throw new InvalidArgumentException('A profile is a document of claims named by the fields that hold them, each a string.');
+            }
+            $named[$name] = $claim;
+        }
+
+        try {
+            return new self(...$named);
+        } catch (Error $error) {
+            throw new InvalidArgumentException($error->getMessage(), previous: $error);
+        }
     }
 
     /**

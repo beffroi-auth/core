@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Session;
 
 use DateTimeImmutable;
+use Exception;
 use const FILTER_VALIDATE_IP;
 use function filter_var;
+use Beffroi\Core\Domain\Encoding\Document;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function mb_substr;
 use function sprintf;
@@ -19,6 +21,13 @@ use function trim;
 final readonly class RequestContext
 {
     public const int USER_AGENT_MAX_LENGTH = 1024;
+
+    /**
+     * The format of the moment in the document: to the second and with no offset, which is the precision
+     * the columns it replaced held (`TIMESTAMP(0) WITHOUT TIME ZONE`), read back in the default timezone,
+     * which is what the Doctrine type of a datetime did.
+     */
+    private const string RECEIVED_AT = 'Y-m-d H:i:s';
 
     public ?string $userAgent;
 
@@ -57,5 +66,59 @@ final readonly class RequestContext
     public function isEnriched(): bool
     {
         return $this->location !== null || $this->device !== null;
+    }
+
+    /**
+     * The document one column holds a provenance as, the two enrichments nested in it rather than held
+     * beside it: **one column and not five**, which is what lets the column seal, the family a sealed
+     * column belongs to being its table (decisions 0011 and 0018).
+     *
+     * `received_at` joins the document rather than keeping a column. It is a date and says nothing of a
+     * person, so it could have stayed in the clear, but a column of its own would be a second column per
+     * provenance and the dates the tables that hold one actually query are their own (`established_at`,
+     * `issued_at`, `expires_at`).
+     *
+     * @return array<string, mixed>
+     */
+    public function toDocument(): array
+    {
+        return [
+            'received_at' => $this->receivedAt->format(self::RECEIVED_AT),
+            'ip_address' => $this->ipAddress,
+            'user_agent' => $this->userAgent,
+            'location' => $this->location?->toDocument(),
+            'device' => $this->device?->toDocument(),
+        ];
+    }
+
+    /**
+     * @param array<array-key, mixed> $document
+     *
+     * @throws InvalidArgumentException when the document says nothing of when the request was received,
+     *                                  or when a member of it is not what a provenance holds
+     */
+    public static function fromDocument(array $document): self
+    {
+        $members = new Document($document);
+        $written = $members->nullableString('received_at');
+        if ($written === null) {
+            throw new InvalidArgumentException('A request context says when the request was received.');
+        }
+
+        try {
+            $receivedAt = new DateTimeImmutable($written);
+        } catch (Exception $exception) {
+            throw new InvalidArgumentException(sprintf('"%s" is not when a request was received.', $written), previous: $exception);
+        }
+        $location = $members->nested('location');
+        $device = $members->nested('device');
+
+        return new self(
+            $receivedAt,
+            $members->nullableString('ip_address'),
+            $members->nullableString('user_agent'),
+            $location === null ? null : GeoLocation::fromDocument($location),
+            $device === null ? null : Device::fromDocument($device),
+        );
     }
 }
