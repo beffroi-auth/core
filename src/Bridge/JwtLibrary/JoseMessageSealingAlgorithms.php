@@ -7,9 +7,7 @@ namespace Beffroi\Core\Bridge\JwtLibrary;
 use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\MessageSealingAlgorithmsInterface;
-use function implode;
 use Jose\Component\Core\AlgorithmManager;
-use function sprintf;
 
 /**
  * The algorithms of the keys the tenant seals what leaves the process to, as the wiring gave them. The
@@ -18,7 +16,7 @@ use function sprintf;
  * An empty one is a deployment that seals nothing, and a deployment that seals nothing writes no message:
  * the refusal says so, rather than a body going out in the clear (decision 0020).
  */
-final readonly class JoseMessageSealingAlgorithms implements MessageSealingAlgorithmsInterface
+final readonly class JoseMessageSealingAlgorithms implements JoseAlgorithmRegistryInterface, MessageSealingAlgorithmsInterface
 {
     /**
      * @var WiredAlgorithms<JoseMessageSealingAlgorithmInterface>
@@ -42,14 +40,22 @@ final readonly class JoseMessageSealingAlgorithms implements MessageSealingAlgor
         return $this->wired->algorithms;
     }
 
+    public function find(string $name): ?JoseMessageSealingAlgorithmInterface
+    {
+        return $this->wired->named($name);
+    }
+
     public function named(string $name): JoseMessageSealingAlgorithmInterface
     {
-        return (
-            $this->wired->named($name) ?? throw new UnsupportedAlgorithmException(sprintf(
-                'This provider seals no message body to a key named "%s"; it seals to %s.',
-                $name,
-                $this->wired->algorithms === [] ? 'none' : implode(', ', $this->wired->names()),
-            ))
+        return $this->find($name) ?? throw $this->refusalOf($name);
+    }
+
+    public function refusalOf(string $name): UnsupportedAlgorithmException
+    {
+        return $this->wired->refusalOf(
+            $name,
+            'This provider seals no message body to a key named "%s"; it seals to %s.',
+            'This provider seals no message body to a key named "%s"; it seals to none.',
         );
     }
 

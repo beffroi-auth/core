@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\JwtLibrary;
 
 use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
-use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\ContentEncryptionAlgorithmsInterface;
-use function implode;
-use function sprintf;
 
 /**
  * The JWE content encryption algorithms the wiring gave the provider, read by the decrypter and by the
@@ -39,18 +36,12 @@ final readonly class JoseContentEncryptionAlgorithms implements ContentEncryptio
 
     public function named(string $name): JoseContentEncryptionAlgorithmInterface
     {
-        $algorithm = $this->wired->named($name);
-        if ($algorithm !== null) {
-            return $algorithm;
-        }
-        if ($this->wired->algorithms === []) {
-            throw new UnsupportedAlgorithmException(sprintf('This provider encrypts no payload; "%s" is not read.', $name));
-        }
-
-        throw new UnsupportedAlgorithmException(sprintf(
-            'This provider does not encrypt a payload with "%s"; it encrypts with %s.',
-            $name,
-            implode(', ', $this->wired->names()),
-        ));
+        return (
+            $this->wired->named($name) ?? throw $this->wired->refusalOf(
+                $name,
+                'This provider does not encrypt a payload with "%s"; it encrypts with %s.',
+                'This provider encrypts no payload; "%s" is not read.',
+            )
+        );
     }
 }
