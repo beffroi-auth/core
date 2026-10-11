@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use DateTimeImmutable;
 use Beffroi\Core\Exception\LogicException;
 use function sprintf;
@@ -44,5 +47,18 @@ abstract class RevocableCredential extends Credential implements RevocableCreden
         if ($this->revokedAt !== null) {
             throw new LogicException(sprintf('A revoked %s never authenticates again.', $this->kind()));
         }
+    }
+
+    /**
+     * The instant a credential was revoked at, beside what every credential holds.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            ...parent::classifiedFields(),
+            'revokedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+        ];
     }
 }

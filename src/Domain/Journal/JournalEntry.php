@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Journal;
 
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -27,7 +32,7 @@ use Symfony\Component\Uid\Uuid;
  * **The identifier is a UUIDv7**, so a journal sorts chronologically by its primary key and the last acts
  * of a person are a lookup rather than a sort.
  */
-final class JournalEntry
+final class JournalEntry implements ClassifiedFieldsInterface
 {
     /**
      * As long a name as the longest an event gives itself, and room for the ones to come.
@@ -49,5 +54,24 @@ final class JournalEntry
         if ($client === '') {
             throw new InvalidArgumentException('An act of the journal names a client or names none, never an empty one.');
         }
+    }
+
+    /**
+     * An act of the provider: four facts and two names, the provenance sealed in a family of its own and the
+     * subject beside it in the clear.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'act' => new NoPersonalDatum('the name of the act, which an event gives itself and which names no person'),
+            'occurredAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'context' => new Sealed('journal'),
+            'subject' => new NoPersonalDatum(Reason::THE_SUBJECT),
+            'client' => new NoPersonalDatum('the client the act concerned, by the identifier it was registered under'),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+        ];
     }
 }

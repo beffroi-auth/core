@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use DateInterval;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
@@ -135,5 +138,22 @@ final class PasswordCredential extends Credential implements ProvingCredentialIn
         }
 
         return $this->breachCheckedAt->add(new DateInterval(self::LOOKUP_AGAIN_AFTER)) <= $now;
+    }
+
+    /**
+     * A password is held as the digest of what was presented, with the algorithm it was computed with and the
+     * parameters it was computed under.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            ...parent::classifiedFields(),
+            'hash' => new NoPersonalDatum(Reason::HASHED . ', with the algorithm it was computed with and the parameters it was computed under'),
+            'hashChangedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'breachCheckedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'breachFoundAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+        ];
     }
 }

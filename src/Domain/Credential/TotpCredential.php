@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
 use function count;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\User;
@@ -146,5 +149,21 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
         $code = $this->backupCodes[$index] ?? throw new InvalidArgumentException(sprintf('There is no backup code at position %d.', $index));
         $this->backupCodes[$index] = $code->spend($now);
         $this->markUsed($now);
+    }
+
+    /**
+     * The secret is an envelope the KMS of the tenant sealed and the backup codes are digests: nothing in this
+     * table produces a code.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            ...parent::classifiedFields(),
+            'sealedSecret' => new NoPersonalDatum(Reason::AN_ENVELOPE),
+            'lastAcceptedStep' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'backupCodes' => new NoPersonalDatum(Reason::HASHED),
+        ];
     }
 }

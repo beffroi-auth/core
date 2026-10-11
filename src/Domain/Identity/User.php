@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\PersonalData\BlindIndex;
+use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
+use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
+use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
+use Beffroi\Core\Domain\PersonalData\Reason;
+use Beffroi\Core\Domain\PersonalData\Sealed;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
@@ -15,7 +21,7 @@ use function trim;
 /**
  * An identity of a tenant; credentials, linked identities and group memberships hang off it (decision 0002).
  */
-final class User
+final class User implements ClassifiedFieldsInterface
 {
     public private(set) ?DateTimeImmutable $disabledAt = null;
 
@@ -162,5 +168,33 @@ final class User
         }
 
         return $username;
+    }
+
+    /**
+     * What this provider holds of a person, sealed under the data key of its tenant: the username, the two
+     * verifiable contacts, the postal address and the thirteen claims of the profile. Beside two of them are the
+     * tags a search matches on, the values themselves being sealed, and the subject stays in the clear.
+     *
+     * @return array<string, FieldClassificationInterface>
+     */
+    public static function classifiedFields(): array
+    {
+        return [
+            'subject' => new NoPersonalDatum(Reason::THE_SUBJECT),
+            'username' => new Sealed('user'),
+            'usernameIndex' => new BlindIndex(),
+            'email' => new Sealed('user'),
+            'emailIndex' => new BlindIndex(),
+            'emailVerified' => new NoPersonalDatum('whether an address or a number was verified, which says nothing of either'),
+            'profile' => new Sealed('user'),
+            'phoneNumber' => new Sealed('user'),
+            'phoneNumberVerified' => new NoPersonalDatum('whether an address or a number was verified, which says nothing of either'),
+            'address' => new Sealed('user'),
+            'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'updatedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'disabledAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
+            'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
+            'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+        ];
     }
 }
