@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Identity;
 
+use Beffroi\Core\Application\Credential\ActivePassword;
 use Beffroi\Core\Application\Credential\BreachedPasswordRefusal;
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
@@ -34,6 +35,7 @@ final readonly class UserProvisioner
     public function __construct(
         private UserRepositoryInterface $users,
         private CredentialRepositoryInterface $credentials,
+        private ActivePassword $activePassword,
         private PasswordHasherInterface $hasher,
         private BreachedPasswordRefusal $breaches,
         private EnrolmentRefusal $enrolments,
@@ -99,7 +101,7 @@ final readonly class UserProvisioner
         $count = $this->breaches->count($password);
         $now = $this->clock->now();
         $hash = $this->hasher->hash($password->value);
-        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
+        $credential = $this->activePassword->of($user);
         if ($credential === null) {
             $credential = new PasswordCredential($this->uuids->timeOrdered(), $user, $hash, $now);
         } else {

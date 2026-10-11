@@ -49,6 +49,7 @@ final readonly class PasswordChange
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
+        private ActivePassword $activePassword,
         private PasswordHasherInterface $hasher,
         private BreachedPasswordRefusal $breaches,
         private ClockInterface $clock,
@@ -84,8 +85,8 @@ final readonly class PasswordChange
                 'The tenant signs its users in without a password; there is nothing to replace.',
             );
         }
-        $credential = $this->credentials->findByUser($user, PasswordCredential::class)[0] ?? null;
-        if (! $credential instanceof PasswordCredential) {
+        $credential = $this->activePassword->of($user);
+        if ($credential === null) {
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::NoPasswordHeld,
                 'The user holds no password; there is nothing to replace.',
