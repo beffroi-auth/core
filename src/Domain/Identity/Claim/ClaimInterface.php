@@ -25,6 +25,10 @@ interface ClaimInterface
 {
     /**
      * The name of the claim (OIDC Core §5.1), which the policy of a tenant names and a form field carries.
+     *
+     * **It is the name the specification defines and never the name of the field that holds the value**
+     * (issue #626): it is the name a module announces as one this provider serves, so a claim answering
+     * anything else would have an operator open a name the metadata of their own instance does not carry.
      */
     public function name(): string;
 

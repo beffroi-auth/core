@@ -104,6 +104,11 @@ final readonly class Profile
      * the object whose shape they describe; every claim of Domain\Identity\Claim writes through here, so a
      * claim added is a class added and a line here, and never a reading of a field by name.
      *
+     * **A key here is a name of the specification and never a field of this object** (issue #626): three
+     * of them differ, "profile", "picture" and "website" being held by `profileUrl`, `pictureUrl` and
+     * `websiteUrl`, and a field is nobody's claim. So what a caller writes is what a module announces and
+     * what a tenant opens, and the name of a field stops existing outside this object.
+     *
      * @param array<string, string|null> $claims
      */
     public function describedWith(array $claims): self
@@ -115,9 +120,9 @@ final readonly class Profile
             array_key_exists('middle_name', $claims) ? $claims['middle_name'] : $this->middleName,
             array_key_exists('nickname', $claims) ? $claims['nickname'] : $this->nickname,
             array_key_exists('preferred_username', $claims) ? $claims['preferred_username'] : $this->preferredUsername,
-            array_key_exists('profile_url', $claims) ? $claims['profile_url'] : $this->profileUrl,
-            array_key_exists('picture_url', $claims) ? $claims['picture_url'] : $this->pictureUrl,
-            array_key_exists('website_url', $claims) ? $claims['website_url'] : $this->websiteUrl,
+            array_key_exists('profile', $claims) ? $claims['profile'] : $this->profileUrl,
+            array_key_exists('picture', $claims) ? $claims['picture'] : $this->pictureUrl,
+            array_key_exists('website', $claims) ? $claims['website'] : $this->websiteUrl,
             array_key_exists('gender', $claims) ? $claims['gender'] : $this->gender,
             array_key_exists('birthdate', $claims) ? $claims['birthdate'] : $this->birthdate,
             array_key_exists('zoneinfo', $claims) ? $claims['zoneinfo'] : $this->zoneinfo,
