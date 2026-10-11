@@ -18,8 +18,9 @@ use function sprintf;
  * predicates of the provider. No hierarchy: a session satisfies every class whose predicate holds, the
  * order only says which one it is answered with when nothing is requested. What decision 0006 forbids a
  * policy is refused here: "0" (OIDC Core §2 defines it as no confidence at all), a name twice, an empty
- * policy, and a policy without a class on the single factor, since every session has an "acr"
- * (architecture §4.6). What a name may mean is the class's own (AuthenticationContextClass).
+ * policy, and a policy no session could be answered in, that is one with no class on a predicate that
+ * holds on every login (AuthenticationPredicateInterface::holdsOnEveryLogin()), since every session has
+ * an "acr" (architecture §4.6). What a name may mean is the class's own (AuthenticationContextClass).
  */
 final readonly class AuthenticationContextPolicy
 {
@@ -37,7 +38,7 @@ final readonly class AuthenticationContextPolicy
             throw new InvalidArgumentException('An authentication context policy names at least one class.');
         }
         $names = [];
-        $singleFactor = false;
+        $everyLogin = false;
         foreach ($classes as $class) {
             if ($class->value === '0') {
                 throw new InvalidArgumentException('"0" is not a class a policy may name: OIDC Core section 2 defines it as no confidence that the same person is there.');
@@ -46,10 +47,10 @@ final readonly class AuthenticationContextPolicy
                 throw new InvalidArgumentException(sprintf('An authentication context policy names "%s" once.', $class->value));
             }
             $names[] = $class->value;
-            $singleFactor = $singleFactor || $class->predicate === AuthenticationPredicate::SingleFactor;
+            $everyLogin = $everyLogin || $class->predicate->holdsOnEveryLogin();
         }
-        if (! $singleFactor) {
-            throw new InvalidArgumentException('An authentication context policy names a class on the single factor: every session has an "acr".');
+        if (! $everyLogin) {
+            throw new InvalidArgumentException('An authentication context policy names a class on a predicate that every login satisfies: every session has an "acr".');
         }
         $this->classes = $classes;
     }
@@ -94,7 +95,7 @@ final readonly class AuthenticationContextPolicy
             }
         }
 
-        throw new InvalidArgumentException('Proofs satisfy no class of the policy, which names the single factor.');
+        throw new InvalidArgumentException('Proofs satisfy no class of the policy, which names a class on a predicate that every login satisfies.');
     }
 
     /**
@@ -132,7 +133,7 @@ final readonly class AuthenticationContextPolicy
             $this->classes,
             static fn (AuthenticationContextClass $class, int $index): bool => (
                 $class->equals($other->classes[$index])
-                && $class->predicate === $other->classes[$index]->predicate
+                && $class->predicate->name() === $other->classes[$index]->predicate->name()
             ),
         );
     }

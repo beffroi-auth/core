@@ -7,7 +7,7 @@ namespace Beffroi\Core\Application\Tenant;
 use Beffroi\Core\Domain\Credential\Credential;
 use Beffroi\Core\Domain\Credential\ProvingCredentialInterface;
 use Beffroi\Core\Domain\Event\CredentialForgotten;
-use Beffroi\Core\Domain\Session\AuthenticationPredicate;
+use Beffroi\Core\Domain\Session\AuthenticationPredicateInterface;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Port\CanForgetCredentialsInterface;
@@ -23,7 +23,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  *
  * **What the floor forbids is read off the floor** and never listed here: each credential says what one
  * authentication with it would prove (ProvingCredentialInterface) and the floor says whether it reads any
- * of those methods (AuthenticationPredicate::admits()). A kind this provider gains is swept by the same
+ * of those methods (AuthenticationPredicateInterface::admits()). A kind this provider gains is swept by the same
  * walk, with nothing to edit.
  *
  * **The floor is written first and the sweep follows**, so that an interruption leaves a tenant that
@@ -44,7 +44,7 @@ final readonly class TenantHardening
     /**
      * @return int how many credentials the floor forbade and this forgot, zero when it forbade none
      */
-    public function adopt(Tenant $tenant, AuthenticationPredicate $floor, RequestContext $context): int
+    public function adopt(Tenant $tenant, AuthenticationPredicateInterface $floor, RequestContext $context): int
     {
         $tenant->adoptLoginFloor($floor);
         $this->tenants->save($tenant);
@@ -66,7 +66,7 @@ final readonly class TenantHardening
      * A credential that could prove nothing anyway, a revoked one, is not a credential the floor forbids:
      * it holds no way in, and the page of that person keeps naming it.
      */
-    private function isForbidden(Credential $credential, AuthenticationPredicate $floor): bool
+    private function isForbidden(Credential $credential, AuthenticationPredicateInterface $floor): bool
     {
         $methods = $credential instanceof ProvingCredentialInterface ? $credential->provableMethods() : [];
 
