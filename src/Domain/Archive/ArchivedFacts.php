@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Archive;
 
 use Beffroi\Core\Domain\Encoding\Base64Url;
+use Beffroi\Core\Domain\Journal\JournalEntry;
 use Beffroi\Core\Domain\Session\RequestContext;
 use DateTimeImmutable;
 use DateTimeInterface;
 
 /**
- * The readings every chapter of an archive shares (issue #453): a moment, and what a request carried of
- * where it came from. A named mapper beside the objects it reads, so that two chapters writing the same
- * fact write it the same way and a reader of the document learns one shape.
+ * The readings every chapter of an archive shares (issue #453): a moment, an act of the journal, and what
+ * a request carried of where it came from. A named mapper beside the objects it reads, so that two
+ * readings writing the same fact write it the same way and a reader of the document learns one shape. The
+ * console writes an act with it too (issue #591), a register attached to an answer being the same document
+ * as the chapter of an archive.
  *
  * A moment is written in the shape of RFC 3339, which is what RGPD article 20 means by machine readable.
  * Dates are held in UTC in this schema, so what a person reads here is UTC whatever their own clock says;
@@ -26,6 +29,23 @@ final readonly class ArchivedFacts
     public static function moment(?DateTimeImmutable $moment): ?string
     {
         return $moment?->format(DateTimeInterface::ATOM);
+    }
+
+    /**
+     * One act of the journal: what happened, when, on behalf of which application, and what the request
+     * carried of where it came from. Never the subject, because whose journal it is is said once, by the
+     * document or by the reading that asked for it.
+     *
+     * @return array<string, mixed>
+     */
+    public static function act(JournalEntry $act): array
+    {
+        return [
+            'act' => $act->act,
+            'occurred_at' => self::moment($act->occurredAt),
+            'client' => $act->client,
+            'from' => self::context($act->context),
+        ];
     }
 
     /**

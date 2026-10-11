@@ -47,12 +47,7 @@ final readonly class JournalChapter implements ArchiveChapterInterface
         do {
             $page = $this->acts->everyActOf($user, self::READ_AT_ONCE, $after);
             foreach ($page as $act) {
-                $lines[] = [
-                    'act' => $act->act,
-                    'occurred_at' => ArchivedFacts::moment($act->occurredAt),
-                    'client' => $act->client,
-                    'from' => ArchivedFacts::context($act->context),
-                ];
+                $lines[] = ArchivedFacts::act($act);
                 $after = $act->id;
             }
         } while (count($page) === self::READ_AT_ONCE);

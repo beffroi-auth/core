@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Journal;
 
 use Beffroi\Core\Domain\Tenant\Tenant;
+use DateTimeImmutable;
 use Beffroi\Core\Port\JournalInterface;
 use function sprintf;
 use Psr\Clock\ClockInterface;
@@ -18,18 +19,31 @@ use Psr\Clock\ClockInterface;
  *
  * It says how many it forgot, so a timed step can say whether it did anything, and the store bounds a run
  * so that a backlog is worked through over several ticks rather than in one statement that holds a table.
+ *
+ * It also says where the journal stops, because the duration is here and nowhere else: a reading asked for
+ * a stretch of time the journal cannot cover says so rather than answering an empty table, which is a
+ * register that looks complete and is not (issue #591).
  */
 final readonly class JournalRetention
 {
     public function __construct(
         private JournalInterface $journal,
         private ClockInterface $clock,
-        private int $days,
+        public int $days,
     ) {
     }
 
     public function enforce(Tenant $tenant): int
     {
-        return $this->journal->forgetBefore($tenant, $this->clock->now()->modify(sprintf('-%d days', $this->days)));
+        return $this->journal->forgetBefore($tenant, $this->keptSince());
+    }
+
+    /**
+     * The oldest moment the journal still holds an act of. What is before it was forgotten, or is about to
+     * be by the next tick of the step that forgets.
+     */
+    public function keptSince(): DateTimeImmutable
+    {
+        return $this->clock->now()->modify(sprintf('-%d days', $this->days));
     }
 }
