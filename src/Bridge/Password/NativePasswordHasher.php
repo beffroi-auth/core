@@ -14,7 +14,6 @@ use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Port\AlgorithmPasswordHasherInterface;
 use function in_array;
 use const PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
-use const PASSWORD_ARGON2_DEFAULT_THREADS;
 use const PASSWORD_ARGON2_DEFAULT_TIME_COST;
 use const PASSWORD_ARGON2ID;
 use function password_hash;
@@ -34,15 +33,32 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
     private const array SUPPORTED = [Argon2id::NAME, Argon2i::NAME, Bcrypt::NAME];
 
     /**
-     * The defaults of PHP meet RFC 9106 §4; a deployment raises them, never lowers them.
+     * The memory-constrained parameter set of RFC 9106 §4: 64 MiB of memory, three passes, four lanes. The memory and
+     * the passes are the defaults of PHP, which holds that memory and spends a pass more than the RFC asks; the four
+     * lanes are this hasher's, PHP defaulting to one. A lane is the "threads" option of password_hash(), and the lanes
+     * of a set divide its memory instead of adding to it, so four of them ask a deployment for the same work.
+     */
+    public const int MEMORY_COST = PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
+
+    public const int TIME_COST = PASSWORD_ARGON2_DEFAULT_TIME_COST;
+
+    public const int THREADS = 4;
+
+    /**
+     * A deployment raises these parameters, never lowers them.
      */
     public function __construct(
-        private int $memoryCost = PASSWORD_ARGON2_DEFAULT_MEMORY_COST,
-        private int $timeCost = PASSWORD_ARGON2_DEFAULT_TIME_COST,
-        private int $threads = PASSWORD_ARGON2_DEFAULT_THREADS,
+        private int $memoryCost = self::MEMORY_COST,
+        private int $timeCost = self::TIME_COST,
+        private int $threads = self::THREADS,
     ) {
-        if ($memoryCost < PASSWORD_ARGON2_DEFAULT_MEMORY_COST || $timeCost < PASSWORD_ARGON2_DEFAULT_TIME_COST || $threads < 1) {
-            throw new InvalidArgumentException('argon2id parameters cannot go below the defaults of PHP.');
+        if ($memoryCost < self::MEMORY_COST || $timeCost < self::TIME_COST || $threads < self::THREADS) {
+            throw new InvalidArgumentException(sprintf(
+                'argon2id parameters cannot go below %d KiB of memory, %d passes and %d lanes.',
+                self::MEMORY_COST,
+                self::TIME_COST,
+                self::THREADS,
+            ));
         }
     }
 
