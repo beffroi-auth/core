@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Totp;
 
-use function array_map;
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
-use Beffroi\Core\Domain\Credential\BackupCode;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Credential\TotpProvisioning;
 use Beffroi\Core\Domain\Credential\TotpSecret;
@@ -19,7 +17,6 @@ use Beffroi\Core\Exception\KmsUnavailableException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\RandomnessInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
-use Beffroi\Core\Port\PasswordHasherInterface;
 use Beffroi\Core\Port\SecretSealerInterface;
 use Beffroi\Core\Port\TotpAlgorithmInterface;
 use Psr\Clock\ClockInterface;
@@ -41,11 +38,11 @@ final readonly class TotpEnrolment
         private EnrolmentRefusal $enrolments,
         private UuidGeneratorInterface $uuids,
         private RandomnessInterface $randomness,
+        private BackupCodeSet $backupCodes,
         private ActiveTotp $activeTotp,
         private TotpAlgorithmInterface $algorithm,
         private TotpCodeMatcher $matcher,
         private SecretSealerInterface $sealer,
-        private PasswordHasherInterface $hasher,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -62,12 +59,8 @@ final readonly class TotpEnrolment
     {
         $this->refuseASecondOne($user);
         $secret = new TotpSecret($this->randomness->bytes(TotpSecret::LENGTH));
-        $backupCodes = [];
-        for ($i = 0; $i < TotpCredential::BACKUP_CODES; ++$i) {
-            $backupCodes[] = BackupCode::spelledBy($this->randomness->bytes(BackupCode::LENGTH));
-        }
 
-        return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $backupCodes);
+        return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $this->backupCodes->draw());
     }
 
     /**
@@ -91,7 +84,7 @@ final readonly class TotpEnrolment
                 $this->uuids->timeOrdered(),
                 $user,
                 $sealed,
-                array_map(fn (string $code): BackupCode => new BackupCode($this->hasher->hash(BackupCode::normalize($code))), $challenge->backupCodes),
+                $this->backupCodes->hashed($challenge->backupCodes),
                 $step,
                 $now,
             );

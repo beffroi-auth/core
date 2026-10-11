@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Totp;
 
-use Beffroi\Core\Domain\Credential\BackupCode;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Event\BackupCodesRenewed;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
-use Beffroi\Core\Port\PasswordHasherInterface;
-use Beffroi\Core\Port\RandomnessInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
@@ -30,8 +27,7 @@ final readonly class BackupCodesRenewal
 {
     public function __construct(
         private CredentialRepositoryInterface $credentials,
-        private RandomnessInterface $randomness,
-        private PasswordHasherInterface $hasher,
+        private BackupCodeSet $codes,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -45,14 +41,8 @@ final readonly class BackupCodesRenewal
      */
     public function renew(TotpCredential $totp, RequestContext $context): array
     {
-        $spelled = [];
-        $drawn = [];
-        for ($code = 0; $code < TotpCredential::BACKUP_CODES; ++$code) {
-            $one = BackupCode::spelledBy($this->randomness->bytes(BackupCode::LENGTH));
-            $spelled[] = $one;
-            $drawn[] = new BackupCode($this->hasher->hash(BackupCode::normalize($one)));
-        }
-        $totp->renewBackupCodes($drawn);
+        $spelled = $this->codes->draw();
+        $totp->renewBackupCodes($this->codes->hashed($spelled));
         $this->credentials->save($totp);
         $this->events->dispatch(new BackupCodesRenewed($totp, $this->clock->now(), $context));
 

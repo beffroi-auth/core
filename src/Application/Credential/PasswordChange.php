@@ -28,10 +28,11 @@ use SensitiveParameter;
  * knows the password, which is exactly what matters here: a session somebody else took over does not get
  * to replace the password it signed in with and lock its owner out.
  *
- * **What the guess costs is not counted against the login.** The attempts of a password login are
- * counted per user (PasswordAttempts), and counting these there would let whoever holds a session spend
- * the budget of the person whose session it is, which is the owner locked out by the form meant to
- * protect them. What bounds a guess here is that one has to be signed in as that person to make it.
+ * **What the guess costs is not counted against the login.** The attempts of a password login are counted
+ * per user (PasswordAttemptLimiterInterface, the window being the bundle's: RateLimitedAttempts), and
+ * counting these there would let whoever holds a session spend the budget of the person whose session it
+ * is, which is the owner locked out by the form meant to protect them. What bounds a guess here is that
+ * one has to be signed in as that person to make it.
  *
  * **What happens to the other sessions is the caller's policy**, as it is for every act on a credential:
  * this writes the password and says so.
