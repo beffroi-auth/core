@@ -11,7 +11,7 @@ use SensitiveParameter;
 use function strlen;
 
 /**
- * How hard a password is to guess, in bits, and the rung that number falls on (NIST SP 800-63B §5.1.1.2).
+ * How hard a password is to guess, in bits, and the rung that number falls on (NIST SP 800-63B §3.1.1.2).
  *
  * **It is an estimate of entropy and never a composition rule.** The same section asks a verifier not to
  * impose one: a password is not refused for holding no digit and no capital, it is refused for being

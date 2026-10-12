@@ -14,7 +14,7 @@ use Beffroi\Core\Port\BreachedPasswordsInterface;
 use SensitiveParameter;
 
 /**
- * The rule NIST SP 800-63B §5.1.1.2 puts first: a prospective secret is compared against a list of values
+ * The rule NIST SP 800-63B §3.1.1.2 puts first: a prospective secret is compared against a list of values
  * known to be commonly used, expected or compromised, and refused when it is one.
  *
  * It is one object and not a block in each use case, because every path that writes a password runs it:

@@ -10,7 +10,7 @@ use Beffroi\Core\Exception\BreachLookupFailedException;
 use SensitiveParameter;
 
 /**
- * A list of values known to be commonly used, expected or compromised, which NIST SP 800-63B §5.1.1.2
+ * A list of values known to be commonly used, expected or compromised, which NIST SP 800-63B §3.1.1.2
  * asks a prospective secret to be compared against.
  *
  * **It is a port because a lookup is input and output, and a value object does none.** What a password has

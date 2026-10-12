@@ -26,6 +26,19 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * of those methods (AuthenticationPredicateInterface::admits()). A kind this provider gains is swept by the same
  * walk, with nothing to edit.
  *
+ * **A password already held is not swept for its length.** A floor the tenant adopts here decides how
+ * long a password has to be (PasswordLength, NIST SP 800-63B §3.1.1.2), and a floor that stops reading a
+ * second factor asks fifteen characters of a password that was held to eight. This sweep does nothing
+ * about that, and the reason is not that it would be awkward: what is stored is a hash, which says
+ * nothing of the length of the password behind it, and the section that asks for fifteen asks a verifier
+ * in the same breath not to require a change without evidence that the authenticator is compromised. The
+ * length is therefore a rule of what is posed, from the instant the floor is written: every password
+ * posed after it reaches what the floor asks, and the one already held keeps signing its person in, no
+ * path of a login building a PlainPassword to measure what they typed. A password this provider accepted
+ * is not a password it refuses at the next login without a word. What does take a password out of a
+ * person's hands is the list of compromised passwords, and that has its own lane
+ * (BreachedPasswordRefusal).
+ *
  * **The floor is written first and the sweep follows**, so that an interruption leaves a tenant that
  * refuses what it forbids rather than a tenant that still admits it: the login is refused by the floor
  * from the first instant (SessionOpener), and running this again finishes the sweep. Lowering the floor

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Credential;
 
 /**
- * Why a string is not a password this provider will hold (NIST SP 800-63B §5.1.1.2). A closed set the
+ * Why a string is not a password this provider will hold (NIST SP 800-63B §3.1.1.2). A closed set the
  * page and the console that pose one read to say which rule pronounced it: nothing acts on it, every
  * refusal being the same answer, which is that nothing was written.
  *
@@ -16,7 +16,9 @@ namespace Beffroi\Core\Domain\Credential;
 enum PasswordRefusal: string
 {
     /**
-     * Shorter than the eight characters of §5.1.1.2.
+     * Shorter than what §3.1.1.2 asks of a password serving the login this one would serve
+     * (PasswordLength): fifteen characters where it signs somebody in alone, eight where the floor of the
+     * tenant reads a second factor beside it.
      */
     case TooShort = 'too_short';
 
@@ -32,7 +34,7 @@ enum PasswordRefusal: string
     case TooWeak = 'too_weak';
 
     /**
-     * Counted in a list of values known to be compromised, which is the rule §5.1.1.2 puts first.
+     * Counted in a list of values known to be compromised, which is the rule §3.1.1.2 puts first.
      */
     case Breached = 'breached';
 

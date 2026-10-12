@@ -193,7 +193,7 @@ final class PasskeyCredential extends RevocableCredential implements
      * "swk" for a synced passkey (the flag set: the key lives wherever the provider of the user copies it);
      * "user" when the authenticator tested that a user is present (UP, §6.2.4); "mfa" when it verified the
      * user (UV, §6.2.3): the key was unlocked by a PIN or a biometric the authenticator does not name, the
-     * multi-factor cryptographic device of NIST SP 800-63B §5.1.9.
+     * multi-factor cryptographic authenticator of NIST SP 800-63B §3.1.7.1.
      *
      * @return non-empty-list<AuthenticationMethod>
      */
