@@ -13,7 +13,7 @@ final readonly class PictureUrl extends ProfileClaim
 {
     public function name(): string
     {
-        return 'picture_url';
+        return 'picture';
     }
 
     public function of(User $user): ?string
