@@ -9,7 +9,7 @@ use function count;
 
 /**
  * Two methods of different kinds (knowledge, possession, inherence, RFC 8176 §2), or a method that counts
- * as several factors by itself ("mfa"). Two proofs of the same kind are one factor (NIST SP 800-63B §4),
+ * as several factors by itself ("mfa"). Two proofs of the same kind are one factor (NIST SP 800-63B §2),
  * which is why this reads the kinds of a set of methods and not their number.
  *
  * It is the one predicate of decision 0010 that reads the proofs of a login together rather than one by

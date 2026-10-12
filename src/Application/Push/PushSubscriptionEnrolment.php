@@ -15,7 +15,7 @@ use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 
 /**
- * A browser of a user says where it can be pushed to (Push API §4): what it hands over is recorded
+ * A browser of a user says where it can be pushed to (Push API §3.4, §8): what it hands over is recorded
  * against the application server key it was handed, so that what signs a push later is the key that
  * browser bound itself to (RFC 8292 §3.2).
  *

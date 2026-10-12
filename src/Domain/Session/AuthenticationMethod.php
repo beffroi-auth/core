@@ -94,7 +94,7 @@ final readonly class AuthenticationMethod implements Stringable
 
     /**
      * The distinct kinds of factor a set of methods proves, in the order the methods come. Two proofs of
-     * the same kind are one factor (NIST SP 800-63B §4), and a method that proves none is not counted.
+     * the same kind are one factor (NIST SP 800-63B §2), and a method that proves none is not counted.
      *
      * @param list<self> $methods
      *

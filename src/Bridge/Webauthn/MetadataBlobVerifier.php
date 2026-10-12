@@ -26,9 +26,9 @@ use Webauthn\MetadataService\CertificateChain\CertificateToolbox;
 use Webauthn\MetadataService\Service\MetadataBLOBPayload;
 
 /**
- * Verifies a Metadata BLOB as the FIDO Metadata Service v3 (§3.1.7, §3.2) has a relying party verify it:
- * a compact JWS with one signature, whose protected header carries the certificate chain of the signer
- * (RFC 7515 §4.1.6, "x5c"), the signature checked with the key of the first certificate, the chain
+ * Verifies a Metadata BLOB as the FIDO Metadata Service v3.1.1 (§3.1.7, §3.2) has a relying party verify
+ * it: a compact JWS with one signature, whose protected header carries the certificate chain of the
+ * signer (RFC 7515 §4.1.6, "x5c"), the signature checked with the key of the first certificate, the chain
  * checked up to the root the caller pins (never one the token names), the payload read as a blob. What
  * the library ships for this (FidoAllianceCompliantMetadataService) fetches the root over HTTP at every
  * load and swallows a refusal into an empty repository; this one refuses aloud and reads nothing from the

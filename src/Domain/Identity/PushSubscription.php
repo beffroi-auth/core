@@ -21,9 +21,9 @@ use function trim;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * One browser of a user that this provider may push to (RFC 8030 §2, Push API §4): where the push service
- * takes a message for it, the two keys it gave to encrypt one (RFC 8291 §3.1), and the application server
- * key of the tenant it was made under, by its "kid".
+ * One browser of a user that this provider may push to (RFC 8030 §2, Push API §3.4): where the push
+ * service takes a message for it (§8), the two keys it gave to encrypt one (RFC 8291 §3.1), and the
+ * application server key of the tenant it was made under, by its "kid".
  *
  * It is the user's and not a client's, so it lives with the rest of what a tenant knows about somebody
  * (decision 0002): several per user, because a user has several browsers, restated with the tenant of
@@ -38,8 +38,9 @@ use Symfony\Component\Uid\Uuid;
 final class PushSubscription implements ClassifiedFieldsInterface
 {
     /**
-     * Push API §4: what a browser calls the subscription is a URL of its push service, and nothing this
-     * provider chose. It is taken as it was given, and only what could not be a push endpoint is refused.
+     * Push API §8: what a browser hands over as the endpoint of its subscription is a URL of its push
+     * service, and nothing this provider chose. It is taken as it was given, and only what could not be a
+     * push endpoint is refused.
      */
     private const string ENDPOINT_SCHEME = 'https://';
 
@@ -100,8 +101,9 @@ final class PushSubscription implements ClassifiedFieldsInterface
     }
 
     /**
-     * The same browser, subscribing again (Push API §4). It hands back the endpoint it already had, which
-     * is what says it is this browser, so this row is what changes rather than a second row beside it.
+     * The same browser, subscribing again (Push API §3.4). It hands back the endpoint it already had
+     * (§8), which is what says it is this browser, so this row is what changes rather than a second row
+     * beside it.
      *
      * What changes is what it handed with it: a browser draws its two keys afresh at every subscription
      * (RFC 8291 §3.1), the application server key is the one it was just handed, which a rotation may have

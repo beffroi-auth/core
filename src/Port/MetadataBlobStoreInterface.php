@@ -8,10 +8,11 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 
 /**
  * Where the FIDO metadata the provider trusts is kept (architecture §3.4): the payload of a Metadata BLOB
- * (FIDO Metadata Service v3 §3.1.4, a JSON document of entries by AAGUID with their status reports) once
- * the console verified its signature under the root it pins, or one the console wrapped around a statement
- * a manufacturer published. What is in the store was verified when it was written and is trusted like the
- * sealed keys next to it are; the ceremonies read it, they never write it.
+ * (FIDO Metadata Service v3.1.1 §3.1.7, its payload §3.1.6: a JSON document of entries, each naming its
+ * own authenticator by AAID, AAGUID or attestation certificate key identifiers and carrying its status
+ * reports) once the console verified its signature under the root it pins, or one the console wrapped
+ * around a statement a manufacturer published. What is in the store was verified when it was written and
+ * is trusted like the sealed keys next to it are; the ceremonies read it, they never write it.
  */
 interface MetadataBlobStoreInterface
 {
