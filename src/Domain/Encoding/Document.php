@@ -8,6 +8,7 @@ use function array_is_list;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function get_debug_type;
 use function is_array;
+use function is_bool;
 use function is_float;
 use function is_int;
 use function is_string;
@@ -72,6 +73,21 @@ final readonly class Document
         $value = $this->members[$name] ?? null;
         if ($value !== null && ! is_int($value)) {
             throw new InvalidArgumentException(sprintf('The member "%s" must be an integer or absent.', $name));
+        }
+
+        return $value;
+    }
+
+    /**
+     * A JSON boolean, never a string or a number read as one.
+     *
+     * @throws InvalidArgumentException when the member is there and is not a boolean
+     */
+    public function nullableBool(string $name): ?bool
+    {
+        $value = $this->members[$name] ?? null;
+        if ($value !== null && ! is_bool($value)) {
+            throw new InvalidArgumentException(sprintf('The member "%s" must be a boolean or absent.', $name));
         }
 
         return $value;
