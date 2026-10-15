@@ -10,6 +10,7 @@ use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Port\RotationSchedulesInterface;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use function sprintf;
@@ -27,17 +28,20 @@ use function sprintf;
  * **Idempotent by what it looks at and not by a flag**: a key gets a successor only when its algorithm has
  * no staged key, so the tick that follows finds the one this call staged and stages nothing. The reading is
  * one pass over the keys in service, the staged ones included.
+ *
+ * **Each key is old by the age of its family** (issue #738): a SAML key works a year, every rotation of it
+ * being a step for whoever pinned its certificate, while a key of the JWK Set works a quarter.
  */
 final readonly class KeySuccession
 {
     /**
-     * @param DateInterval $age how long a key works before a successor is staged for it, counted from its activation
+     * @param RotationSchedulesInterface $schedules how long a key of each family works before a successor is staged for it, counted from its activation
      */
     public function __construct(
         private TenantKeyRepositoryInterface $keys,
         private KeyStaging $staging,
         private RetirementWindow $window,
-        private DateInterval $age,
+        private RotationSchedulesInterface $schedules,
         private ClockInterface $clock,
     ) {
     }
@@ -47,7 +51,8 @@ final readonly class KeySuccession
      *
      * @throws LogicException if the age is not longer than the retirement window of what the key is for:
      *                        each successor would then start retiring before the previous key had
-     *                        retired, and the JWK Set would grow with every rotation
+     *                        retired, and the JWK Set would grow with every rotation; or if no family
+     *                        holds the algorithm of a key
      */
     public function stageSuccessorsDue(Tenant $tenant, RequestContext $context): array
     {
@@ -61,10 +66,14 @@ final readonly class KeySuccession
         }
         $staged = [];
         foreach ($inService as $key) {
-            if (! $key->hasReachedItsAge($now, $this->age) || isset($awaited[$key->algorithm->name()])) {
+            if (isset($awaited[$key->algorithm->name()])) {
                 continue;
             }
-            $this->assertTheAgeOutlasts($tenant, $key, $now);
+            $age = $this->schedules->of($key->algorithm)->age;
+            if (! $key->hasReachedItsAge($now, $age)) {
+                continue;
+            }
+            $this->assertTheAgeOutlasts($tenant, $key, $age, $now);
             $staged[] = $this->staging->stage($tenant, $key->algorithm, $context);
             $awaited[$key->algorithm->name()] = true;
         }
@@ -74,22 +83,22 @@ final readonly class KeySuccession
 
     /**
      * The age has to outlast what a key of that use holds back, and the comparison is made here because
-     * here is the one place both numbers exist: the age is the deployment's and the window is the tenant's,
+     * here is the one place both numbers exist: the age is the family's and the window is the tenant's,
      * read from the kinds of artifact that name the use. A deployment that got it wrong hears it on the
      * first tick rather than finding its JWK Set grown a quarter later.
      *
      * @throws LogicException
      */
-    private function assertTheAgeOutlasts(Tenant $tenant, TenantKey $key, DateTimeImmutable $now): void
+    private function assertTheAgeOutlasts(Tenant $tenant, TenantKey $key, DateInterval $age, DateTimeImmutable $now): void
     {
         $window = $this->window->dueAt($tenant, $key->algorithm->keyUse(), $now);
-        if ($now->add($this->age) > $window) {
+        if ($now->add($age) > $window) {
             return;
         }
         throw new LogicException(sprintf(
             'A key of the "%s" use works for %s and what it holds back lives until %s: the age of a key is longer than that window, or every rotation leaves a key behind in the JWK Set.',
             $key->algorithm->keyUse()->value,
-            $now->add($this->age)->format(DateTimeImmutable::RFC3339),
+            $now->add($age)->format(DateTimeImmutable::RFC3339),
             $window->format(DateTimeImmutable::RFC3339),
         ));
     }

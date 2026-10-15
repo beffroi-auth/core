@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Key;
 
-use DateInterval;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Event\TenantKeyStaged;
 use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Port\KeyPairGeneratorInterface;
 use Beffroi\Core\Port\KeySealerInterface;
+use Beffroi\Core\Port\RotationSchedulesInterface;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -30,30 +31,37 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  *
  * The same first step for a key that signs and for a key a client encrypts to: what the key is for is what
  * its algorithm is for, and nothing here reads it.
+ *
+ * **How long the window lasts is the family's** (issue #738): read from the schedule of the family that
+ * holds the algorithm, so that a key a SAML service provider must find in metadata it reads once a day waits
+ * days, and a key of the JWK Set minutes. Nothing here holds a delay of its own.
  */
 final readonly class KeyStaging
 {
     /**
-     * @param DateInterval $stagingDelay how long a staged key stays published before it is used: what a relying party needs to see it
+     * @param RotationSchedulesInterface $schedules how long a staged key of each family stays published before it is used: what its readers need to see it
      */
     public function __construct(
         private TenantKeyRepositoryInterface $keys,
         private KeyPairGeneratorInterface $generator,
         private KeySealerInterface $sealer,
-        private DateInterval $stagingDelay,
+        private RotationSchedulesInterface $schedules,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
     }
 
     /**
-     * Published, sealed, doing nothing until the staging window ends and the take-over activates it.
+     * Published, sealed, doing nothing until the staging window of its family ends and the take-over
+     * activates it.
+     *
+     * @throws LogicException when no family holds the algorithm
      */
     public function stage(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
     {
         $now = $this->clock->now();
 
-        return $this->publish($tenant, $algorithm, $context, $now, $now->add($this->stagingDelay));
+        return $this->publish($tenant, $algorithm, $context, $now, $now->add($this->schedules->of($algorithm)->stagingDelay));
     }
 
     /**
