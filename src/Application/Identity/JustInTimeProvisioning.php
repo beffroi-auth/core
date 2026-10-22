@@ -30,21 +30,22 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * identity names that subject, the person is created, with its source, which names the provider and holds
  * the address and those of the claims of the profile it fills that it said, and its linked identity, with
  * the snapshot of what the provider said; `PersonProvisioned` is announced. Its subject is drawn as any
- * other, and its username is that subject: a person an upstream provider creates never signs in here with a
- * username (decision 0029), and an address would be a username that follows no change of address and keeps
- * from the next holder of the old one. Its address is verified, the provider answering for its domain. The
- * next sign-ins create nothing and announce nothing: the snapshot is refreshed, and what the source holds
- * becomes exactly what the provider fills and says now, written as it says it, a claim it no longer fills or
- * says being released to a manual description with the value it wrote last. Only by the provider that
- * created the person: an identity an import linked to a local person, or to a person another provider
- * created, refreshes its snapshot and nothing else.
+ * other, and its username is its address, which is what the pages a person reads call them by. Its address
+ * is verified, the provider answering for its domain. The next sign-ins create nothing and announce nothing:
+ * the snapshot is refreshed, and what the source holds becomes exactly what the provider fills and says now,
+ * written as it says it, a claim it no longer fills or says being released to a manual description with the
+ * value it wrote last. **The username follows the address**: a provider that sends another one has the
+ * person renamed to it in the same unit, so that the old address is nobody's username any more and the next
+ * person who holds it can be created. Only by the provider that created the person: an identity an import
+ * linked to a local person, or to a person another provider created, refreshes its snapshot and nothing
+ * else.
  *
  * **What a provider writes of a person keeps two rules**, whether it creates the person or refreshes it. The
  * address is in a domain the provider declares, so that a provider never creates or rewrites a person of a
- * domain it does not answer for (decision 0029). And no other person of the tenant holds that mailbox, so
- * that no existing account is linked on its own, linking one being spike 12's after a local
- * re-authentication; at a refresh, that one is asked only when the mailbox changed, the person already
- * holding their own.
+ * domain it does not answer for (decision 0029). And no other person of the tenant holds that address, as
+ * its mailbox or as its username, so that no existing account is linked on its own, linking one being spike
+ * 12's after a local re-authentication; at a refresh, each is asked only of what changed, the person already
+ * holding their own mailbox and their own name.
  *
  * **Every refusal is raised before the writes, and says nothing of who holds what**
  * (`UpstreamProvisioningRefusedException`, one message, the reason for the audit trail). The writes of a
@@ -100,17 +101,24 @@ final readonly class JustInTimeProvisioning
             return $user;
         }
         // every refusal before the unit: a profile the claims cannot be, a domain the provider does not
-        // answer for, a mailbox somebody else holds
+        // answer for, a mailbox or a username somebody else holds
         $source = $provider->source($claims);
         $profile = $source->rewrite($user->profile, $claims);
         $this->assertAnswersFor($provider, $email);
         if (! ($user->email?->isTheSameMailboxAs($email) ?? false)) {
             $this->assertNobodyHolds($tenant, $email, $user);
         }
+        $renamed = $user->username !== $email->value;
+        if ($renamed) {
+            $this->assertNobodyIsNamed($tenant, $email, $user);
+        }
         $now = $this->clock->now();
-        $this->writes->atomically(function () use ($user, $provider, $subject, $email, $source, $profile, $snapshot, $now): void {
+        $this->writes->atomically(function () use ($user, $provider, $subject, $email, $source, $profile, $snapshot, $now, $renamed): void {
             $user->heldBy($source, $now);
             $user->changeEmail($email, true, $now);
+            if ($renamed) {
+                $user->rename($email->value, $now);
+            }
             $user->updateProfile($profile, $now);
             $this->users->save($user);
             $this->linker->link($user, $provider->name, $subject, $snapshot);
@@ -136,12 +144,13 @@ final readonly class JustInTimeProvisioning
     ): User {
         $source = $provider->source($claims);
         // every refusal before the unit: a profile the claims cannot be, a domain the provider does not
-        // answer for, a mailbox somebody holds, a subject drawn twice
+        // answer for, an address somebody holds as a mailbox or as a username, a subject drawn twice
         $profile = $source->rewrite(Profile::empty(), $claims);
         $this->assertAnswersFor($provider, $email);
         $this->assertNobodyHolds($tenant, $email);
+        $this->assertNobodyIsNamed($tenant, $email);
         $person = new Subject($this->uuids->opaque()->toRfc4122());
-        if ($this->users->findBySubject($tenant, $person) !== null || $this->users->findByUsername($tenant, $person->value) !== null) {
+        if ($this->users->findBySubject($tenant, $person) !== null) {
             throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::DrawnSubjectTaken);
         }
         $now = $this->clock->now();
@@ -149,7 +158,7 @@ final readonly class JustInTimeProvisioning
         // that names it is a person no sign-in finds, whose address refuses every creation after it
         try {
             $user = $this->writes->atomically(function () use ($tenant, $provider, $subject, $email, $source, $profile, $snapshot, $now, $person): User {
-                $user = $this->provisioner->create($tenant, $person->value, $email, true, $person, $source);
+                $user = $this->provisioner->create($tenant, $email->value, $email, true, $person, $source);
                 $user->updateProfile($profile, $now);
                 $this->users->save($user);
                 $this->linker->link($user, $provider->name, $subject, $snapshot);
@@ -189,6 +198,20 @@ final readonly class JustInTimeProvisioning
             if ($except === null || ! $holder->id->equals($except->id)) {
                 throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::AddressHeld);
             }
+        }
+    }
+
+    /**
+     * Whoever is named by that address, as it is written, a username being matched byte for byte, and not the
+     * person it is written for.
+     *
+     * @throws UpstreamProvisioningRefusedException
+     */
+    private function assertNobodyIsNamed(Tenant $tenant, EmailAddress $email, ?User $except = null): void
+    {
+        $named = $this->users->findByUsername($tenant, $email->value);
+        if ($named !== null && ($except === null || ! $named->id->equals($except->id))) {
+            throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::AddressHeld);
         }
     }
 }

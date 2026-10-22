@@ -16,13 +16,13 @@ enum UpstreamProvisioningRefusalReason: string
     case OutsideItsDomains = 'outside_its_domains';
 
     /**
-     * Another person of the tenant holds the address, and no existing account is linked on its own (spike
-     * 12, beffroi-auth/beffroi#85).
+     * Another person of the tenant holds the address, as its mailbox or as its username, and no existing
+     * account is linked on its own (spike 12, beffroi-auth/beffroi#85).
      */
     case AddressHeld = 'address_held';
 
     /**
-     * The subject drawn for the person is already the subject or the username of a person of the tenant.
+     * The subject drawn for the person is already the subject of a person of the tenant.
      */
     case DrawnSubjectTaken = 'drawn_subject_taken';
 
