@@ -86,12 +86,22 @@ final readonly class UpstreamProvider
     }
 
     /**
-     * The source of a person this provider creates: it names this provider, and holds the address and the
-     * claims of the profile it fills, which a manual description then leaves to it.
+     * The source of a person as this provider holds it from what it said at a sign-in: it names this
+     * provider, and holds the address and those of the claims of the profile it fills that it said, which a
+     * manual description then leaves to it. A claim it fills and did not say, it holds no longer.
+     *
+     * @param array<string, string> $said what the provider said, by the names of OIDC Core §5.1
      */
-    public function source(): UserSource
+    public function source(array $said): UserSource
     {
-        return UserSource::upstream($this->name, [self::EMAIL, ...$this->claims]);
+        $held = [self::EMAIL];
+        foreach ($this->claims as $claim) {
+            if (array_key_exists($claim, $said)) {
+                $held[] = $claim;
+            }
+        }
+
+        return UserSource::upstream($this->name, $held);
     }
 
     /**

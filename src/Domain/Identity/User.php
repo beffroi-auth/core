@@ -65,7 +65,7 @@ final class User implements ClassifiedFieldsInterface
         public private(set) ?Address $address,
         public readonly DateTimeImmutable $createdAt,
         public private(set) DateTimeImmutable $updatedAt,
-        public readonly UserSource $source,
+        public private(set) UserSource $source,
     ) {
         $this->username = self::normalizeUsername($username);
         self::assertVerifiable($email, $emailVerified, 'email address');
@@ -133,6 +133,23 @@ final class User implements ClassifiedFieldsInterface
     public function changeAddress(?Address $address, DateTimeImmutable $now): void
     {
         $this->address = $address?->isEmpty() === true ? null : $address;
+        $this->updatedAt = $now;
+    }
+
+    /**
+     * What the source that created the person holds now, which its provider says again at every sign-in
+     * through it (issue #781): a claim it no longer fills or no longer sends is released, and a manual
+     * description may say it again, no source holding a claim for ever. The provider is not what changes:
+     * the person stays the one it created.
+     *
+     * @throws InvalidArgumentException when the source names another provider than the one that created the person
+     */
+    public function heldBy(UserSource $source, DateTimeImmutable $now): void
+    {
+        if ($source->provider !== $this->source->provider) {
+            throw new InvalidArgumentException('What a source holds of a person changes, and the provider that created the person does not.');
+        }
+        $this->source = $source;
         $this->updatedAt = $now;
     }
 

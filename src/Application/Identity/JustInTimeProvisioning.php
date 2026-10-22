@@ -25,11 +25,12 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  *
  * **The person is found by the linked identity (provider, subject), never by the address.** When no linked
  * identity names that subject, the person is created, with its source, the provider that holds the address
- * and the claims of the profile it fills, and its linked identity, with the snapshot of what the provider
+ * and those of the claims of the profile it fills that it said, and its linked identity, with the snapshot of what the provider
  * said; `PersonProvisioned` is announced. Its username is its address, its subject is drawn as any other,
  * and its address is verified, the provider answering for its domain. The next sign-ins create nothing and
- * announce nothing: the snapshot is refreshed, and what the source holds is written again as the provider
- * says it now. Only by the provider that created the person: an identity an import linked to a local
+ * announce nothing: the snapshot is refreshed, and what the source holds becomes exactly what the provider
+ * fills and says now, written as it says it, a claim it no longer fills or says being released to a manual
+ * description with the value it wrote last. Only by the provider that created the person: an identity an import linked to a local
  * person, or to a person another provider created, refreshes its snapshot and nothing else.
  *
  * **What a provider writes of a person keeps two rules**, whether it creates the person or refreshes it, and
@@ -107,7 +108,7 @@ final readonly class JustInTimeProvisioning
         array $snapshot,
         RequestContext $context,
     ): User {
-        $source = $provider->source();
+        $source = $provider->source($claims);
         // every refusal before the first write: a profile the claims cannot be, a domain the provider does
         // not answer for, an address somebody holds
         $profile = $source->rewrite(Profile::empty(), $claims);
@@ -133,23 +134,21 @@ final readonly class JustInTimeProvisioning
     }
 
     /**
-     * What the source of the person holds, written as its provider says it now.
+     * What the source of the person holds becomes exactly what its provider fills and says now, each claim
+     * written as it says it: a claim it no longer fills or says is released, keeping the value it wrote
+     * last, which a manual description may then say.
      *
      * @param array<string, string> $claims
      */
     private function rewritten(User $user, UpstreamProvider $provider, EmailAddress $email, array $claims): void
     {
-        $source = $user->source;
+        $source = $provider->source($claims);
         $profile = $source->rewrite($user->profile, $claims);
-        $holdsTheAddress = $source->holds(UpstreamProvider::EMAIL);
-        if ($holdsTheAddress) {
-            $this->assertAnswersFor($provider, $email);
-            $this->assertNobodyElseHolds($user, $provider, $email);
-        }
+        $this->assertAnswersFor($provider, $email);
+        $this->assertNobodyElseHolds($user, $provider, $email);
         $now = $this->clock->now();
-        if ($holdsTheAddress) {
-            $user->changeEmail($email, true, $now);
-        }
+        $user->heldBy($source, $now);
+        $user->changeEmail($email, true, $now);
         $user->updateProfile($profile, $now);
         $this->users->save($user);
     }
