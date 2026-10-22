@@ -6,13 +6,14 @@ namespace Beffroi\Core\Bridge\InMemory;
 
 use Beffroi\Core\Domain\Group\GroupMembership;
 use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Port\GroupMembershipRepositoryInterface;
 use Beffroi\Core\Port\GroupsOfAPersonInterface;
 use function usort;
 
 /**
  * For tests and for the examples: nothing here survives the process.
  */
-final class InMemoryGroupMembershipRepository implements GroupsOfAPersonInterface
+final class InMemoryGroupMembershipRepository implements GroupMembershipRepositoryInterface, GroupsOfAPersonInterface
 {
     /**
      * @var array<string, GroupMembership>
@@ -22,6 +23,11 @@ final class InMemoryGroupMembershipRepository implements GroupsOfAPersonInterfac
     public function save(GroupMembership $membership): void
     {
         $this->memberships[$membership->id->toRfc4122()] = $membership;
+    }
+
+    public function remove(GroupMembership $membership): void
+    {
+        unset($this->memberships[$membership->id->toRfc4122()]);
     }
 
     public function of(User $user): array
