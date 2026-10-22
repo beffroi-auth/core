@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\InMemory;
 
+use Beffroi\Core\Domain\Identity\EmailAddress;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -40,6 +41,17 @@ final class InMemoryUserRepository implements UserRepositoryInterface
     {
         foreach ($this->users as $user) {
             if ($user->belongsTo($tenant) && $user->username === $username) {
+                return $user;
+            }
+        }
+
+        return null;
+    }
+
+    public function findByEmail(Tenant $tenant, EmailAddress $email): ?User
+    {
+        foreach ($this->users as $user) {
+            if ($user->belongsTo($tenant) && $user->email?->isTheSameMailboxAs($email) === true) {
                 return $user;
             }
         }

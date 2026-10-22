@@ -86,6 +86,28 @@ final readonly class UserSource
     }
 
     /**
+     * The profile as this source writes it from what its provider says now: each claim of the profile it
+     * holds said as the provider says it, and cleared when the provider says nothing of it, the provider
+     * being the one that answers for it; every other claim left as it was. A local source holds nothing, so
+     * the profile comes back as it was.
+     *
+     * @param array<string, string> $said what the provider said, by the names of OIDC Core §5.1
+     *
+     * @throws InvalidArgumentException when a claim it holds is said in a form the profile refuses
+     */
+    public function rewrite(Profile $profile, array $said): Profile
+    {
+        $written = [];
+        foreach ($profile->claims() as $claim => $value) {
+            if ($this->holds($claim)) {
+                $written[$claim] = $said[$claim] ?? null;
+            }
+        }
+
+        return $profile->describedWith($written);
+    }
+
+    /**
      * A manual description that changes these claims of the person, refused when the source holds any of
      * them, naming the provider and what it holds.
      *

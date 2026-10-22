@@ -19,6 +19,7 @@ use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Event\PersonAskedForTheirArchive;
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
 use Beffroi\Core\Domain\Event\PersonDroppedTheirArchive;
+use Beffroi\Core\Domain\Event\PersonProvisioned;
 use Beffroi\Core\Domain\Event\PersonTookTheirArchive;
 use Beffroi\Core\Domain\Event\TotpUsed;
 use Beffroi\Core\Domain\Event\UserAuthenticated;
@@ -31,9 +32,9 @@ use Beffroi\Core\Domain\Event\UserAuthenticated;
  * **The acts are named and the question is not the whole journal**, because the journal of a person holds
  * the protocol as well: a token issued, a consent granted, a read that handed them over to an application
  * are acts of theirs too (issues #588 to #590), and they are read where they mean something, by
- * application, beside what that application was given. What is here is the account itself: who got in and
- * how, who tried, what signed out, what changed of the means of signing in, and what the person did of
- * their own record.
+ * application, beside what that application was given. What is here is the account itself: which provider
+ * created it, who got in and how, who tried, what signed out, what changed of the means of signing in, and
+ * what the person did of their own record.
  *
  * **It is one list and a walk holds it to the events**: every act of this package that names a person is
  * here or is named in the test as one that is not theirs, so an act added to the package is put on the
@@ -45,6 +46,8 @@ final class ActsOfAnAccount
      * @var list<string>
      */
     public const array NAMES = [
+        // where the account came from, when a provider created it
+        PersonProvisioned::NAME,
         // who got in, and who tried
         UserAuthenticated::NAME,
         AuthenticationFailed::NAME,
