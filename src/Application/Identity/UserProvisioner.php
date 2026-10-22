@@ -143,13 +143,15 @@ final readonly class UserProvisioner
      * again what was just asked.
      *
      * @throws PasswordRefusedException when a list counts this password, or could not be asked
-     * @throws CredentialEnrolmentFailedException when the floor of the tenant admits no password (issue #327)
+     * @throws CredentialEnrolmentFailedException when the floor of the tenant admits no password (issue #327), or
+     *                                             the person is of a federated domain (decision 0029)
      */
     public function setPassword(User $user, #[SensitiveParameter] PlainPassword $password): PasswordCredential
     {
         // before the list is asked and before anything is hashed: a tenant that holds no password has
         // nobody to ask about this one
         $this->enrolments->assertTheFloorAdmits($user->tenant, 'password', [PasswordCredential::method()]);
+        $this->enrolments->assertTheirDomainAdmits($user, 'password');
         $count = $this->breaches->count($password);
         $now = $this->clock->now();
         $hash = $this->hasher->hash($password->value);

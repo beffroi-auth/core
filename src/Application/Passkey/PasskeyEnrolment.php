@@ -98,6 +98,7 @@ final readonly class PasskeyEnrolment
         // so a tenant that requires a key held in hardware refuses a synced one and only knows which it
         // was once the ceremony answered
         $this->enrolments->assertTheFloorAdmits($user->tenant, 'passkey', $credential->provableMethods());
+        $this->enrolments->assertTheirDomainAdmits($user, 'passkey');
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
 

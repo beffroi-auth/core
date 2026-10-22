@@ -102,14 +102,15 @@ final readonly class TotpEnrolment
      */
     /**
      * What both steps refuse before anything is drawn or written: a second TOTP, and a TOTP at all where
-     * the floor of the tenant admits none (issue #327), so that nobody is shown a secret to scan that
-     * would prove no login here.
+     * the floor of the tenant admits none (issue #327) or for a person of a federated domain (decision
+     * 0029), so that nobody is shown a secret to scan that would prove no login here.
      *
      * @throws CredentialEnrolmentFailedException
      */
     private function refuseASecondOne(User $user): void
     {
         $this->enrolments->assertTheFloorAdmits($user->tenant, 'one-time code', [TotpCredential::method()]);
+        $this->enrolments->assertTheirDomainAdmits($user, 'one-time code');
         if ($this->activeTotp->of($user) !== null) {
             throw new CredentialEnrolmentFailedException('The user has a TOTP already; it is revoked before another is enrolled.');
         }

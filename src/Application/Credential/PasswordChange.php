@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Credential;
 
+use Beffroi\Core\Application\Identity\FederatedDomains;
 use Beffroi\Core\Domain\Credential\PasswordChangeRefusal;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Credential\PlainPassword;
@@ -55,6 +56,7 @@ final readonly class PasswordChange
         private BreachedPasswordRefusal $breaches,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private FederatedDomains $federated,
     ) {
     }
 
@@ -64,7 +66,8 @@ final readonly class PasswordChange
      *                             checked
      *
      * @throws PasswordChangeRefusedException when the password in use was not typed, when the one posed is
-     *                                        the one already held, or when this person holds none
+     *                                        the one already held, when this person holds none, or when they
+     *                                        are of a federated domain
      * @throws PasswordRefusedException when a list of compromised passwords counts the one posed, or could
      *                                 not be asked
      * @throws LogicException when no hasher of this deployment handles the algorithm the stored hash names
@@ -84,6 +87,14 @@ final readonly class PasswordChange
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::NoPasswordHeld,
                 'The tenant signs its users in without a password; there is nothing to replace.',
+            );
+        }
+        // and a person of a federated domain holds none either, whatever a store kept of the time before (decision
+        // 0029): replacing it would be posing a local credential for them
+        if (! $this->federated->admitsLocalCredentials($user)) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::FederatedDomain,
+                'The person is of an e-mail domain the tenant federates; no password of theirs is replaced.',
             );
         }
         $credential = $this->activePassword->of($user);

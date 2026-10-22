@@ -27,4 +27,11 @@ enum PasswordChangeRefusal: string
      * and the page offers nothing rather than setting a first one from a form nobody proved anything on.
      */
     case NoPasswordHeld = 'no_password_held';
+
+    /**
+     * This person is of an e-mail domain the tenant federates to an upstream provider, through which alone
+     * they sign in (decision 0029): a password they held before their domain was federated is replaced by
+     * nobody, posing a new one being posing a local credential for them.
+     */
+    case FederatedDomain = 'federated_domain';
 }
