@@ -32,8 +32,9 @@ final readonly class EmailAddress implements Stringable
 
     /**
      * What follows the last "@", without regard to ASCII case, which is how a domain name is compared (RFC
-     * 4343 §3): what an upstream provider answers for is a domain, and `Acme.Example` is the domain it
-     * declared as `acme.example`. The address is valid, so there is one "@" at least.
+     * 4343 §3): the domain of a mailbox, as isTheSameMailboxAs() compares two. Which upstream provider a
+     * domain is federated to is read by EmailDomain::ofAddress() and never here (decision 0029). The address
+     * is valid, so there is one "@" at least.
      */
     public function domain(): string
     {

@@ -6,6 +6,7 @@ namespace Beffroi\Core\Application\Identity;
 
 use Beffroi\Core\Domain\Event\PersonProvisioned;
 use Beffroi\Core\Domain\Identity\EmailAddress;
+use Beffroi\Core\Domain\Identity\EmailDomain;
 use Beffroi\Core\Domain\Identity\LinkedIdentity;
 use Beffroi\Core\Domain\Identity\Profile;
 use Beffroi\Core\Domain\Identity\Subject;
@@ -177,11 +178,19 @@ final readonly class JustInTimeProvisioning
     }
 
     /**
+     * The domain of the address read by EmailDomain, the rule the login page and the refusal of a local credential
+     * read it by too (decision 0029): one the rule does not read is no domain the provider answers for.
+     *
      * @throws UpstreamProvisioningRefusedException
      */
     private function assertAnswersFor(UpstreamProvider $provider, EmailAddress $email): void
     {
-        if (! $provider->answersFor($email)) {
+        try {
+            $domain = EmailDomain::ofAddress($email->value);
+        } catch (InvalidArgumentException) {
+            throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::OutsideItsDomains);
+        }
+        if (! $provider->answersFor($domain)) {
             throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::OutsideItsDomains);
         }
     }

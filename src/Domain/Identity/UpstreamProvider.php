@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use function array_any;
 use function array_key_exists;
-use const FILTER_FLAG_EMAIL_UNICODE;
-use const FILTER_VALIDATE_EMAIL;
-use function filter_var;
+use function array_values;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function sprintf;
-use function strtolower;
 
 /**
  * An upstream provider as the deployment declares it, which is what a sign-in through it is given: its
@@ -20,9 +18,9 @@ use function strtolower;
  * the profile of OIDC Core §5.1 it fills.
  *
  * **It answers for its domains and for nothing else** (decision 0029): a provider creates a person only of a
- * domain it declares, which is what makes a person it creates safe to create at all. A domain is compared
- * exactly and without regard to ASCII case (RFC 4343 §3), so a subdomain is not its parent: a provider that
- * answers for `eu.acme.example` declares it.
+ * domain it declares, which is what makes a person it creates safe to create at all. A domain is the one
+ * reading of EmailDomain, in lower case and in its A-label, compared exactly, so a subdomain is not its
+ * parent: a provider that answers for `eu.acme.example` declares it.
  *
  * Protocol-neutral, as the rest of the identity model: a SAML identity provider, an OpenID Connect issuer
  * of a federation and a SCIM client are each one of these, a name, domains and claims.
@@ -36,7 +34,7 @@ final readonly class UpstreamProvider
     public const string EMAIL = 'email';
 
     /**
-     * @var list<string> each once, in lowercase, in the order they were declared
+     * @var list<EmailDomain> each once, in the order they were declared
      */
     public array $domains;
 
@@ -46,10 +44,10 @@ final readonly class UpstreamProvider
     public array $claims;
 
     /**
-     * @param list<string> $domains the e-mail domains it answers for
+     * @param list<EmailDomain> $domains the e-mail domains it answers for
      * @param list<string> $claims the claims of the profile it fills, by their names in OIDC Core §5.1
      *
-     * @throws InvalidArgumentException when it is unnamed, a domain is empty, or a claim is none of the profile
+     * @throws InvalidArgumentException when it is unnamed, or a claim is none of the profile
      */
     public function __construct(
         public string $name,
@@ -61,20 +59,7 @@ final readonly class UpstreamProvider
         }
         $folded = [];
         foreach ($domains as $domain) {
-            // what an address can carry after its "@", by the rule that accepts an address (EmailAddress): a
-            // label in Unicode or a final dot is a domain no address of a person ever names, so a provider
-            // declared with one would answer for nobody, and say so only at the first sign-in it refuses
-            if (filter_var('postmaster@' . $domain, FILTER_VALIDATE_EMAIL, FILTER_FLAG_EMAIL_UNICODE) === false) {
-                throw new InvalidArgumentException(sprintf(
-                    'The upstream provider "%s" answers for "%s", which is no domain an address carries.',
-                    $name,
-                    $domain,
-                ));
-            }
-            $domain = strtolower($domain);
-            if (! in_array($domain, $folded, true)) {
-                $folded[] = $domain;
-            }
+            $folded[$domain->value] ??= $domain;
         }
         $profile = Profile::empty()->claims();
         $filled = [];
@@ -86,13 +71,16 @@ final readonly class UpstreamProvider
                 $filled[] = $claim;
             }
         }
-        $this->domains = $folded;
+        $this->domains = array_values($folded);
         $this->claims = $filled;
     }
 
-    public function answersFor(EmailAddress $email): bool
+    /**
+     * @param EmailDomain $domain the domain of an address, as EmailDomain::ofAddress() read it
+     */
+    public function answersFor(EmailDomain $domain): bool
     {
-        return in_array($email->domain(), $this->domains, true);
+        return array_any($this->domains, static fn (EmailDomain $declared): bool => $declared->equals($domain));
     }
 
     /**
