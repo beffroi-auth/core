@@ -6,6 +6,7 @@ namespace Beffroi\Core\Port;
 
 use Beffroi\Core\Domain\Group\Group;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\GroupAlreadyExistsException;
 
 /**
  * The groups of a tenant (decision 0002), found by the name the tenant knows them by: what the console names
@@ -21,5 +22,9 @@ interface GroupRepositoryInterface
      */
     public function findByName(Tenant $tenant, string $name): ?Group;
 
+    /**
+     * @throws GroupAlreadyExistsException when another group of the tenant holds that name, which a creation
+     *                                     running beside this one may have written after the lookup
+     */
     public function save(Group $group): void;
 }

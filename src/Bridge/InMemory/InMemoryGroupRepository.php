@@ -6,6 +6,7 @@ namespace Beffroi\Core\Bridge\InMemory;
 
 use Beffroi\Core\Domain\Group\Group;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\GroupAlreadyExistsException;
 use Beffroi\Core\Port\GroupRepositoryInterface;
 
 /**
@@ -31,6 +32,10 @@ final class InMemoryGroupRepository implements GroupRepositoryInterface
 
     public function save(Group $group): void
     {
+        $holder = $this->findByName($group->tenant, $group->name);
+        if ($holder !== null && ! $holder->id->equals($group->id)) {
+            throw GroupAlreadyExistsException::named($group->name);
+        }
         $this->groups[$group->id->toRfc4122()] = $group;
     }
 }

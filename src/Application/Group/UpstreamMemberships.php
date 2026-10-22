@@ -28,7 +28,14 @@ use Psr\Clock\ClockInterface;
  * and the value gone does not take it away.
  *
  * The mapping is an argument, which the caller holds from the declaration of the provider: nothing here reads
- * a configuration. Synchronous writes and no event, as the linking of an identity.
+ * a configuration.
+ *
+ * **It runs inside one atomic unit with the sign-in that calls it**, the provisioning of the person included
+ * (AtomicWritesInterface::atomically()): the store writes a row at a time, and the unit is what makes the
+ * removals and the additions one write, or none. **The write is synchronous**, because a membership taken
+ * away must be written before the session that sign-in opens serves anything: queued, it would leave the
+ * person in a group the provider no longer asserts for as long as the queue takes. The removals come before
+ * the additions. No event.
  */
 final readonly class UpstreamMemberships
 {
@@ -44,7 +51,7 @@ final readonly class UpstreamMemberships
      * Nothing is written when a membership cannot be made, so a mapping wired with a group of another tenant
      * leaves the person as they were.
      *
-     * @param list<string> $asserted the values of the attribute the declaration names for groups, as the provider sent them
+     * @param list<mixed> $asserted the values of the attribute the declaration names for groups, as the provider sent them; what is not a string is ignored
      *
      * @throws InvalidArgumentException when the mapping leads to a group of another tenant than the person's
      */
