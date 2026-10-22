@@ -7,6 +7,7 @@ namespace Beffroi\Core\Application\Archive\Chapter;
 use Beffroi\Core\Domain\Archive\ArchivedFacts;
 use Beffroi\Core\Domain\Identity\Address;
 use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\UserSource;
 use Beffroi\Core\Port\ArchiveChapterInterface;
 
 /**
@@ -16,7 +17,9 @@ use Beffroi\Core\Port\ArchiveChapterInterface;
  * **The names are those of OIDC Core §5.1**, which is what RGPD article 20 means by a commonly used
  * format: a person who takes this file to another provider hands it a document that provider already
  * reads. What is not a claim of the specification keeps the name this provider gives it: the username they
- * sign in with, the dates of the record, and the day the account was disabled if it was.
+ * sign in with, the dates of the record, the day the account was disabled if it was, and the source that
+ * created it (decision 0002), the upstream provider and the claims it holds, which this provider keeps
+ * sealed as the personal datum it is and article 15 asks for as such.
  *
  * **It reads the record and not what is wired.** A claim a deployment does not offer on any page is a
  * claim this provider holds all the same, and article 15 asks for what is held.
@@ -57,7 +60,22 @@ final readonly class ProfileChapter implements ArchiveChapterInterface
                 'created_at' => ArchivedFacts::moment($user->createdAt),
                 'updated_at' => ArchivedFacts::moment($user->updatedAt),
                 'disabled_at' => ArchivedFacts::moment($user->disabledAt),
+                'source' => self::source($user->source),
             ],
+        ];
+    }
+
+    /**
+     * The provider that created the record and the claims it holds, member by member; a record a console,
+     * a fixture or an import created names no provider, and no provider holds anything of it.
+     *
+     * @return array{provider: string|null, claims: list<string>}
+     */
+    private static function source(UserSource $source): array
+    {
+        return [
+            'provider' => $source->provider,
+            'claims' => $source->claims,
         ];
     }
 
