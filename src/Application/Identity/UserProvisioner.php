@@ -14,6 +14,7 @@ use Beffroi\Core\Domain\Identity\EmailAddress;
 use Beffroi\Core\Domain\Identity\Profile;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Identity\UserSource;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
@@ -45,12 +46,19 @@ final readonly class UserProvisioner
     }
 
     /**
-     * The subject is generated unless an import brings one (decision 0002); it never changes afterwards.
+     * The subject is generated unless an import brings one (decision 0002); it never changes afterwards. The
+     * person is local unless the caller names the upstream provider that creates it and what it holds.
      *
      * @throws UserAlreadyExistsException
      */
-    public function create(Tenant $tenant, string $username, ?EmailAddress $email = null, bool $emailVerified = false, ?Subject $subject = null): User
-    {
+    public function create(
+        Tenant $tenant,
+        string $username,
+        ?EmailAddress $email = null,
+        bool $emailVerified = false,
+        ?Subject $subject = null,
+        ?UserSource $source = null,
+    ): User {
         $username = trim($username);
         if ($this->users->findByUsername($tenant, $username) !== null) {
             throw UserAlreadyExistsException::username($username);
@@ -59,27 +67,71 @@ final readonly class UserProvisioner
         if ($this->users->findBySubject($tenant, $subject) !== null) {
             throw UserAlreadyExistsException::subject($subject->value);
         }
-        $user = User::create($this->uuids->timeOrdered(), $tenant, $subject, $username, $this->clock->now(), $email, $emailVerified);
+        $user = User::create($this->uuids->timeOrdered(), $tenant, $subject, $username, $this->clock->now(), $email, $emailVerified, $source);
         $this->users->save($user);
 
         return $user;
     }
 
     /**
-     * The claims of OIDC Core §5.1. A replacement, not a merge: what the caller does not say is cleared.
+     * The claims of OIDC Core §5.1. A replacement, not a merge: what the caller does not say is cleared,
+     * except what the source of the person holds, which stays what that source wrote (decision 0002).
      *
-     * @throws InvalidArgumentException when a phone number is absent but said to be verified
+     * **A claim the source holds is not the caller's to change.** One the caller says otherwise is refused,
+     * naming the provider, before anything is written; one it says as it already is, it may say, which is
+     * what a script played again does.
+     *
+     * @throws InvalidArgumentException when the source holds a claim the caller says otherwise, or a phone
+     *                                  number is absent but said to be verified
      */
     public function setProfile(User $user, Profile $profile, ?string $phoneNumber = null, bool $phoneNumberVerified = false, ?Address $address = null): User
     {
+        $source = $user->source;
+        $address = $address?->isEmpty() === true ? null : $address;
+        $source->assertLeaves(self::changedBy($user, $profile, $phoneNumber, $phoneNumberVerified, $address));
         $now = $this->clock->now();
         // first: the one change the user can refuse
-        $user->changePhoneNumber($phoneNumber, $phoneNumberVerified, $now);
-        $user->updateProfile($profile, $now);
-        $user->changeAddress($address, $now);
+        if (! $source->holds('phone_number')) {
+            $user->changePhoneNumber($phoneNumber, $phoneNumberVerified, $now);
+        }
+        $kept = [];
+        foreach ($user->profile->claims() as $claim => $value) {
+            if ($source->holds($claim)) {
+                $kept[$claim] = $value;
+            }
+        }
+        $user->updateProfile($kept === [] ? $profile : $profile->describedWith($kept), $now);
+        if (! $source->holds('address')) {
+            $user->changeAddress($address, $now);
+        }
         $this->users->save($user);
 
         return $user;
+    }
+
+    /**
+     * The claims a description says otherwise than the person holds them: what it does not say is not
+     * among them, a claim the source holds being kept rather than cleared.
+     *
+     * @return list<string>
+     */
+    private static function changedBy(User $user, Profile $profile, ?string $phoneNumber, bool $phoneNumberVerified, ?Address $address): array
+    {
+        $changed = [];
+        $was = $user->profile->claims();
+        foreach ($profile->claims() as $claim => $value) {
+            if ($value !== null && $value !== $was[$claim]) {
+                $changed[] = $claim;
+            }
+        }
+        if (($phoneNumber !== null || $phoneNumberVerified) && ($phoneNumber !== $user->phoneNumber || $phoneNumberVerified !== $user->phoneNumberVerified)) {
+            $changed[] = 'phone_number';
+        }
+        if ($address !== null && $address->toDocument() !== $user->address?->toDocument()) {
+            $changed[] = 'address';
+        }
+
+        return $changed;
     }
 
     /**

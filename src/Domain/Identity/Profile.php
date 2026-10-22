@@ -100,9 +100,10 @@ final readonly class Profile
      * The same profile with the claims given said otherwise (issue #452): a claim absent from the map is
      * left as it was, and a claim present with null is one the person took back.
      *
-     * The one place the names of OIDC Core §5.1 are matched with the fields that hold them, because this is
-     * the object whose shape they describe; every claim of Domain\Identity\Claim writes through here, so a
-     * claim added is a class added and a line here, and never a reading of a field by name.
+     * The one place the names of OIDC Core §5.1 are matched with the fields that hold them, with `claims()`
+     * beside it for the other direction, because this is the object whose shape they describe; every claim of
+     * Domain\Identity\Claim writes through here, so a claim added is a class added and a line here and
+     * there, and never a reading of a field by name.
      *
      * **A key here is a name of the specification and never a field of this object** (issue #626): three
      * of them differ, "profile", "picture" and "website" being held by `profileUrl`, `pictureUrl` and
@@ -128,6 +129,35 @@ final readonly class Profile
             array_key_exists('zoneinfo', $claims) ? $claims['zoneinfo'] : $this->zoneinfo,
             array_key_exists('locale', $claims) ? $claims['locale'] : $this->locale,
         );
+    }
+
+    /**
+     * What the profile says under each name of OIDC Core §5.1, null where it says nothing: the inverse of
+     * `describedWith()`, written beside it so that the two directions of one match are read together, and
+     * held together by a test that says every claim back through the other.
+     *
+     * It is what a caller compares claim by claim, by the names a source holds them under (`UserSource`),
+     * and never a reading of a field by name.
+     *
+     * @return array<string, string|null>
+     */
+    public function claims(): array
+    {
+        return [
+            'name' => $this->name,
+            'given_name' => $this->givenName,
+            'family_name' => $this->familyName,
+            'middle_name' => $this->middleName,
+            'nickname' => $this->nickname,
+            'preferred_username' => $this->preferredUsername,
+            'profile' => $this->profileUrl,
+            'picture' => $this->pictureUrl,
+            'website' => $this->websiteUrl,
+            'gender' => $this->gender,
+            'birthdate' => $this->birthdate,
+            'zoneinfo' => $this->zoneinfo,
+            'locale' => $this->locale,
+        ];
     }
 
     /**

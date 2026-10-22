@@ -24,6 +24,11 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * the browser, a command, whatever comes next. What the page does with the policy is show a person why a
  * field is not theirs to change.
  *
+ * **A claim the source of the person holds is not theirs to say** (decision 0002): the provider that
+ * created them writes it, and a person who said it otherwise would be read so by a client until their next
+ * sign-in through it. Refused before anything is written, whatever the value, the person saying one claim
+ * at a time and never needing to say that one.
+ *
  * It announces the act and not the value (PersonDescribedThemselves), the value living in the row of that
  * person and nowhere else.
  *
@@ -44,12 +49,13 @@ final readonly class SelfDescription
     }
 
     /**
-     * @throws InvalidArgumentException when this tenant does not open that claim, or the value is not one
-     *                                  the claim holds
+     * @throws InvalidArgumentException when this tenant does not open that claim, the source of the person
+     *                                  holds it, or the value is not one the claim holds
      */
     public function describe(User $user, ClaimInterface $claim, ?string $value, RequestContext $context): void
     {
         $user->tenant->selfServedClaims->assertOpens($claim->name());
+        $user->source->assertLeaves([$claim->name()]);
         $now = $this->clock->now();
         $was = $claim->of($user);
         $claim->describe($user, $value, $now);

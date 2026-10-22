@@ -19,7 +19,8 @@ use Symfony\Component\Uid\Uuid;
 use function trim;
 
 /**
- * An identity of a tenant; credentials, linked identities and group memberships hang off it (decision 0002).
+ * An identity of a tenant, which names the source that created it; credentials, linked identities and group
+ * memberships hang off it (decision 0002).
  */
 final class User implements ClassifiedFieldsInterface
 {
@@ -64,6 +65,7 @@ final class User implements ClassifiedFieldsInterface
         public private(set) ?Address $address,
         public readonly DateTimeImmutable $createdAt,
         public private(set) DateTimeImmutable $updatedAt,
+        public readonly UserSource $source,
     ) {
         $this->username = self::normalizeUsername($username);
         self::assertVerifiable($email, $emailVerified, 'email address');
@@ -78,8 +80,23 @@ final class User implements ClassifiedFieldsInterface
         DateTimeImmutable $now,
         ?EmailAddress $email = null,
         bool $emailVerified = false,
+        ?UserSource $source = null,
     ): self {
-        return new self($id, $tenant, $subject, $username, $email, $emailVerified, Profile::empty(), null, false, null, $now, $now);
+        return new self(
+            $id,
+            $tenant,
+            $subject,
+            $username,
+            $email,
+            $emailVerified,
+            Profile::empty(),
+            null,
+            false,
+            null,
+            $now,
+            $now,
+            $source ?? UserSource::local(),
+        );
     }
 
     public function rename(string $username, DateTimeImmutable $now): void
@@ -172,8 +189,10 @@ final class User implements ClassifiedFieldsInterface
 
     /**
      * What this provider holds of a person, sealed under the data key of its tenant: the username, the two
-     * verifiable contacts, the postal address and the thirteen claims of the profile. Beside two of them are the
-     * tags a search matches on, the values themselves being sealed, and the subject stays in the clear.
+     * verifiable contacts, the postal address, the thirteen claims of the profile, and the source that created
+     * the person, whose provider says which organisation that person is of, as the column of a linked identity
+     * that names it does. Beside two of them are the tags a search matches on, the values themselves being
+     * sealed, and the subject stays in the clear.
      *
      * @return array<string, FieldClassificationInterface>
      */
@@ -190,6 +209,7 @@ final class User implements ClassifiedFieldsInterface
             'phoneNumber' => new Sealed('user'),
             'phoneNumberVerified' => new NoPersonalDatum('whether an address or a number was verified, which says nothing of either'),
             'address' => new Sealed('user'),
+            'source' => new Sealed('user'),
             'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'updatedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'disabledAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
