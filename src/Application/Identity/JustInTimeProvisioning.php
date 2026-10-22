@@ -12,6 +12,7 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Port\AtomicWritesInterface;
 use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
 use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
@@ -37,6 +38,9 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * (decision 0029). And no other person of the tenant holds the address, so that no existing account is
  * linked on its own, linking one being spike 12's after a local re-authentication; at a refresh, that one
  * is asked only when the address changed, the person already holding their own.
+ *
+ * **The writes of a sign-in are one unit** (`AtomicWritesInterface`): the person, its source and its linked
+ * identity are all kept, or none is, and the event is announced once they are.
  */
 final readonly class JustInTimeProvisioning
 {
@@ -47,6 +51,7 @@ final readonly class JustInTimeProvisioning
         private IdentityLinker $linker,
         private EventDispatcherInterface $events,
         private ClockInterface $clock,
+        private AtomicWritesInterface $writes,
     ) {
     }
 
@@ -79,10 +84,12 @@ final readonly class JustInTimeProvisioning
             return $this->created($tenant, $provider, $subject, $email, $claims, $snapshot, $context);
         }
         $user = $linked->user;
-        if ($provider->isTheSourceOf($user)) {
-            $this->rewritten($user, $provider, $email, $claims);
-        }
-        $this->linker->link($user, $provider->name, $subject, $snapshot);
+        $this->writes->atomically(function () use ($user, $provider, $subject, $email, $claims, $snapshot): void {
+            if ($provider->isTheSourceOf($user)) {
+                $this->rewritten($user, $provider, $email, $claims);
+            }
+            $this->linker->link($user, $provider->name, $subject, $snapshot);
+        });
 
         return $user;
     }
@@ -108,11 +115,18 @@ final readonly class JustInTimeProvisioning
         if ($this->users->findByEmail($tenant, $email) !== null) {
             throw UpstreamProvisioningRefusedException::heldByAnotherPerson($provider->name);
         }
-        $user = $this->provisioner->create($tenant, $email->value, $email, true, source: $source);
         $now = $this->clock->now();
-        $user->updateProfile($profile, $now);
-        $this->users->save($user);
-        $this->linker->link($user, $provider->name, $subject, $snapshot);
+        // the person, its source and its linked identity, all or none: a person kept without the identity
+        // that names it is a person no sign-in finds, whose address refuses every creation after it
+        $user = $this->writes->atomically(function () use ($tenant, $provider, $subject, $email, $source, $profile, $snapshot, $now): User {
+            $user = $this->provisioner->create($tenant, $email->value, $email, true, source: $source);
+            $user->updateProfile($profile, $now);
+            $this->users->save($user);
+            $this->linker->link($user, $provider->name, $subject, $snapshot);
+
+            return $user;
+        });
+        // announced once it is kept, never for a person a failed write took back
         $this->events->dispatch(new PersonProvisioned($now, $tenant, $user->subject, $provider->name, $context));
 
         return $user;
