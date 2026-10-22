@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Authentication;
 
 use Beffroi\Core\Application\Credential\ActivePassword;
+use Beffroi\Core\Application\Identity\FederatedDomains;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
 use Beffroi\Core\Domain\Event\PasswordRehashed;
@@ -25,7 +26,8 @@ use function trim;
 /**
  * What a password proves, and the whole order of proving it (architecture §3.2, issue #130): the tenant is
  * asked whether a password proves anything here at all, the user is named, the attempts on them are
- * counted, the hash is verified, a disabled account is refused after the password, the count is emptied,
+ * counted, the hash is verified, a disabled account and a person of a federated domain (decision 0029) are
+ * refused after the password, the count is emptied,
  * the credential is dated and rehashed if the policy has moved, and the act of the password is announced. What the caller does with the proof, open a session, hold the login
  * until a code, hand a passport to a firewall, is the caller's, as it is for a code (TotpAuthentication).
  *
@@ -55,6 +57,7 @@ final readonly class PasswordVerification
         private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private FederatedDomains $federated,
     ) {
     }
 
@@ -114,6 +117,19 @@ final readonly class PasswordVerification
         // after the password on purpose: a disabled account answers like a wrong password
         if (! $user->isEnabled()) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::DisabledUser, AuthenticationMethod::password(), $identifier, $user);
+        }
+
+        // and so does a person of a federated domain, who signs in through their provider and through nothing
+        // else (decision 0029): the page offers them no password, and a post written by hand is refused here
+        if (! $this->federated->admitsLocalCredentials($user)) {
+            throw $this->refusals->refuse(
+                $tenant,
+                $context,
+                AuthenticationFailureReason::FederatedDomain,
+                AuthenticationMethod::password(),
+                $identifier,
+                $user,
+            );
         }
 
         $this->attempts->reset($user);

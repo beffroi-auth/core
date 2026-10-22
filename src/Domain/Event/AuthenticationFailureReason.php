@@ -24,4 +24,10 @@ enum AuthenticationFailureReason: string
      * proofs that do not satisfy the predicate it requires.
      */
     case BelowTheFloor = 'below_the_floor';
+
+    /**
+     * A local credential, a password, a passkey or a code, presented for a person of an e-mail domain the tenant
+     * federates to an upstream provider, through which alone that person signs in (decision 0029).
+     */
+    case FederatedDomain = 'federated_domain';
 }

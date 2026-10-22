@@ -7,6 +7,7 @@ namespace Beffroi\Core\Application\Passkey;
 use Beffroi\Core\Application\Authentication\AuthenticationFailedException;
 use Beffroi\Core\Application\Authentication\AuthenticationRefusal;
 use Beffroi\Core\Application\Credential\ActiveCredentials;
+use Beffroi\Core\Application\Identity\FederatedDomains;
 use Beffroi\Core\Application\Authentication\SessionOpener;
 use Beffroi\Core\Domain\Credential\PasskeyCredential;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
@@ -37,6 +38,7 @@ final readonly class PasskeyAuthentication
         private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private FederatedDomains $federated,
     ) {
     }
 
@@ -52,9 +54,10 @@ final readonly class PasskeyAuthentication
     }
 
     /**
-     * An assertion whose backup eligibility is not the one of the enrolment, a revoked passkey and a
-     * disabled user are refused after the signature was checked, so that a refusal costs the same as a
-     * wrong signature; a sign count that did not grow is told, not refused.
+     * An assertion whose backup eligibility is not the one of the enrolment, a revoked passkey, a disabled
+     * user and a person of a federated domain (decision 0029) are refused after the signature was checked,
+     * so that a refusal costs the same as a wrong signature; a sign count that did not grow is told, not
+     * refused.
      *
      * @throws AuthenticationFailedException
      */
@@ -78,6 +81,9 @@ final readonly class PasskeyAuthentication
         }
         if (! $credential->user->isEnabled()) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::DisabledUser, $methods[0], null, $credential->user);
+        }
+        if (! $this->federated->admitsLocalCredentials($credential->user)) {
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::FederatedDomain, $methods[0], null, $credential->user);
         }
 
         $now = $this->clock->now();

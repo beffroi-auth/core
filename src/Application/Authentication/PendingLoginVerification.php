@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Authentication;
 
+use Beffroi\Core\Application\Identity\FederatedDomains;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
 use Beffroi\Core\Domain\Identity\User;
@@ -20,7 +21,7 @@ use Psr\Clock\ClockInterface;
  * same two things with the same reason and write the same act.
  *
  * A login past its lifetime is refused before the code is read, because a code typed late is not what was
- * wrong; a login naming somebody this provider no longer serves names them by their identifier, there
+ * wrong, and so is a login of a person of a federated domain (decision 0029); a login naming somebody this provider no longer serves names them by their identifier, there
  * being no user to name.
  */
 final readonly class PendingLoginVerification
@@ -29,6 +30,7 @@ final readonly class PendingLoginVerification
         private UserRepositoryInterface $users,
         private AuthenticationRefusal $refusals,
         private ClockInterface $clock,
+        private FederatedDomains $federated,
     ) {
     }
 
@@ -52,6 +54,12 @@ final readonly class PendingLoginVerification
         }
         if ($login->isExpired($this->clock->now())) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::ExpiredLogin, TotpCredential::method(), $user->username, $user);
+        }
+        // a login held before the tenant federated the domain of that person, or before their address moved
+        // into it, completes nothing: they sign in through their provider and through nothing else (decision
+        // 0029), and the code is not read
+        if (! $this->federated->admitsLocalCredentials($user)) {
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::FederatedDomain, TotpCredential::method(), $user->username, $user);
         }
 
         return $user;
