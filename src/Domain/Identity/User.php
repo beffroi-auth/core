@@ -165,6 +165,16 @@ final class User implements ClassifiedFieldsInterface
     }
 
     /**
+     * Whether this person may say this claim of themselves: their tenant opens it (issue #452), and the
+     * source that created them does not hold it (decision 0002). What a page offers and what the use case
+     * that writes it accepts are read here, so that the two cannot disagree.
+     */
+    public function maySayOfThemselves(string $claim): bool
+    {
+        return $this->tenant->selfServedClaims->opens($claim) && ! $this->source->holds($claim);
+    }
+
+    /**
      * A contact detail nobody gave cannot have been verified; the same rule when the user is created and
      * when it changes, for the address as for the number.
      *

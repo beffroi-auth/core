@@ -17,6 +17,12 @@ use Psr\Clock\ClockInterface;
  *
  * It replaces that claim and nothing else. Saying the whole profile is what provisioning does, and it
  * clears what it is not told (UserProvisioner); here a person named one thing about themselves.
+ *
+ * **Nothing is written when the source of the person holds that claim** (decision 0002): the provider
+ * that created them writes it, and a client would read the language chosen on a page until their next
+ * sign-in through it. The choice is not lost for all that: the cookie of the browser carries it, which is
+ * what the next journey of that browser starts in, and what this provider writes to that person in is the
+ * language their provider says they read.
  */
 final readonly class LanguageRecording
 {
@@ -28,6 +34,9 @@ final readonly class LanguageRecording
 
     public function record(User $user, string $locale): void
     {
+        if ($user->source->holds('locale')) {
+            return;
+        }
         $user->updateProfile($user->profile->readIn($locale), $this->clock->now());
         $this->users->save($user);
     }
