@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\Key;
 
 use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeptEncryptionAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeptSigningAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeyUse;
 use Beffroi\Core\Domain\Key\MessageSealingAlgorithmInterface;
@@ -16,6 +17,7 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
 use Beffroi\Core\Port\DecryptionKeyProviderInterface;
+use Beffroi\Core\Port\KeptDecryptionKeyProviderInterface;
 use Beffroi\Core\Port\KeptSigningKeyProviderInterface;
 use Beffroi\Core\Port\MessageKeyProviderInterface;
 use Beffroi\Core\Port\PublicKeySetProviderInterface;
@@ -32,7 +34,8 @@ use function sprintf;
  * asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
  * header names, what publishes asks for the set, what pushes to a browser asks for the key that browser
  * was handed, what writes to a transport asks for the key the tenant seals to, what signs a SAML message
- * asks for the active key of a family the tenant keeps. A key that signs is never
+ * asks for the active key of a family the tenant keeps, what opens a SAML assertion asks for a key of the
+ * algorithm of the identity provider that encrypted it. A key that signs is never
  * handed out to open a JWE, nor one that opens a JWE to sign: the use is asserted here and not deduced
  * from the caller (RFC 7517 §4.2), and a family of keys is never answered to the caller of another.
  *
@@ -46,6 +49,7 @@ use function sprintf;
 final readonly class SealedKeyProvider implements
     ApplicationServerKeyProviderInterface,
     DecryptionKeyProviderInterface,
+    KeptDecryptionKeyProviderInterface,
     KeptSigningKeyProviderInterface,
     MessageKeyProviderInterface,
     PublicKeySetProviderInterface,
@@ -101,6 +105,36 @@ final readonly class SealedKeyProvider implements
                 'The key "%s" of tenant "%s" is one it keeps; it is not a key a client encrypts to.',
                 $kid,
                 $tenant->slug,
+            ));
+        }
+        self::assertUse($key, KeyUse::Encryption);
+
+        return $this->opened->open($tenant, $key);
+    }
+
+    public function keptDecryptionKey(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, string $kid): UnsealedKey
+    {
+        $key = $this->keys->find($tenant, $kid);
+        if ($key === null) {
+            throw new KeyNotFoundException(sprintf('Tenant "%s" holds no key "%s".', $tenant->slug, $kid));
+        }
+        if (! $key->isInService()) {
+            $this->opened->forget($tenant, $kid);
+
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" has retired: what was encrypted to it is not opened any more.',
+                $kid,
+                $tenant->slug,
+            ));
+        }
+        // the algorithm names whom the key belongs to: the key of another holder is never answered, whatever its kid
+        if ($key->algorithm->name() !== $algorithm->name()) {
+            throw new KeyNotFoundException(sprintf(
+                'The key "%s" of tenant "%s" is a key of %s, not of %s.',
+                $kid,
+                $tenant->slug,
+                $key->algorithm->name(),
+                $algorithm->name(),
             ));
         }
         self::assertUse($key, KeyUse::Encryption);
