@@ -86,10 +86,10 @@ final readonly class UserSource
     }
 
     /**
-     * The profile as this source writes it from what its provider says now: each claim of the profile it
-     * holds said as the provider says it, and cleared when the provider says nothing of it, the provider
-     * being the one that answers for it; every other claim left as it was. A local source holds nothing, so
-     * the profile comes back as it was.
+     * The profile as this source writes it from what its provider says now: each claim it holds that the
+     * provider said, as the provider said it, and every other claim left as it was. A claim the provider
+     * stops saying, its source stops holding (`UpstreamProvider::source()`), so nothing is cleared here. A
+     * local source holds nothing, so the profile comes back as it was.
      *
      * @param array<string, string> $said what the provider said, by the names of OIDC Core §5.1
      *
@@ -98,9 +98,9 @@ final readonly class UserSource
     public function rewrite(Profile $profile, array $said): Profile
     {
         $written = [];
-        foreach ($profile->claims() as $claim => $value) {
+        foreach ($said as $claim => $value) {
             if ($this->holds($claim)) {
-                $written[$claim] = $said[$claim] ?? null;
+                $written[$claim] = $value;
             }
         }
 

@@ -48,15 +48,16 @@ final class InMemoryUserRepository implements UserRepositoryInterface
         return null;
     }
 
-    public function findByEmail(Tenant $tenant, EmailAddress $email): ?User
+    public function findAllByEmail(Tenant $tenant, EmailAddress $email): array
     {
+        $holders = [];
         foreach ($this->users as $user) {
             if ($user->belongsTo($tenant) && $user->email?->isTheSameMailboxAs($email) === true) {
-                return $user;
+                $holders[] = $user;
             }
         }
 
-        return null;
+        return $holders;
     }
 
     public function save(User $user): void

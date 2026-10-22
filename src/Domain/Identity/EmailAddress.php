@@ -7,6 +7,7 @@ namespace Beffroi\Core\Domain\Identity;
 use const FILTER_FLAG_EMAIL_UNICODE;
 use const FILTER_VALIDATE_EMAIL;
 use function filter_var;
+use function mb_strtolower;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 use Stringable;
@@ -40,10 +41,11 @@ final readonly class EmailAddress implements Stringable
     }
 
     /**
-     * The same mailbox: the local part as it is written, which RFC 5321 §2.4 leaves to the receiving server
-     * and so is case-sensitive to everyone else, and the domain without regard to case. It is what the
-     * projection the blind index of an address is derived under keeps of an address, so that an adapter in
-     * memory finds what the storage finds.
+     * The same mailbox, as this provider counts one: without regard to case, the local part included (issue
+     * #781). RFC 5321 §2.4 leaves the case of a local part to the receiving server, and every server a person
+     * reads their mail on ignores it, so `Bob@acme.example` and `bob@acme.example` are one person's mail and
+     * never two persons'. It is what the projection the blind index of an address is derived under keeps of
+     * an address, so that an adapter in memory finds what the storage finds.
      */
     public function isTheSameMailboxAs(self $other): bool
     {
@@ -52,7 +54,7 @@ final readonly class EmailAddress implements Stringable
 
     private function localPart(): string
     {
-        return substr($this->value, 0, (int) strrpos($this->value, '@'));
+        return mb_strtolower(substr($this->value, 0, (int) strrpos($this->value, '@')));
     }
 
     public function __toString(): string

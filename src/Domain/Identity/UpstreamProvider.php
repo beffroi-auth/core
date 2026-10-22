@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Identity;
 
 use function array_key_exists;
+use const FILTER_FLAG_EMAIL_UNICODE;
+use const FILTER_VALIDATE_EMAIL;
+use function filter_var;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function sprintf;
@@ -58,8 +61,15 @@ final readonly class UpstreamProvider
         }
         $folded = [];
         foreach ($domains as $domain) {
-            if ($domain === '') {
-                throw new InvalidArgumentException(sprintf('A domain the upstream provider "%s" answers for is named.', $name));
+            // what an address can carry after its "@", by the rule that accepts an address (EmailAddress): a
+            // label in Unicode or a final dot is a domain no address of a person ever names, so a provider
+            // declared with one would answer for nobody, and say so only at the first sign-in it refuses
+            if (filter_var('postmaster@' . $domain, FILTER_VALIDATE_EMAIL, FILTER_FLAG_EMAIL_UNICODE) === false) {
+                throw new InvalidArgumentException(sprintf(
+                    'The upstream provider "%s" answers for "%s", which is no domain an address carries.',
+                    $name,
+                    $domain,
+                ));
             }
             $domain = strtolower($domain);
             if (! in_array($domain, $folded, true)) {
