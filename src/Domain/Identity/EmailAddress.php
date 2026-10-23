@@ -25,6 +25,22 @@ final readonly class EmailAddress implements Stringable
         }
     }
 
+    /**
+     * An address as somebody wrote it, typed at a login page or asserted by an upstream provider, in capitals or with
+     * its domain in a U-label: its domain written as its A-label by the one rule that reads the domain of an address
+     * (EmailDomain::ofAddress(), decision 0029), its local part as it was written. The address this class holds then
+     * has its domain in ASCII, which the constructor demands.
+     *
+     * @throws InvalidArgumentException when it holds no "@", when the rule refuses its domain, or when the address is
+     *                                  none this class reads
+     */
+    public static function ofAnySpelling(string $address): self
+    {
+        $domain = EmailDomain::ofAddress($address);
+
+        return new self(substr($address, 0, (int) strrpos($address, '@')) . '@' . $domain->value);
+    }
+
     public function equals(self $other): bool
     {
         return $this->value === $other->value;
