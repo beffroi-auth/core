@@ -35,4 +35,10 @@ enum UpstreamProvisioningRefusalReason: string
      * Another sign-in of the same person gave it a membership of a group while this one was giving it the same.
      */
     case MembershipWrittenMeanwhile = 'membership_written_meanwhile';
+
+    /**
+     * The person the linked identity names is disabled: nothing of what the provider said is written, and nobody is
+     * signed in (beffroi/saml S-56).
+     */
+    case PersonDisabled = 'person_disabled';
 }

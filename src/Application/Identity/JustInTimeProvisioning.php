@@ -52,6 +52,9 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * 12's after a local re-authentication; at a refresh, each is asked only of what changed, the person already
  * holding their own mailbox and their own name.
  *
+ * **A disabled person is refused**, whoever created or linked it, before anything of it is written: an account
+ * an administrator disabled keeps what it held and follows the provider no more.
+ *
  * **Every refusal is raised before the writes, and says nothing of who holds what**
  * (`UpstreamProvisioningRefusedException`, one message, the reason for the audit trail). The writes of a
  * sign-in are one unit (`AtomicWritesInterface`): the person, its source and its linked identity are all
@@ -121,6 +124,11 @@ final readonly class JustInTimeProvisioning
             return $this->created($tenant, $provider, $subject, $email, $claims, $snapshot, $context, $phoneNumber, $groups, $asserted);
         }
         $user = $linked->user;
+        // before anything is written, the snapshot of an identity the console linked included: a person disabled stops
+        // following the provider (beffroi/saml S-56)
+        if (! $user->isEnabled()) {
+            throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::PersonDisabled);
+        }
         if (! $provider->isTheSourceOf($user)) {
             $this->writes->atomically(fn (): LinkedIdentity => $this->linker->link($user, $provider->name, $subject, $snapshot));
 
