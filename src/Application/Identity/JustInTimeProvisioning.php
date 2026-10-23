@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Identity;
 
+use Beffroi\Core\Application\Group\UpstreamMemberships;
 use Beffroi\Core\Domain\Event\PersonProvisioned;
+use Beffroi\Core\Domain\Group\GroupMapping;
 use Beffroi\Core\Domain\Identity\EmailAddress;
 use Beffroi\Core\Domain\Identity\EmailDomain;
 use Beffroi\Core\Domain\Identity\LinkedIdentity;
@@ -19,6 +21,7 @@ use Beffroi\Core\Port\AtomicWritesInterface;
 use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
 use Beffroi\Core\Port\UserRepositoryInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
+use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
@@ -53,7 +56,15 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * sign-in are one unit (`AtomicWritesInterface`): the person, its source and its linked identity are all
  * kept, or none is, and the event is announced once they are. The one collision no check before the unit can
  * see, another sign-in linking the same subject in between, is answered by the same refusal once the unit
- * is taken back, without what the linker said of whom.
+ * is taken back, without what the linker said of whom. A sign-in that loses a race at the store, the person or its
+ * linked identity written by another sign-in between the checks and the unit, is answered the same way: the store
+ * turns the violation of its unique constraint into the exception of the port it went through
+ * (`UserAlreadyExistsException`, `IdentityAlreadyLinkedException`), and the unit that raised it is taken back.
+ *
+ * **The groups and the telephone number of a sign-in are written in the same unit** (beffroi/saml S-56): the
+ * memberships the provider asserts are replaced (`UpstreamMemberships::replace()`), and a telephone number it said
+ * is written unverified, held by the source as a claim the provider fills, and released when it says none; both of a
+ * person this provider is the source of, never of one an import linked. The event is announced once all of it is kept.
  */
 final readonly class JustInTimeProvisioning
 {
@@ -66,6 +77,7 @@ final readonly class JustInTimeProvisioning
         private ClockInterface $clock,
         private AtomicWritesInterface $writes,
         private UuidGeneratorInterface $uuids,
+        private UpstreamMemberships $memberships,
     ) {
     }
 
@@ -73,6 +85,11 @@ final readonly class JustInTimeProvisioning
      * @param string $subject the subject the provider gave, compared byte for byte
      * @param array<string, string> $claims what the provider said of the person, by the names of OIDC Core
      *                                      §5.1; the address is given apart, its domain being what is read
+     * @param string|null $phoneNumber the telephone number it said, which is no claim of the profile, null when it
+     *                                 said none
+     * @param GroupMapping|null $groups the groups of the tenant the values it may assert stand for, null when its
+     *                                  declaration maps none
+     * @param list<mixed> $asserted the values of its groups attribute, as it sent them
      *
      * @throws UpstreamProvisioningRefusedException when the provider may not create or write that person
      * @throws InvalidArgumentException when the subject is empty, or a claim is said in a form the profile refuses
@@ -84,6 +101,9 @@ final readonly class JustInTimeProvisioning
         EmailAddress $email,
         array $claims,
         RequestContext $context,
+        ?string $phoneNumber = null,
+        ?GroupMapping $groups = null,
+        array $asserted = [],
     ): User {
         // before the lookup: an empty subject matches no row, and the person created for it would be left
         // without the linked identity that refuses it
@@ -91,9 +111,12 @@ final readonly class JustInTimeProvisioning
             throw new InvalidArgumentException('A person an upstream provider names carries the subject it gave.');
         }
         $snapshot = [...$claims, UpstreamProvider::EMAIL => $email->value];
+        if ($phoneNumber !== null) {
+            $snapshot[UpstreamProvider::PHONE_NUMBER] = $phoneNumber;
+        }
         $linked = $this->identities->find($tenant, $provider->name, $subject);
         if ($linked === null) {
-            return $this->created($tenant, $provider, $subject, $email, $claims, $snapshot, $context);
+            return $this->created($tenant, $provider, $subject, $email, $claims, $snapshot, $context, $phoneNumber, $groups, $asserted);
         }
         $user = $linked->user;
         if (! $provider->isTheSourceOf($user)) {
@@ -103,7 +126,7 @@ final readonly class JustInTimeProvisioning
         }
         // every refusal before the unit: a profile the claims cannot be, a domain the provider does not
         // answer for, a mailbox or a username somebody else holds
-        $source = $provider->source($claims);
+        $source = $provider->source($claims, $phoneNumber !== null);
         $profile = $source->rewrite($user->profile, $claims);
         $this->assertAnswersFor($provider, $email);
         if (! ($user->email?->isTheSameMailboxAs($email) ?? false)) {
@@ -114,16 +137,36 @@ final readonly class JustInTimeProvisioning
             $this->assertNobodyIsNamed($tenant, $email, $user);
         }
         $now = $this->clock->now();
-        $this->writes->atomically(function () use ($user, $provider, $subject, $email, $source, $profile, $snapshot, $now, $renamed): void {
-            $user->heldBy($source, $now);
-            $user->changeEmail($email, true, $now);
-            if ($renamed) {
-                $user->rename($email->value, $now);
-            }
-            $user->updateProfile($profile, $now);
-            $this->users->save($user);
-            $this->linker->link($user, $provider->name, $subject, $snapshot);
-        });
+        try {
+            $this->writes->atomically(function () use (
+                $user,
+                $provider,
+                $subject,
+                $email,
+                $source,
+                $profile,
+                $snapshot,
+                $now,
+                $renamed,
+                $phoneNumber,
+                $groups,
+                $asserted,
+            ): void {
+                $user->heldBy($source, $now);
+                $user->changeEmail($email, true, $now);
+                if ($renamed) {
+                    $user->rename($email->value, $now);
+                }
+                $user->updateProfile($profile, $now);
+                $this->writePhoneNumber($user, $phoneNumber, $now);
+                $this->users->save($user);
+                $this->linker->link($user, $provider->name, $subject, $snapshot);
+                $this->writeGroups($user, $groups, $asserted);
+            });
+        } catch (UserAlreadyExistsException) {
+            // another sign-in gave the address as a name between the check and the unit
+            throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::AddressHeld);
+        }
 
         return $user;
     }
@@ -131,6 +174,7 @@ final readonly class JustInTimeProvisioning
     /**
      * @param array<string, string> $claims
      * @param array<string, string> $snapshot
+     * @param list<mixed> $asserted
      *
      * @throws UpstreamProvisioningRefusedException
      */
@@ -142,8 +186,11 @@ final readonly class JustInTimeProvisioning
         array $claims,
         array $snapshot,
         RequestContext $context,
+        ?string $phoneNumber,
+        ?GroupMapping $groups,
+        array $asserted,
     ): User {
-        $source = $provider->source($claims);
+        $source = $provider->source($claims, $phoneNumber !== null);
         // every refusal before the unit: a profile the claims cannot be, a domain the provider does not
         // answer for, an address somebody holds as a mailbox or as a username, a subject drawn twice
         $profile = $source->rewrite(Profile::empty(), $claims);
@@ -158,23 +205,60 @@ final readonly class JustInTimeProvisioning
         // the person, its source and its linked identity, all or none: a person kept without the identity
         // that names it is a person no sign-in finds, whose address refuses every creation after it
         try {
-            $user = $this->writes->atomically(function () use ($tenant, $provider, $subject, $email, $source, $profile, $snapshot, $now, $person): User {
+            $user = $this->writes->atomically(function () use (
+                $tenant,
+                $provider,
+                $subject,
+                $email,
+                $source,
+                $profile,
+                $snapshot,
+                $now,
+                $person,
+                $phoneNumber,
+                $groups,
+                $asserted,
+            ): User {
                 $user = $this->provisioner->create($tenant, $email->value, $email, true, $person, $source);
                 $user->updateProfile($profile, $now);
+                $this->writePhoneNumber($user, $phoneNumber, $now);
                 $this->users->save($user);
                 $this->linker->link($user, $provider->name, $subject, $snapshot);
+                $this->writeGroups($user, $groups, $asserted);
 
                 return $user;
             });
-        } catch (IdentityAlreadyLinkedException) {
+        } catch (IdentityAlreadyLinkedException|UserAlreadyExistsException) {
             // without the exception it answers: it names the person the identity is, which is not the
-            // business of whoever reads this refusal
+            // business of whoever reads this refusal; the person written by another sign-in between the
+            // checks and the unit, which the store says by the second, is the same race
             throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::IdentityLinkedMeanwhile);
         }
         // announced once it is kept, never for a person a failed write took back
         $this->events->dispatch(new PersonProvisioned($now, $tenant, $user->subject, $provider->name, $context));
 
         return $user;
+    }
+
+    /**
+     * S-45 of beffroi/saml: a telephone number a provider fills is never verified by being filled; the number the
+     * person already holds is left as it is, verified or not.
+     */
+    private function writePhoneNumber(User $user, ?string $phoneNumber, DateTimeImmutable $now): void
+    {
+        if ($phoneNumber !== null && $phoneNumber !== $user->phoneNumber) {
+            $user->changePhoneNumber($phoneNumber, false, $now);
+        }
+    }
+
+    /**
+     * @param list<mixed> $asserted
+     */
+    private function writeGroups(User $user, ?GroupMapping $groups, array $asserted): void
+    {
+        if ($groups !== null) {
+            $this->memberships->replace($user, $asserted, $groups);
+        }
     }
 
     /**

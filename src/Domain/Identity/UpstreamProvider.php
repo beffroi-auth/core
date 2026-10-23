@@ -34,6 +34,12 @@ final readonly class UpstreamProvider
     public const string EMAIL = 'email';
 
     /**
+     * The telephone number a provider may fill (OIDC Core §5.1), which is no claim of the profile: it is handed apart
+     * by the sign-in that reads it, and its source holds it as it holds the claims it fills.
+     */
+    public const string PHONE_NUMBER = 'phone_number';
+
+    /**
      * @var list<EmailDomain> each once, in the order they were declared
      */
     public array $domains;
@@ -89,14 +95,18 @@ final readonly class UpstreamProvider
      * manual description then leaves to it. A claim it fills and did not say, it holds no longer.
      *
      * @param array<string, string> $said what the provider said, by the names of OIDC Core §5.1
+     * @param bool $saidAPhoneNumber whether it said a telephone number, which it then holds too
      */
-    public function source(array $said): UserSource
+    public function source(array $said, bool $saidAPhoneNumber = false): UserSource
     {
         $held = [self::EMAIL];
         foreach ($this->claims as $claim) {
             if (array_key_exists($claim, $said)) {
                 $held[] = $claim;
             }
+        }
+        if ($saidAPhoneNumber) {
+            $held[] = self::PHONE_NUMBER;
         }
 
         return UserSource::upstream($this->name, $held);
