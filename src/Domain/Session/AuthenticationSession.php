@@ -81,9 +81,11 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * A re-authentication or a step-up: one more proof, dated now.
+     * A re-authentication or a step-up: one more proof, dated when the request arrived, or at $provenAt when what
+     * proved it dates it (the AuthnInstant of an upstream identity provider, beffroi/saml S-57), never later than the
+     * request; the newest proof of a method is kept (AuthenticationProofs::with()).
      */
-    public function recordProof(AuthenticationMethod $method, RequestContext $context): void
+    public function recordProof(AuthenticationMethod $method, RequestContext $context, ?DateTimeImmutable $provenAt = null): void
     {
         if ($this->endedAt !== null) {
             throw new LogicException('An ended session cannot receive a proof.');
@@ -91,7 +93,7 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
         if ($context->receivedAt < $this->establishedAt) {
             throw new LogicException('A proof cannot predate the session.');
         }
-        $this->proofs = $this->proofs->with($method, $context->receivedAt);
+        $this->proofs = $this->proofs->with($method, $provenAt === null || $provenAt > $context->receivedAt ? $context->receivedAt : $provenAt);
         $this->lastSeenFrom = $context;
         $this->lastSeenAt = $context->receivedAt;
     }

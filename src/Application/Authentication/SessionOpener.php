@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Authentication;
 
 use DateInterval;
+use DateTimeImmutable;
 use Beffroi\Core\Domain\Event\AuthenticationFailureReason;
 use Beffroi\Core\Domain\Event\UserAuthenticated;
 use Beffroi\Core\Domain\Identity\User;
@@ -42,11 +43,15 @@ final readonly class SessionOpener
     }
 
     /**
-     * @param non-empty-list<AuthenticationMethod> $methods what was proven, every one dated now
+     * @param non-empty-list<AuthenticationMethod> $methods what was proven, every one dated now, or at $provenAt
+     * @param DateTimeImmutable|null $provenAt when what proved them dates it, the AuthnInstant of an upstream identity
+     *                                         provider (beffroi/saml S-57); never later than now, a clock ahead of
+     *                                         ours within its skew dated by ours, no proof being later than the
+     *                                         session that holds it
      *
      * @throws AuthenticationFailedException when what was proven is under the floor of the tenant
      */
-    public function open(Tenant $tenant, User $user, array $methods, RequestContext $context): AuthenticationSession
+    public function open(Tenant $tenant, User $user, array $methods, RequestContext $context, ?DateTimeImmutable $provenAt = null): AuthenticationSession
     {
         if (! $tenant->loginFloor->isSatisfiedBy($methods)) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::BelowTheFloor, $methods[0], null, $user);
@@ -57,7 +62,7 @@ final readonly class SessionOpener
             $tenant,
             $user,
             $now,
-            AuthenticationProofs::ofAll($methods, $now),
+            AuthenticationProofs::ofAll($methods, $provenAt === null || $provenAt > $now ? $now : $provenAt),
             $context,
             $now->add($this->lifetime),
         );
