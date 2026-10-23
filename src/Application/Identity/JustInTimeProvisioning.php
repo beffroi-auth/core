@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Identity;
 
+use Beffroi\Core\Application\Group\MembershipAlreadyHeldException;
 use Beffroi\Core\Application\Group\UpstreamMemberships;
 use Beffroi\Core\Domain\Event\PersonProvisioned;
 use Beffroi\Core\Domain\Group\GroupMapping;
@@ -59,7 +60,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  * is taken back, without what the linker said of whom. A sign-in that loses a race at the store, the person or its
  * linked identity written by another sign-in between the checks and the unit, is answered the same way: the store
  * turns the violation of its unique constraint into the exception of the port it went through
- * (`UserAlreadyExistsException`, `IdentityAlreadyLinkedException`), and the unit that raised it is taken back.
+ * (`UserAlreadyExistsException`, `IdentityAlreadyLinkedException`, `MembershipAlreadyHeldException` for a group the
+ * provider asserts that the other sign-in gave the person first), and the unit that raised it is taken back.
  *
  * **The groups and the telephone number of a sign-in are written in the same unit** (beffroi/saml S-56): the
  * memberships the provider asserts are replaced (`UpstreamMemberships::replace()`), and a telephone number it said
@@ -166,6 +168,9 @@ final readonly class JustInTimeProvisioning
         } catch (UserAlreadyExistsException) {
             // another sign-in gave the address as a name between the check and the unit
             throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::AddressHeld);
+        } catch (MembershipAlreadyHeldException) {
+            // another sign-in of the same person gave it the same group between the reading and the unit
+            throw new UpstreamProvisioningRefusedException(UpstreamProvisioningRefusalReason::MembershipWrittenMeanwhile);
         }
 
         return $user;

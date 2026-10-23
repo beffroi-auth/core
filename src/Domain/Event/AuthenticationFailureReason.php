@@ -30,4 +30,17 @@ enum AuthenticationFailureReason: string
      * federates to an upstream provider, through which alone that person signs in (decision 0029).
      */
     case FederatedDomain = 'federated_domain';
+
+    /**
+     * A response of an upstream identity provider the service provider of the tenant does not take (beffroi/saml
+     * S-53 to S-55): no request of the browser it answers, a signature, an audience or a recipient refused, a
+     * replay, an assertion in clear from a provider asked to encrypt, no subject, no address.
+     */
+    case UpstreamResponseRefused = 'upstream_response_refused';
+
+    /**
+     * The person an upstream identity provider named is one this provider does not create or write (beffroi/saml
+     * S-56, decision 0029), the reason of which the refusal of the first sign-in keeps to itself.
+     */
+    case UpstreamPersonRefused = 'upstream_person_refused';
 }

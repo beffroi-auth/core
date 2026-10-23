@@ -30,4 +30,9 @@ enum UpstreamProvisioningRefusalReason: string
      * Another sign-in linked that subject of that provider while this one was creating the person.
      */
     case IdentityLinkedMeanwhile = 'identity_linked_meanwhile';
+
+    /**
+     * Another sign-in of the same person gave it a membership of a group while this one was giving it the same.
+     */
+    case MembershipWrittenMeanwhile = 'membership_written_meanwhile';
 }

@@ -48,15 +48,25 @@ final readonly class SessionOpener
      *                                         provider (beffroi/saml S-57); never later than now, a clock ahead of
      *                                         ours within its skew dated by ours, no proof being later than the
      *                                         session that holds it
+     * @param DateTimeImmutable|null $notOnOrAfter when what proved them allows the session to end at the latest, the
+     *                                             SessionNotOnOrAfter of an upstream identity provider (beffroi/saml
+     *                                             S-57); the session ends at the earlier of its lifetime and that
      *
      * @throws AuthenticationFailedException when what was proven is under the floor of the tenant
      */
-    public function open(Tenant $tenant, User $user, array $methods, RequestContext $context, ?DateTimeImmutable $provenAt = null): AuthenticationSession
-    {
+    public function open(
+        Tenant $tenant,
+        User $user,
+        array $methods,
+        RequestContext $context,
+        ?DateTimeImmutable $provenAt = null,
+        ?DateTimeImmutable $notOnOrAfter = null,
+    ): AuthenticationSession {
         if (! $tenant->loginFloor->isSatisfiedBy($methods)) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::BelowTheFloor, $methods[0], null, $user);
         }
         $now = $this->clock->now();
+        $expiresAt = $now->add($this->lifetime);
         $session = new AuthenticationSession(
             $this->uuids->timeOrdered(),
             $tenant,
@@ -64,7 +74,7 @@ final readonly class SessionOpener
             $now,
             AuthenticationProofs::ofAll($methods, $provenAt === null || $provenAt > $now ? $now : $provenAt),
             $context,
-            $now->add($this->lifetime),
+            $notOnOrAfter !== null && $notOnOrAfter < $expiresAt ? $notOnOrAfter : $expiresAt,
         );
         $this->sessions->save($session);
         $this->events->dispatch(new UserAuthenticated($session));
