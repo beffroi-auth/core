@@ -7,7 +7,9 @@ namespace Beffroi\Core\Bridge\InMemory;
 use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\RuntimeException;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
+use function sprintf;
 use function usort;
 
 final class InMemoryTenantKeyRepository implements TenantKeyRepositoryInterface
@@ -65,6 +67,15 @@ final class InMemoryTenantKeyRepository implements TenantKeyRepositoryInterface
 
     public function save(TenantKey $key): void
     {
+        $held = $this->keys[self::index($key->tenant, $key->kid)] ?? null;
+        if ($held !== null && $held->algorithm->name() !== $key->algorithm->name()) {
+            throw new RuntimeException(sprintf(
+                'The key "%s" of tenant "%s" is held already, and not as a key of %s: one material is the key of one algorithm.',
+                $key->kid,
+                $key->tenant->slug,
+                $key->algorithm->name(),
+            ));
+        }
         ++$this->saves;
         $this->keys[self::index($key->tenant, $key->kid)] = $key;
     }

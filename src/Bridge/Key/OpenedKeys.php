@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\Key;
 
+use function array_flip;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Key\UnsealedKey;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -69,12 +71,21 @@ final class OpenedKeys
      */
     public function forgetOthers(Tenant $tenant, TenantKey $answered): void
     {
+        $this->keepOnly($tenant, $answered->algorithm, [$answered->kid]);
+    }
+
+    /**
+     * The keys of that tenant and of that algorithm, other than those named, are out of the process: what answers for
+     * an algorithm with several keys at once, the keys in service the key of a SAML identity provider is tried among,
+     * names them all, and a key that has left the service since is no longer among them.
+     *
+     * @param list<string> $kids
+     */
+    public function keepOnly(Tenant $tenant, KeyAlgorithmInterface $algorithm, array $kids): void
+    {
+        $kept = array_flip($kids);
         foreach ($this->opened as $index => $opened) {
-            if (
-                $opened->key->kid !== $answered->kid
-                && $opened->key->tenant->equals($tenant)
-                && $opened->key->algorithm->name() === $answered->algorithm->name()
-            ) {
+            if (! isset($kept[$opened->key->kid]) && $opened->key->tenant->equals($tenant) && $opened->key->algorithm->name() === $algorithm->name()) {
                 unset($this->opened[$index]);
             }
         }

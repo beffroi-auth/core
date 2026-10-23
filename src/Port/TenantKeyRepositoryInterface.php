@@ -7,6 +7,7 @@ namespace Beffroi\Core\Port;
 use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Tenant\Tenant;
+use Beffroi\Core\Exception\RuntimeException;
 
 /**
  * The keys of a tenant, whatever they are published for: one store, one lifecycle, one set of commands.
@@ -37,5 +38,12 @@ interface TenantKeyRepositoryInterface
      */
     public function findAll(Tenant $tenant): array;
 
+    /**
+     * A key written, or written again as its life goes on. One material is the key of one algorithm: the "kid" is the
+     * thumbprint of the public half (RFC 7638), so a key of another algorithm under a "kid" the store holds is the same
+     * material, refused rather than written over it (beffroi/saml S-64).
+     *
+     * @throws RuntimeException when the store holds that "kid" under another algorithm, or cannot write
+     */
     public function save(TenantKey $key): void;
 }

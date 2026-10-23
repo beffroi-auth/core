@@ -112,7 +112,22 @@ final readonly class SealedKeyProvider implements
         return $this->opened->open($tenant, $key);
     }
 
-    public function keptDecryptionKey(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, string $kid): UnsealedKey
+    public function keptDecryptionKeys(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, array $kids): array
+    {
+        // what the caller no longer names has left the service since its last call, or is not its to open
+        $this->opened->keepOnly($tenant, $algorithm, $kids);
+        $opened = [];
+        foreach ($kids as $kid) {
+            $opened[] = $this->keptDecryptionKey($tenant, $algorithm, $kid);
+        }
+
+        return $opened;
+    }
+
+    /**
+     * @throws KeyNotFoundException
+     */
+    private function keptDecryptionKey(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, string $kid): UnsealedKey
     {
         $key = $this->keys->find($tenant, $kid);
         if ($key === null) {
