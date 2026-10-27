@@ -50,7 +50,8 @@ final readonly class ClaimField
 
     /**
      * What an input of a kind can carry, where that is narrower than what the model holds: a date input
-     * carries a whole date, and OIDC Core §5.1 provides for a year alone (`forHolding()`).
+     * carries a whole date whose year is above zero (HTML §2.3.5.1, §2.3.5.2), and OIDC Core §5.1 provides
+     * for a year alone and for a day whose year is withheld, written "0000" (`forHolding()`).
      *
      * A list of the kinds that have one and not a method per kind, because it is a fact about a kind and
      * not a behaviour of it: the day a second kind is narrower than its claim, it is a line here.
@@ -58,7 +59,7 @@ final readonly class ClaimField
      * @var array<string, non-empty-string>
      */
     private const array CARRIED = [
-        'date' => '/^\\d{4}-\\d{2}-\\d{2}$/D',
+        'date' => '/^(?!0000)\\d{4}-\\d{2}-\\d{2}$/D',
     ];
 
     /**
@@ -154,8 +155,9 @@ final readonly class ClaimField
 
     /**
      * The field a page offers for a value already held, which is this one unless the input cannot carry
-     * that value: a birthdate held as a year alone is offered as a line of text, because a date input
-     * renders it empty and a save on an empty input would quietly erase what an import wrote.
+     * that value: a birthdate held as a year alone, or as a day whose year is withheld, is offered as a
+     * line of text, because a date input renders it empty and a save on an empty input would quietly erase
+     * what an import wrote.
      */
     public function forHolding(?string $value): self
     {
