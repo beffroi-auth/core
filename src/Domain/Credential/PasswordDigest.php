@@ -43,7 +43,7 @@ final readonly class PasswordDigest
         #[SensitiveParameter]
         public string $value,
     ) {
-        if (preg_match('/^[0-9A-F]{' . self::LENGTH . '}$/', $value) !== 1) {
+        if (preg_match('/^[0-9A-F]{' . self::LENGTH . '}$/D', $value) !== 1) {
             throw new InvalidArgumentException(sprintf('A password digest is %d hexadecimal characters in upper case.', self::LENGTH));
         }
     }

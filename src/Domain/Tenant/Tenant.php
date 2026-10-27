@@ -68,7 +68,7 @@ final class Tenant implements ClassifiedFieldsInterface
         ?SelfServedClaims $selfServedClaims = null,
         ?AuthenticationPredicateInterface $loginFloor = null,
     ) {
-        if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $slug) !== 1) {
+        if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
                 'The tenant slug "%s" must be 1 to 63 lowercase letters, digits or hyphens, and must not start or end with a hyphen.',
                 $slug,

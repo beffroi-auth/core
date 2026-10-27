@@ -23,7 +23,7 @@ final readonly class GeoLocation
         public ?float $latitude = null,
         public ?float $longitude = null,
     ) {
-        if ($countryCode !== null && preg_match('/^[A-Z]{2}$/', $countryCode) !== 1) {
+        if ($countryCode !== null && preg_match('/^[A-Z]{2}$/D', $countryCode) !== 1) {
             throw new InvalidArgumentException(sprintf('The country code "%s" must be two uppercase letters (ISO 3166-1 alpha-2).', $countryCode));
         }
         if (($latitude === null) !== ($longitude === null)) {

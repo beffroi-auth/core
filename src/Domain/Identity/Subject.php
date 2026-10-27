@@ -22,7 +22,7 @@ final readonly class Subject implements Stringable
         if ($value === '' || strlen($value) > 255) {
             throw new InvalidArgumentException('A subject is 1 to 255 characters long.');
         }
-        if (preg_match('/^[\x21-\x7E]+$/', $value) !== 1) {
+        if (preg_match('/^[\x21-\x7E]+$/D', $value) !== 1) {
             throw new InvalidArgumentException(sprintf('The subject "%s" must be made of printable ASCII characters without spaces.', $value));
         }
     }

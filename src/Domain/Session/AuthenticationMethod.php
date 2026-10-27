@@ -61,7 +61,7 @@ final readonly class AuthenticationMethod implements Stringable
     public function __construct(
         public string $value,
     ) {
-        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/', $value) !== 1) {
+        if (preg_match('/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/D', $value) !== 1) {
             throw new InvalidArgumentException(sprintf('"%s" is not a well-formed authentication method reference.', $value));
         }
     }

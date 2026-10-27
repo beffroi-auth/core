@@ -31,7 +31,7 @@ final readonly class TenantLook
      * CSS Color 4 §5.1: three or six hexadecimal digits, with their alpha forms left out, a transparent
      * accent being a mistake and not a brand.
      */
-    private const string COLOR = '/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i';
+    private const string COLOR = '/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/Di';
 
     public function __construct(
         public ?LogoUri $logoUri = null,

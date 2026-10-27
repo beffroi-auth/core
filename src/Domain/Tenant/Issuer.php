@@ -91,6 +91,6 @@ final readonly class Issuer implements Stringable
             return true;
         }
 
-        return preg_match('/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $host) === 1;
+        return preg_match('/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/D', $host) === 1;
     }
 }

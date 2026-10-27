@@ -58,7 +58,7 @@ final readonly class ClaimField
      * @var array<string, non-empty-string>
      */
     private const array CARRIED = [
-        'date' => '/^\\d{4}-\\d{2}-\\d{2}$/',
+        'date' => '/^\\d{4}-\\d{2}-\\d{2}$/D',
     ];
 
     /**
