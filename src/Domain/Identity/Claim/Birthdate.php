@@ -24,10 +24,12 @@ final readonly class Birthdate extends ProfileClaim
     /**
      * A date, which a browser offers a calendar for (issue #479). The pattern comes with it, for a browser
      * that renders a line of text instead and for which it is then the only check; it is the pattern the
-     * profile itself refuses anything else by, which is wider than a date input, OIDC Core §5.1 providing
-     * for a year alone and for "0000" when nobody knows it. A birthdate held in that wider shape is
+     * profile itself refuses another shape by, which is wider than a date input, OIDC Core §5.1 providing
+     * for a year alone and for the year "0000" when it is omitted, and the profile also refuses a date of
+     * that shape that names no day of the calendar (issue #846). A birthdate held as a year alone is
      * offered as a line of text rather than erased by a calendar that cannot render it
-     * (`ClaimField::forHolding()`).
+     * (`ClaimField::forHolding()`); a date whose year is "0000" is offered to the calendar, which renders
+     * it empty (issue #887).
      */
     public function field(): ClaimField
     {

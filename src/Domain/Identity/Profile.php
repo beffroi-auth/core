@@ -6,6 +6,7 @@ namespace Beffroi\Core\Domain\Identity;
 
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function array_key_exists;
+use function checkdate;
 use Error;
 use function get_object_vars;
 use function is_string;
@@ -17,6 +18,12 @@ use function sprintf;
  */
 final readonly class Profile
 {
+    /**
+     * What a year withheld is read as when a day is checked: a leap year, so that the 29th of February stays a
+     * day somebody who keeps their year to themselves was born on.
+     */
+    private const int WITHHELD_YEAR_READ_AS = 2000;
+
     public function __construct(
         public ?string $name = null,
         public ?string $givenName = null,
@@ -32,9 +39,9 @@ final readonly class Profile
         public ?string $zoneinfo = null,
         public ?string $locale = null,
     ) {
-        if ($birthdate !== null && preg_match('/^\d{4}(?:-\d{2}-\d{2})?$/D', $birthdate) !== 1) {
+        if ($birthdate !== null && ! self::isABirthdate($birthdate)) {
             throw new InvalidArgumentException(sprintf(
-                'The birthdate "%s" must be "YYYY-MM-DD" or "YYYY" (a year alone, or "0000" for an unknown year).',
+                'The birthdate "%s" must be a day of the calendar, "YYYY-MM-DD", or a year alone, "YYYY", the year "0000" when it is withheld.',
                 $birthdate,
             ));
         }
@@ -43,6 +50,24 @@ final readonly class Profile
     public static function empty(): self
     {
         return new self();
+    }
+
+    /**
+     * OIDC Core §5.1: "YYYY-MM-DD", or "YYYY" when only the year is given, the year "0000" when it is withheld.
+     * A date names a day of the calendar, and its shape alone does not make it one (issue #846): "2024-13-45" is
+     * refused as "21/05/1990" is.
+     */
+    private static function isABirthdate(string $birthdate): bool
+    {
+        if (preg_match('/^\d{4}$/D', $birthdate) === 1) {
+            return true;
+        }
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/D', $birthdate, $date) !== 1) {
+            return false;
+        }
+        [, $year, $month, $day] = $date;
+
+        return checkdate((int) $month, (int) $day, $year === '0000' ? self::WITHHELD_YEAR_READ_AS : (int) $year);
     }
 
     /**

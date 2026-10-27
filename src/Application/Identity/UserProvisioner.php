@@ -19,6 +19,7 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\PasswordRefusedException;
+use Beffroi\Core\Port\ClaimsInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
@@ -42,6 +43,7 @@ final readonly class UserProvisioner
         private EnrolmentRefusal $enrolments,
         private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
+        private ClaimsInterface $claims,
     ) {
     }
 
@@ -81,7 +83,13 @@ final readonly class UserProvisioner
      * naming the provider, before anything is written; one it says as it already is, it may say, which is
      * what a script played again does.
      *
-     * @throws InvalidArgumentException when the source holds a claim the caller says otherwise, or a phone
+     * **A claim of the profile the caller says is held to the claim that answers its name** (issue #846): a
+     * value outside the closed set of that claim, a zone or a language this deployment does not hold, is
+     * refused before anything is written, as the page of the account refuses it (`ProfileClaim::describe()`),
+     * the set being the claim's and not a page's (issue #479).
+     *
+     * @throws InvalidArgumentException when the source holds a claim the caller says otherwise, a claim of the
+     *                                  profile is said with a value its claim does not hold, or a phone
      *                                  number is absent but said to be verified
      */
     public function setProfile(User $user, Profile $profile, ?string $phoneNumber = null, bool $phoneNumberVerified = false, ?Address $address = null): User
@@ -89,6 +97,9 @@ final readonly class UserProvisioner
         $source = $user->source;
         $address = $address?->isEmpty() === true ? null : $address;
         $source->assertLeaves(self::changedBy($user, $profile, $phoneNumber, $phoneNumberVerified, $address));
+        foreach ($profile->claims() as $name => $value) {
+            $this->claims->named($name)?->field()->assertHolds($value);
+        }
         $now = $this->clock->now();
         // first: the one change the user can refuse
         if (! $source->holds('phone_number')) {
