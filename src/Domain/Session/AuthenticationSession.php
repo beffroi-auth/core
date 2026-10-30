@@ -100,10 +100,11 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
 
     /**
      * The instant an upstream identity provider allows the session it vouches for (the SessionNotOnOrAfter of SAML
-     * Core §2.7.2, beffroi/saml S-57): the session ends no later than that, and a bound later than its end changes
-     * nothing, so that the provider shortens a session and never lengthens one.
+     * Core §2.7.2, beffroi/saml S-57): the session expires no later than that, and a bound later than its expiry
+     * changes nothing, so that the provider shortens a session and never lengthens one. Reaching it ends nothing
+     * (decision 0031).
      */
-    public function endNoLaterThan(DateTimeImmutable $notOnOrAfter): void
+    public function expireNoLaterThan(DateTimeImmutable $notOnOrAfter): void
     {
         if ($notOnOrAfter < $this->expiresAt) {
             $this->expiresAt = $notOnOrAfter;

@@ -48,9 +48,10 @@ final readonly class SessionOpener
      *                                         provider (beffroi/saml S-57); never later than now, a clock ahead of
      *                                         ours within its skew dated by ours, no proof being later than the
      *                                         session that holds it
-     * @param DateTimeImmutable|null $notOnOrAfter when what proved them allows the session to end at the latest, the
-     *                                             SessionNotOnOrAfter of an upstream identity provider (beffroi/saml
-     *                                             S-57); the session ends at the earlier of its lifetime and that
+     * @param DateTimeImmutable|null $notOnOrAfter when what proved them allows the session to expire at the latest,
+     *                                             the SessionNotOnOrAfter of an upstream identity provider
+     *                                             (beffroi/saml S-57); the session expires at the earlier of its
+     *                                             lifetime and that instant
      *
      * @throws AuthenticationFailedException when what was proven is under the floor of the tenant
      */
