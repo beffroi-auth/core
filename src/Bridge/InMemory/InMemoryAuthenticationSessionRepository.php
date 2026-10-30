@@ -15,6 +15,7 @@ use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Exception\RuntimeException;
 use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
+use Beffroi\Core\Port\CanFindUnendedSessionsInterface;
 use Beffroi\Core\Port\CanPageActiveSessionsInterface;
 use Beffroi\Core\Port\SubjectsOfSessionsInterface;
 use function sprintf;
@@ -22,6 +23,7 @@ use Symfony\Component\Uid\Uuid;
 
 final class InMemoryAuthenticationSessionRepository implements
     AuthenticationSessionRepositoryInterface,
+    CanFindUnendedSessionsInterface,
     CanPageActiveSessionsInterface,
     SubjectsOfSessionsInterface
 {
@@ -69,14 +71,22 @@ final class InMemoryAuthenticationSessionRepository implements
 
     public function findActiveByUser(User $user, DateTimeImmutable $now): array
     {
-        $active = [];
+        return array_values(array_filter(
+            $this->findUnendedByUser($user),
+            static fn (AuthenticationSession $session): bool => $session->isActive($now),
+        ));
+    }
+
+    public function findUnendedByUser(User $user): array
+    {
+        $unended = [];
         foreach ($this->sessions as $session) {
-            if ($session->user->id->equals($user->id) && $session->isActive($now)) {
-                $active[] = $session;
+            if ($session->user->id->equals($user->id) && ! $session->hasEnded()) {
+                $unended[] = $session;
             }
         }
 
-        return $active;
+        return $unended;
     }
 
     public function save(AuthenticationSession $session): void

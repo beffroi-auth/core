@@ -7,8 +7,7 @@ namespace Beffroi\Core\Application\Authentication;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Session\SessionEnd;
-use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
-use Psr\Clock\ClockInterface;
+use Beffroi\Core\Port\CanFindUnendedSessionsInterface;
 
 /**
  * Every session of a person but the one they are reading from (architecture §5.2): what somebody does
@@ -20,26 +19,29 @@ use Psr\Clock\ClockInterface;
  * is one act of the core: a statement that closed them all at once would be the one end nobody is told
  * about.
  *
+ * **A session past its expiry is ended as well.** It signs nobody in, but reaching its expiry ended
+ * nothing (decision 0031), so what was issued under it lives on, a refresh token up to its own expiry:
+ * a password replaced because the one before it is not trusted any more leaves no refresh token of a
+ * session opened under the old one to be spent.
+ *
  * **The session it is given is the one it keeps**, and it is the caller's own: the person reading the page
  * is not signed out by the button that signs out everything else.
  */
 final readonly class OtherSessionsTermination
 {
     public function __construct(
-        private AuthenticationSessionRepositoryInterface $sessions,
+        private CanFindUnendedSessionsInterface $sessions,
         private SessionTerminator $terminator,
-        private ClockInterface $clock,
     ) {
     }
 
     /**
-     * Says how many it ended, so that the page can tell a person who had five browsers open from a person
-     * who had none.
+     * Says how many it ended, those past their expiry included.
      */
     public function endEveryOther(AuthenticationSession $kept, RequestContext $context): int
     {
         $ended = 0;
-        foreach ($this->sessions->findActiveByUser($kept->user, $this->clock->now()) as $session) {
+        foreach ($this->sessions->findUnendedByUser($kept->user) as $session) {
             if ($session->id->equals($kept->id)) {
                 continue;
             }
