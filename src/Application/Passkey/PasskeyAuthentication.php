@@ -54,10 +54,9 @@ final readonly class PasskeyAuthentication
     }
 
     /**
-     * An assertion whose backup eligibility is not the one of the enrolment, a revoked passkey, a disabled
-     * user and a person of a federated domain (decision 0029) are refused after the signature was checked,
-     * so that a refusal costs the same as a wrong signature; a sign count that did not grow is told, not
-     * refused.
+     * An assertion whose backup eligibility is not the one of the enrolment or whose sign count did not grow
+     * (decision 0034), a revoked passkey, a disabled user and a person of a federated domain (decision 0029)
+     * are refused after the signature was checked, so that a refusal costs the same as a wrong signature.
      *
      * @throws AuthenticationFailedException
      */
@@ -73,7 +72,7 @@ final readonly class PasskeyAuthentication
         if (! $credential->tenant->equals($tenant)) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, null);
         }
-        if ($credential->backupEligibilityChanged($assertion->authenticatorData)) {
+        if ($credential->backupEligibilityChanged($assertion->authenticatorData) || $credential->signCountRegresses($assertion->authenticatorData)) {
             throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, $credential->user);
         }
         if ($credential->isRevoked()) {
@@ -87,10 +86,9 @@ final readonly class PasskeyAuthentication
         }
 
         $now = $this->clock->now();
-        $signCountRegressed = $credential->signCountRegresses($assertion->authenticatorData);
         $credential->recordUse($assertion->authenticatorData, $now);
         $this->credentials->save($credential);
-        $this->events->dispatch(new PasskeyUsed($credential, $now, $context, $signCountRegressed));
+        $this->events->dispatch(new PasskeyUsed($credential, $now, $context));
 
         return $this->opener->open($tenant, $credential->user, $methods, $context);
     }

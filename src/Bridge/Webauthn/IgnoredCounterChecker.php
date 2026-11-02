@@ -9,8 +9,8 @@ use Webauthn\CredentialRecord;
 
 /**
  * The sign count is not the library's to refuse here: the core compares it after the signature
- * (PasskeyCredential::signCountRegresses()) and tells a regression as an event, because a synced passkey
- * keeps it at zero (architecture §3.2).
+ * (PasskeyCredential::signCountRegresses()) and refuses a regression there, with the other refusals of an
+ * assertion whose signature holds, so that the refusal names the passkey and its holder (decision 0034).
  */
 final class IgnoredCounterChecker implements CounterChecker
 {

@@ -23,9 +23,10 @@ use Webauthn\PublicKeyCredentialRequestOptions;
  * tenant the response names, revoked or not (the core tells it apart after the signature, so that a
  * refusal costs the same); user verification is asked for and not required, the flags say what was done.
  * The BE flag the assertion claims is compared with the one of the enrolment by the core
- * (PasskeyCredential::backupEligibilityChanged()), after the signature, as the sign count is, so that its
- * refusal names the passkey and its holder: the library is handed the record without that flag, a record
- * it compares no BE flag with (CheckBackupEligibilityIsUnchanged).
+ * (PasskeyCredential::backupEligibilityChanged()), after the signature, as the sign count is
+ * (PasskeyCredential::signCountRegresses()), so that either refusal names the passkey and its holder:
+ * the library is handed the record without that flag, a record it compares no BE flag with
+ * (CheckBackupEligibilityIsUnchanged).
  */
 final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticatorInterface
 {

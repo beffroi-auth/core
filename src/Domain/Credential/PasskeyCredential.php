@@ -222,7 +222,8 @@ final class PasskeyCredential extends RevocableCredential implements
     /**
      * The check of webauthn-lib (the CheckCounter step, Counter\ThrowExceptionIfInvalid), made a question:
      * when either count is non-zero, a count that did not grow means a cloned authenticator or a replay
-     * (WebAuthn Level 3 §6.1.1); a synced passkey keeps it at zero, so the answer is an event, not a refusal.
+     * (WebAuthn Level 3 §6.1.1), and the assertion is refused (decision 0034); a synced passkey keeps both
+     * counts at zero, which is never a regression.
      */
     public function signCountRegresses(AuthenticatorData $data): bool
     {
@@ -234,7 +235,7 @@ final class PasskeyCredential extends RevocableCredential implements
      * with: "The value of the BE flag is set during authenticatorMakeCredential operation and MUST NOT
      * change" (WebAuthn Level 3 §6.1.3), so the stored flag is the anchor and never a fact to refresh,
      * where the backup state is "the latest value of the BS flag from any ceremony" (§6.1.4). Asked where
-     * signCountRegresses() is asked, and refused where that one is told: a key that is suddenly bound to
+     * signCountRegresses() is asked, and refused as that one is: a key that is suddenly bound to
      * its authenticator, or suddenly synced, is not the key the provider enrolled.
      */
     public function backupEligibilityChanged(AuthenticatorData $data): bool

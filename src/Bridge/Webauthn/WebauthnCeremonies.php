@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\Webauthn;
 
+use function array_map;
 use Cose\Algorithm\Manager;
 use Cose\Algorithm\Signature\ECDSA\ES256;
+use Cose\Algorithm\Signature\EdDSA\Ed25519;
+use Cose\Algorithm\Signature\RSA\RS1;
 use Cose\Algorithm\Signature\RSA\RS256;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
@@ -42,15 +45,25 @@ use Webauthn\PublicKeyCredentialParameters;
  * §5.4.7, and which a ceremony asking for one gets: a compromised authenticator refused on its status
  * reports, a full attestation checked up to the root its statement names, an unknown AAGUID refused on a
  * full attestation and passed on a self attestation), and the sign count is left to the core
- * (PasskeyCredential::signCountRegresses()), which tells a regression instead of refusing it.
+ * (PasskeyCredential::signCountRegresses()), which refuses a regression after the signature.
  */
 final readonly class WebauthnCeremonies
 {
     /**
-     * COSE algorithm identifiers (RFC 9053 §2.1, §2.2, RFC 8812 §2): what a platform authenticator and a
-     * hardware key create, in the order the provider prefers.
+     * COSE algorithm identifiers (RFC 9053 §2.1 and §2.2, RFC 8812 §2): ES256, EdDSA over Ed25519 and RS256,
+     * what a platform authenticator and a hardware key create, in the order the provider prefers them
+     * (decision 0033).
      */
-    private const array ALGORITHMS = [-7, -257];
+    private const array ALGORITHMS = [-7, -8, -257];
+
+    /**
+     * RSASSA-PKCS1-v1_5 with SHA-1 (RFC 8812 §2), registered "Deprecated" and kept for the TPMs that still
+     * sign with it (§5.3), which the FIDO2 server tests of the conformance tools ask a server to accept. The
+     * ceremonies verify it and the options of the provider never offer it: only the FIDO2 server API of the
+     * conformance tools adds it to the options it draws (decision 0033), and CheckAlgorithm refusing a
+     * credential of an algorithm its options did not offer, no ceremony of the product enrols one.
+     */
+    public const int RS1 = -65535;
 
     /**
      * WebAuthn Level 3 §13.4.3: at least 16 bytes. The same for either ceremony, so it is written here
@@ -74,7 +87,7 @@ final readonly class WebauthnCeremonies
      */
     public static function parameters(): array
     {
-        return [PublicKeyCredentialParameters::createPk(self::ALGORITHMS[0]), PublicKeyCredentialParameters::createPk(self::ALGORITHMS[1])];
+        return array_map(PublicKeyCredentialParameters::createPk(...), self::ALGORITHMS);
     }
 
     /**
@@ -123,8 +136,9 @@ final readonly class WebauthnCeremonies
 
     private function factory(Tenant $tenant): CeremonyStepManagerFactory
     {
-        // the factory verifies ES256 and RS256 by default, the two the options offer (ALGORITHMS)
         $factory = new CeremonyStepManagerFactory();
+        // the signature of an assertion is verified with every algorithm a credential of the provider may hold
+        $factory->setAlgorithmManager(self::algorithms());
         $factory->setAttestationStatementSupportManager($this->attestationFormats());
         // the whole origin, scheme and port included: what lets a loopback issuer be plain HTTP, as the Issuer does
         $factory->setAllowedOrigins([$tenant->issuer->origin()]);
@@ -136,9 +150,13 @@ final readonly class WebauthnCeremonies
         return $factory;
     }
 
+    /**
+     * The algorithms the ceremonies verify: those the options offer (ALGORITHMS), and RS1 for the conformance
+     * tools alone, its weakness acknowledged by name since it signs over SHA-1 (RFC 8812 §5.3).
+     */
     private static function algorithms(): Manager
     {
-        return Manager::create()->add(ES256::create(), RS256::create());
+        return Manager::create()->add(ES256::create(), Ed25519::create(), RS256::create(), RS1::create(acknowledgeInsecureAlgorithm: true));
     }
 
     /**
