@@ -21,6 +21,7 @@
         "psr/log": "^3.0",
         "spomky-labs/aes-key-wrap": "^7.0",
         "spomky-labs/otphp": "^11.5",
+        "spomky-labs/pki-framework": "^1.2.1",
         "symfony/key-management": "8.2.*",
         "symfony/uid": "8.2.*",
         "web-auth/webauthn-lib": "^5.3.10",

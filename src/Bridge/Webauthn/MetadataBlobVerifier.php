@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\Webauthn;
 
 use function array_is_list;
+use function array_slice;
+use function base64_decode;
 use Beffroi\Core\Exception\MetadataBlobRefusedException;
+use function count;
 use function is_array;
 use function is_string;
 use Jose\Component\Core\AlgorithmManager;
@@ -15,6 +18,8 @@ use Jose\Component\Signature\Algorithm\RS256;
 use Jose\Component\Signature\JWS;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
+use SpomkyLabs\Pki\CryptoEncoding\PEM;
+use SpomkyLabs\Pki\X509\Certificate\Certificate;
 use function sprintf;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -29,10 +34,12 @@ use Webauthn\MetadataService\Service\MetadataBLOBPayload;
  * Verifies a Metadata BLOB as the FIDO Metadata Service v3.1.1 (§3.1.7, §3.2) has a relying party verify
  * it: a compact JWS with one signature, whose protected header carries the certificate chain of the
  * signer (RFC 7515 §4.1.6, "x5c"), the signature checked with the key of the first certificate, the chain
- * checked up to the root the caller pins (never one the token names), the payload read as a blob. What
- * the library ships for this (FidoAllianceCompliantMetadataService) fetches the root over HTTP at every
- * load and swallows a refusal into an empty repository; this one refuses aloud and reads nothing from the
- * network, the console does that once.
+ * checked up to the root the caller pins (never one the token names), the payload read as a blob. A
+ * certificate of the chain that carries the name and the key of the pinned root is that root issued by
+ * another, and the chain stops before it (upToThePinnedRoot()). What the library ships for this
+ * (FidoAllianceCompliantMetadataService) fetches the root over HTTP at every load and swallows a refusal
+ * into an empty repository; this one refuses aloud and reads nothing from the network, the console does
+ * that once.
  */
 final readonly class MetadataBlobVerifier
 {
@@ -67,7 +74,10 @@ final readonly class MetadataBlobVerifier
             throw new MetadataBlobRefusedException('The signature of the blob does not hold under the certificate it names.');
         }
         try {
-            $this->chains->check(CertificateToolbox::fixPEMStructures($chain), [CertificateToolbox::fixPEMStructure($rootCertificate)]);
+            $this->chains->check(
+                CertificateToolbox::fixPEMStructures(self::upToThePinnedRoot($chain, $rootCertificate)),
+                [CertificateToolbox::fixPEMStructure($rootCertificate)],
+            );
         } catch (Throwable $exception) {
             throw new MetadataBlobRefusedException(
                 sprintf('The certificate chain of the blob does not lead to the pinned root: %s', $exception->getMessage()),
@@ -105,6 +115,43 @@ final readonly class MetadataBlobVerifier
         }
 
         return $jws;
+    }
+
+    /**
+     * The chain up to the pinned root. A trust anchor is a name and a key (RFC 5280 §6.1.1 (d)), so a certificate
+     * after the signer that carries the name and the key of the pinned root is that root, issued by another
+     * one: the chain stops before it, and the pinned root takes its place. The chain of the FIDO Alliance ends
+     * with GlobalSign Root R46 issued by GlobalSign Root CA - R3, and verifies under GlobalSign Root R46, the
+     * root the FIDO Alliance names, once that certificate is left out. A certificate this cannot read stays
+     * where it is, for the chain to be refused on it.
+     *
+     * @param non-empty-list<string> $chain
+     *
+     * @return list<string>
+     */
+    private static function upToThePinnedRoot(array $chain, string $rootCertificate): array
+    {
+        try {
+            $root = Certificate::fromPEM(PEM::fromString(CertificateToolbox::fixPEMStructure($rootCertificate)))->tbsCertificate();
+        } catch (Throwable) {
+            return $chain;
+        }
+        for ($position = 1, $length = count($chain); $position < $length; ++$position) {
+            $der = base64_decode($chain[$position], true);
+            if ($der === false) {
+                return $chain;
+            }
+            try {
+                $certificate = Certificate::fromDER($der)->tbsCertificate();
+            } catch (Throwable) {
+                return $chain;
+            }
+            if ($certificate->subject()->equals($root->subject()) && $certificate->subjectPublicKeyInfo()->toDER() === $root->subjectPublicKeyInfo()->toDER()) {
+                return array_slice($chain, 0, $position);
+            }
+        }
+
+        return $chain;
     }
 
     /**
