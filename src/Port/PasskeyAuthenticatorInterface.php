@@ -13,7 +13,7 @@ use Webauthn\PublicKeyCredentialRequestOptions;
 /**
  * The authentication ceremony of WebAuthn Level 3 §7.2, run by the integration over webauthn-lib: the
  * signature, the origin, the challenge and the relying party are its business; what the assertion proves,
- * the sign count and the revocation are the core's.
+ * the sign count, the backup eligibility of the enrolment and the revocation are the core's.
  */
 interface PasskeyAuthenticatorInterface
 {
