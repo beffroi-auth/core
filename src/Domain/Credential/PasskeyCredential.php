@@ -30,6 +30,7 @@ use Webauthn\TrustPath\EmptyTrustPath;
  */
 final class PasskeyCredential extends RevocableCredential implements
     ExternallyIdentifiedCredentialInterface,
+    ModelDeclaringCredentialInterface,
     NameableCredentialInterface,
     ProvingCredentialInterface
 {
@@ -68,6 +69,17 @@ final class PasskeyCredential extends RevocableCredential implements
      */
     public string $credentialId {
         get => $this->externalId;
+    }
+
+    /**
+     * How the passkey is reached, in the terms of WebAuthn Level 3 §5.8.4: the transports its authenticator
+     * declared that the specification defines, in the order they were declared. Another value stays in
+     * $transports, a hint for the next ceremony (§5.2.1), and says nothing to a person.
+     *
+     * @var list<AuthenticatorTransport>
+     */
+    public array $reachedThrough {
+        get => AuthenticatorTransport::definedIn($this->transports);
     }
 
     /**
