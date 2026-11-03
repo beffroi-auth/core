@@ -20,8 +20,7 @@ use Symfony\Component\Uid\NilUuid;
  *
  * **An AAGUID of sixteen zero bytes names no model**, whatever a source says of it: it is what a client of
  * WebAuthn Level 2 sent in place of the real one when the provider asked for no attestation, a replacement
- * Level 3 dropped (§18.1.1), and what stands for an authenticator that has no AAGUID, as a FIDO U2F one
- * (FIDO Metadata Service v3.1.1 §3.1.1).
+ * Level 3 dropped (§18.1.1).
  */
 final readonly class AuthenticatorModels
 {
