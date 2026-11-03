@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Tenant;
 
+use Beffroi\Core\Domain\Encoding\Host;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function is_string;
 use function parse_url;
@@ -13,11 +14,14 @@ use function strtolower;
 
 /**
  * Where the logo of a tenant is served from (issue #449): an absolute HTTPS URL, no fragment, no
- * credentials; plain HTTP on a loopback host only, as the issuer of a development stack is.
+ * credentials, a host of letters, digits, hyphens and dots or an IP address (Host); plain HTTP on a
+ * loopback host only, as the issuer of a development stack is.
  *
  * The browser of whoever reads the page loads it, never the provider, so what this holds is handed to a
  * browser and named in a Content-Security-Policy; that is why the origin is derived here, once, and not
- * by whoever writes a policy.
+ * by whoever writes a policy. Every page that shows the logo names that origin (issue #926), so a host
+ * a policy would split, a ";" or a "," that RFC 3986 §3.2.2 admits in a registered name, is refused here,
+ * where a deployment names it, and never reaches a page.
  *
  * The same rails guard what a client registers (ClientUri), and the two are not one class: that one
  * belongs to the protocol, refuses in the words of RFC 6749 §3.1.2 and answers questions about a
@@ -44,6 +48,12 @@ final readonly class LogoUri implements Stringable
         }
         if (isset($parts['user']) || isset($parts['pass'])) {
             throw new InvalidArgumentException(sprintf('The logo URL "%s" of a tenant must not carry credentials.', $value));
+        }
+        if (! Host::isHost($parts['host'])) {
+            throw new InvalidArgumentException(sprintf(
+                'The logo URL "%s" of a tenant must name a host of letters, digits, hyphens and dots, or an IP address (RFC 3986 §3.2.2).',
+                $value,
+            ));
         }
         $scheme = strtolower($parts['scheme']);
         $host = strtolower($parts['host']);
