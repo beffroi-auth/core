@@ -12,8 +12,8 @@ use Jose\Component\Signature\Algorithm\ES256 as JoseEs256;
 use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 
 /**
- * ECDSA over P-256 with SHA-256 (RFC 7518 §3.4), the elliptic curve algorithm FAPI 2.0 §5.2.2 takes; its
- * signatures and its keys are the shortest of the four.
+ * ECDSA over P-256 with SHA-256 (RFC 7518 §3.4), the elliptic curve algorithm FAPI 2.0 Security Profile
+ * §5.4.1 takes; its signatures and its keys are the shortest of the four.
  */
 final readonly class Es256 implements JoseSignatureAlgorithmInterface
 {

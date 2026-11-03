@@ -13,8 +13,8 @@ use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 
 /**
  * RSASSA-PKCS1-v1_5 with SHA-256 (RFC 7518 §3.3), the algorithm every relying party understands and the
- * only one OIDC Core §15.1 makes mandatory. FAPI 2.0 §5.2.2 refuses it: a deployment that follows that
- * profile wires the others and leaves this one out.
+ * only one OIDC Core §15.1 makes mandatory. FAPI 2.0 Security Profile §5.4.1 does not take it: a
+ * deployment that follows that profile wires the others and leaves this one out.
  */
 final readonly class Rs256 implements JoseSignatureAlgorithmInterface
 {

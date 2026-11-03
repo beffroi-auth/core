@@ -13,8 +13,8 @@ use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 
 /**
  * EdDSA over Ed25519 (RFC 8037 §3.1), the curve published in the JWK Set as "crv": "Ed25519" with a "kty"
- * of "OKP". Ed25519 signs over SHA-512 (RFC 8032 §5.1), which is the digest "at_hash" and "c_hash" halve
- * (OIDC Core §3.1.3.6 reads the hash from the "alg").
+ * of "OKP". Ed25519 signs over SHA-512 (RFC 8032 §5.1), which is the digest "at_hash" halves (OIDC Core
+ * §3.1.3.6 reads the hash from the "alg").
  */
 final readonly class EdDsa implements JoseSignatureAlgorithmInterface
 {
