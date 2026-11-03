@@ -8,7 +8,6 @@ use function array_map;
 use Cose\Algorithm\Algorithm;
 use Cose\Algorithm\Manager;
 use Cose\Algorithm\Signature\ECDSA\ES256;
-use Cose\Algorithm\Signature\ECDSA\ES384;
 use Cose\Algorithm\Signature\EdDSA\Ed25519;
 use Cose\Algorithm\Signature\RSA\RS256;
 use Psr\Clock\ClockInterface;
@@ -17,11 +16,12 @@ use Webauthn\AttestationStatement\TPMAttestationStatementSupport;
 use Webauthn\PublicKeyCredentialParameters;
 
 /**
- * The algorithms of the provider (decision 0033): ES384, EdDSA over Ed25519, ES256 and RS256 (RFC 9053 §2.1
- * and §2.2, RFC 8812 §2), from the strongest to the weakest as w3c/webauthn#2448 proposes; the options
- * offer them in that order and the signatures are verified with them alone. What signs over SHA-1 is
- * neither offered nor verified: an attestation statement signed with RS1 is refused before the library
- * reads it, whatever its format.
+ * The algorithms of the provider (decision 0033): EdDSA over Ed25519, ES256 and RS256 (RFC 9053 §2.2, RFC 8812
+ * §2), from the strongest to the weakest as w3c/webauthn#2448 proposes; the options offer them in that order
+ * and the signatures are verified with them alone. ES384 is neither offered nor verified: Windows Hello creates
+ * a passkey of it when the options name it first, and Chrome on Windows does not survive that passkey. What
+ * signs over SHA-1 is neither offered nor verified: an attestation statement signed with RS1 is refused before
+ * the library reads it, whatever its format.
  */
 final readonly class ProviderPasskeyAlgorithms implements PasskeyAlgorithms
 {
@@ -53,6 +53,6 @@ final readonly class ProviderPasskeyAlgorithms implements PasskeyAlgorithms
      */
     private static function algorithms(): array
     {
-        return [ES384::create(), Ed25519::create(), ES256::create(), RS256::create()];
+        return [Ed25519::create(), ES256::create(), RS256::create()];
     }
 }
