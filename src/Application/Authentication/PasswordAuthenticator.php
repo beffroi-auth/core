@@ -20,7 +20,7 @@ use SensitiveParameter;
  * the SessionOpener.
  *
  * It is the counterpart of LoginCompletion for the first step, and the caller of the core: a login on the
- * firewall of the bundle plays the same verification and holds or opens with the objects of the firewall
+ * firewall of the application plays the same verification and holds or opens with the objects of the firewall
  * (issue #130), so the order of a login is written once and the two paths cannot drift.
  */
 final readonly class PasswordAuthenticator

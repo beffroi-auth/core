@@ -15,7 +15,7 @@ use function strtr;
  *
  * **It is in the core because the core writes octets too.** A credential ID of WebAuthn is raw bytes, and
  * every place that hands those bytes to a reader hands them over in this alphabet: the column that holds
- * one (BytesType of the bundle), the document a person downloads (CredentialsChapter), the hash in a
+ * one (BytesType of the application), the document a person downloads (CredentialsChapter), the hash in a
  * token and the thumbprint of a certificate in the module. Two places that must agree are one place, so
  * the encoding is here, below all of them, and nothing writes the three characters of the substitution a
  * second time.

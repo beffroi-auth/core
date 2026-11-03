@@ -24,7 +24,7 @@ use function sprintf;
  * `is_string($data['x'] ?? null)` a second time, and a member reads the same way in every one of them.
  *
  * Nothing of a store is here. Where a document was read out of, and what becomes of a refusal, belong to
- * whoever holds it: a DBAL type of the bundle turns the exception of this package into the
+ * whoever holds it: a DBAL type of the application turns the exception of this package into the
  * `ValueNotConvertible` of Doctrine, naming the column it was reading.
  */
 final readonly class Document

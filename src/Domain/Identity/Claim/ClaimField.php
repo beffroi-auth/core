@@ -15,7 +15,7 @@ use function sprintf;
  * What kind of field a claim is offered as (issue #476): what a person types into, and what the browser
  * may check before anything is sent.
  *
- * **A value and not a form.** Neither this package nor the bundle knows what a form is: the pages of the
+ * **A value and not a form.** Neither this package nor the application knows what a form is: the pages of the
  * interaction plane are bare HTML with a form token, which is what lets an application dress them by one
  * layout override and no form theme (architecture §5.2). So a claim says the kind its input carries, the
  * values when the set is closed, and the pattern or the length its value holds to; the page prints them

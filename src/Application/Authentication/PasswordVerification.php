@@ -32,7 +32,7 @@ use function trim;
  * until a code, hand a passport to a firewall, is the caller's, as it is for a code (TotpAuthentication).
  *
  * **It is the one order of a login by password**, and both paths of this provider play it: the use case
- * (PasswordAuthenticator) and the firewall of the bundle, which hands the request here rather than
+ * (PasswordAuthenticator) and the firewall of the application, which hands the request here rather than
  * verifying a hash of its own. A rule that lived in one of the two copies held on one of the two paths,
  * and the drift was not hypothetical: the refusals of one were announced and the refusals of the other
  * were not.

@@ -13,7 +13,7 @@ namespace Beffroi\Core\Domain\PersonalData;
  * **The classification is the model's own**, in the package that owns the entity, so that what this
  * provider holds of a person is answered by the class that holds it: a use case, a command or an export
  * asks the class, and a second place that writes these rows reads the same answer. What a field seals
- * under is still the type its mapping gives it, which is the bundle's (`EncryptedColumnTypes`), and what
+ * under is still the type its mapping gives it, which is the application's (`EncryptedColumnTypes`), and what
  * holds the two together is the walk of the schema: it gives every line here the column the mapping gives
  * its field, refuses a column no line names and a line no column carries, and refuses a field sealed into
  * the scope of a table that is not its own.

@@ -14,7 +14,7 @@ use Throwable;
 
 /**
  * What a failure of symfony/key-management means for the provider, decided once for both sealers and for the
- * data key store of the bundle. A backend that did not answer or refused (a transport failure, an error of the
+ * data key store of the application. A backend that did not answer or refused (a transport failure, an error of the
  * KMS, a master key the KMS does not hold when it seals) is an outage, KmsUnavailableException: the call is
  * served again once the KMS is back. An envelope the component refuses is a RuntimeException as before, a bug
  * or an attack: invalid, tampered, foreign to this use or this tenant, and what the component deliberately

@@ -13,7 +13,7 @@ use SensitiveParameter;
  * The hash a refused password is verified against when no hash of the user could be: the user does not
  * exist, holds no password, or has tried too often. What is paid is the time, so that a refusal costs
  * what a wrong password costs and does not say whether the account exists (decision 0006). One place for
- * every login that verifies a password, PasswordAuthenticator and the firewall of the bundle alike. The
+ * every login that verifies a password, PasswordAuthenticator and the firewall of the application alike. The
  * hash is produced by the hasher of the day, so that it costs what a current hash costs, from a value
  * nobody knows, and once per process: a shared service, never a copy per caller.
  */
