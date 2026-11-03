@@ -11,9 +11,9 @@ use Symfony\Component\Uid\Uuid;
 /**
  * What the journal holds of one person (issue #454), for the page of their account that shows it.
  *
- * The acts are named by the caller, because which acts answer a question is the question's: the page of
- * the recent sign-ins asks for the two that mean somebody tried to sign in, where the archive of a person
- * asks for all of theirs and names none (issue #453).
+ * The acts are named by the caller, because which acts answer a question is the question's: the home of
+ * the account asks for the two that mean somebody tried to sign in (issue #842), where the archive of a
+ * person asks for all of theirs and names none (issue #453).
  */
 interface ActsOfAPersonInterface
 {
