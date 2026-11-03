@@ -9,9 +9,9 @@ use function preg_match;
 
 /**
  * The logo of a model of authenticator, as a source of names gives it: an image in a data: URL (RFC 2397), PNG
- * as the FIDO metadata carry it (FIDO Metadata Statement v3.1.1 §4, "icon") or SVG as the list of the community
- * does, in base64, so that a page shows it without fetching anything and under an "img-src" that admits
- * "data:". One image for a light page and one for a dark page, the same one twice when the source has one.
+ * or SVG as the FIDO metadata carry it (FIDO Metadata Statement v3.1.1 §4, "icon"), SVG as the list of the
+ * community does, in base64, so that a page shows it without fetching anything and under an "img-src" that
+ * admits "data:". One image for a light page and one for a dark page, the same one twice when the source has one.
  */
 final readonly class AuthenticatorLogo
 {

@@ -23,12 +23,13 @@ use Symfony\Component\Uid\Uuid;
 
 /**
  * The list of passkey providers the community keeps (aaguid.json of github.com/passkeydeveloper/passkey-
- * authenticator-aaguids, architecture §3.4), read as the schema of that repository writes it: a JSON object
- * whose members are AAGUIDs, each naming a model with a name and, when it has them, a logo for a light page
- * ("icon_light") and one for a dark page ("icon_dark"), an image of a data: URL each, the one standing for
- * the other when a model has one. A list that is anything else is refused whole, as is an object that names
- * nothing: the README of the repository says that a retired list becomes an empty object. A member of a model
- * the schema does not define is left aside.
+ * authenticator-aaguids, architecture §3.4): a JSON object whose members are AAGUIDs, each naming a model with
+ * a name and, when it has them, a logo for a light page ("icon_light") and one for a dark page ("icon_dark"),
+ * the one standing for the other when a model has one. It is held to what a page shows rather than to the
+ * schema of that repository alone: a member is an AAGUID, a name is not empty, and a logo is a PNG or an SVG
+ * image of a base64 data: URL, where the schema asks for an SVG. A list that is anything else is refused whole,
+ * as is an object that names nothing: the README of the repository says that a retired list becomes an empty
+ * object. A member of a model the schema does not define is left aside.
  *
  * Nobody signs the list and it carries no licence, so nothing ships it: a deployment downloads it, and what it
  * names is what it is, a name somebody gave an AAGUID, which the FIDO metadata are asked about first.
