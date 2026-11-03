@@ -5,11 +5,6 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\Webauthn;
 
 use function array_map;
-use Cose\Algorithm\Manager;
-use Cose\Algorithm\Signature\ECDSA\ES256;
-use Cose\Algorithm\Signature\EdDSA\Ed25519;
-use Cose\Algorithm\Signature\RSA\RS1;
-use Cose\Algorithm\Signature\RSA\RS256;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
 use Psr\Clock\ClockInterface;
@@ -23,7 +18,6 @@ use Webauthn\AttestationStatement\AppleAttestationStatementSupport;
 use Webauthn\AttestationStatement\AttestationStatementSupportManager;
 use Webauthn\AttestationStatement\FidoU2FAttestationStatementSupport;
 use Webauthn\AttestationStatement\PackedAttestationStatementSupport;
-use Webauthn\AttestationStatement\TPMAttestationStatementSupport;
 use Webauthn\AuthenticatorAssertionResponseValidator;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\CeremonyStep\CeremonyStepManagerFactory;
@@ -39,8 +33,9 @@ use Webauthn\PublicKeyCredentialParameters;
  * What the two ceremonies of WebAuthn Level 3 share, on webauthn-lib (docs/09-briques.md): the relying
  * party is the tenant (its identifier the host of the issuer, §5.4.2, the one origin allowed the origin of
  * the issuer, §13.4.9, plain HTTP on a loopback host only because the issuer is), the algorithms are those
- * the provider verifies, the attestation formats those the library verifies (the statement of a format it
- * does not know is a refusal, never a pass), the FIDO metadata those of the store (§7.1 step 22: consulted
+ * of its policy (PasskeyAlgorithms: the provider's, or the conformance tools' on the endpoints of the tools
+ * alone), the attestation formats those the library verifies as that policy runs them (the statement of a
+ * format it does not know is a refusal, never a pass), the FIDO metadata those of the store (§7.1 step 22: consulted
  * by the library when the options asked for an attestation, which the provider's own enrolment never does,
  * §5.4.7, and which a ceremony asking for one gets: a compromised authenticator refused on its status
  * reports, a full attestation checked up to the root its statement names, an unknown AAGUID refused on a
@@ -50,22 +45,6 @@ use Webauthn\PublicKeyCredentialParameters;
 final readonly class WebauthnCeremonies
 {
     /**
-     * COSE algorithm identifiers (RFC 9053 §2.1 and §2.2, RFC 8812 §2): ES256, EdDSA over Ed25519 and RS256,
-     * what a platform authenticator and a hardware key create, in the order the provider prefers them
-     * (decision 0033).
-     */
-    private const array ALGORITHMS = [-7, -8, -257];
-
-    /**
-     * RSASSA-PKCS1-v1_5 with SHA-1 (RFC 8812 §2), registered "Deprecated" and kept for the TPMs that still
-     * sign with it (§5.3), which the FIDO2 server tests of the conformance tools ask a server to accept. The
-     * ceremonies verify it and the options of the provider never offer it: only the FIDO2 server API of the
-     * conformance tools adds it to the options it draws (decision 0033), and CheckAlgorithm refusing a
-     * credential of an algorithm its options did not offer, no ceremony of the product enrols one.
-     */
-    public const int RS1 = -65535;
-
-    /**
      * WebAuthn Level 3 §13.4.3: at least 16 bytes. The same for either ceremony, so it is written here
      * and not once per adapter.
      */
@@ -74,6 +53,7 @@ final readonly class WebauthnCeremonies
     private SerializerInterface $serializer;
 
     public function __construct(
+        private PasskeyAlgorithms $algorithms,
         private ClockInterface $clock,
         private MetadataStatementRepository $statements,
         private StatusReportRepository $statusReports,
@@ -83,11 +63,13 @@ final readonly class WebauthnCeremonies
     }
 
     /**
+     * What the options of a creation ceremony offer, in the order of preference of the policy.
+     *
      * @return non-empty-list<PublicKeyCredentialParameters>
      */
-    public static function parameters(): array
+    public function parameters(): array
     {
-        return array_map(PublicKeyCredentialParameters::createPk(...), self::ALGORITHMS);
+        return $this->algorithms->parameters();
     }
 
     /**
@@ -137,8 +119,8 @@ final readonly class WebauthnCeremonies
     private function factory(Tenant $tenant): CeremonyStepManagerFactory
     {
         $factory = new CeremonyStepManagerFactory();
-        // the signature of an assertion is verified with every algorithm a credential of the provider may hold
-        $factory->setAlgorithmManager(self::algorithms());
+        // the signature of an assertion is verified with every algorithm a credential of the policy may hold
+        $factory->setAlgorithmManager($this->algorithms->verifiers());
         $factory->setAttestationStatementSupportManager($this->attestationFormats());
         // the whole origin, scheme and port included: what lets a loopback issuer be plain HTTP, as the Issuer does
         $factory->setAllowedOrigins([$tenant->issuer->origin()]);
@@ -151,27 +133,18 @@ final readonly class WebauthnCeremonies
     }
 
     /**
-     * The algorithms the ceremonies verify: those the options offer (ALGORITHMS), and RS1 for the conformance
-     * tools alone, its weakness acknowledged by name since it signs over SHA-1 (RFC 8812 §5.3).
-     */
-    private static function algorithms(): Manager
-    {
-        return Manager::create()->add(ES256::create(), Ed25519::create(), RS256::create(), RS1::create(acknowledgeInsecureAlgorithm: true));
-    }
-
-    /**
      * Verified when the authenticator sends one, never required (the spike README): "none" is what the
      * provider asks for, and what the manager always knows; the others are what an authenticator may send
-     * anyway, and what a ceremony that asks for an attestation receives.
+     * anyway, and what a ceremony that asks for an attestation receives, each run as the policy runs it.
      */
     private function attestationFormats(): AttestationStatementSupportManager
     {
-        return new AttestationStatementSupportManager([
-            PackedAttestationStatementSupport::create(self::algorithms()),
+        return new AttestationStatementSupportManager(array_map($this->algorithms->attestation(...), [
+            PackedAttestationStatementSupport::create($this->algorithms->verifiers()),
             FidoU2FAttestationStatementSupport::create(),
             AndroidKeyAttestationStatementSupport::create(),
-            TPMAttestationStatementSupport::create($this->clock),
+            $this->algorithms->tpm($this->clock),
             AppleAttestationStatementSupport::create(),
-        ]);
+        ]));
     }
 }

@@ -44,7 +44,7 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
             PublicKeyCredentialRpEntity::create('', WebauthnCeremonies::relyingPartyId($tenant)),
             PublicKeyCredentialUserEntity::create($user->username, $userHandle->value, $user->profile->name ?? $user->username),
             random_bytes(WebauthnCeremonies::CHALLENGE_LENGTH),
-            WebauthnCeremonies::parameters(),
+            $this->ceremonies->parameters(),
             AuthenticatorSelectionCriteria::create(
                 userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED,
                 residentKey: AuthenticatorSelectionCriteria::RESIDENT_KEY_REQUIREMENT_REQUIRED,
