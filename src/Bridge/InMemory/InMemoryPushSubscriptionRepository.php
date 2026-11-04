@@ -16,9 +16,6 @@ use Beffroi\Core\Port\CanPageActiveSubscriptionsInterface;
 use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * The push subscriptions in memory, for the tests and for a deployment that keeps nothing.
- */
 final class InMemoryPushSubscriptionRepository implements CanPageActiveSubscriptionsInterface, PushSubscriptionRepositoryInterface
 {
     /**

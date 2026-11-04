@@ -7,7 +7,9 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * What the person would rather be called by a client; it is not what they sign in with, and nothing resolves an account by it (OIDC Core §5.1).
+ * OIDC Core §5.1
+ *
+ * Not what the person signs in with: nothing resolves an account by it.
  */
 final readonly class PreferredUsername extends ProfileClaim
 {

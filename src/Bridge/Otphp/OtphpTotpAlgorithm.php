@@ -17,8 +17,7 @@ use function sprintf;
 use function str_replace;
 
 /**
- * RFC 6238 by spomky-labs/otphp, with the parameters of TotpCredential and nothing else: the brick does
- * the HMAC and the truncation of RFC 4226 §5.3, the core reads the steps.
+ * RFC 6238, RFC 4226 §5.3
  */
 final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
 {
@@ -28,23 +27,21 @@ final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
     }
 
     /**
-     * The brick takes a Unix time and divides it by the period (RFC 6238 §4.2); the first second of the
-     * step is given, so that the step is what it is asked for.
+     * RFC 6238 §4.2
      */
     public function codeAt(TotpSecret $secret, int $timeStep): string
     {
         if ($timeStep < 0 || $timeStep > intdiv(PHP_INT_MAX, TotpCredential::PERIOD)) {
             throw new InvalidArgumentException('A time step is never negative (RFC 6238 §4.2), nor beyond what a Unix time counts.');
         }
-        /** @var int<0, max> $unixTime the step is bounded on both sides */
+        /** @var int<0, max> $unixTime */
         $unixTime = $timeStep * TotpCredential::PERIOD;
 
         return $this->totp($secret)->at($unixTime);
     }
 
     /**
-     * The label is "issuer:account" (the Key Uri Format), so neither carries a colon: one that would is
-     * shown with a space instead.
+     * The label is "issuer:account" (Key Uri Format), so a colon in either is shown as a space.
      */
     public function provisioningUri(TotpSecret $secret, string $issuer, string $account): string
     {
@@ -53,7 +50,7 @@ final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
 
     private function totp(TotpSecret $secret): TOTP
     {
-        /** @var non-empty-string $encoded at least sixteen bytes, so at least twenty-six characters */
+        /** @var non-empty-string $encoded */
         $encoded = Base32::encodeUpperUnpadded($secret->bytes);
 
         return TOTP::createFromSecret($encoded, $this->clock)

@@ -12,26 +12,13 @@ use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
 use Throwable;
 
-/**
- * An envelope of one use under the KMS key of a tenant (architecture §3.3), which is what every sealer of
- * this bridge is: the plaintext never reaches the KMS, the additional authenticated data binds the
- * envelope to its use and to its tenant, and a KMS that does not answer is told from an envelope it
- * refuses (KeyManagementFailure). Sealed for one tenant, it does not open for another; sealed for one
- * use, it does not open for another.
- *
- * What a sealer adds to this is what it puts in the envelope: a private JWK as JSON (EnvelopeKeySealer),
- * a shared secret as it is (EnvelopeSecretSealer). The binding, the classification of a failure and the
- * resolution of the KMS key of the tenant are written here and once.
- */
 final readonly class TenantEnvelope
 {
     private KmsKeyId $kmsKeyId;
 
     /**
      * @param string $kmsKeyId "{tenant}" stands for the slug of the tenant
-     * @param string $purpose the additional authenticated data of this use, the prefix the slug of the
-     *                        tenant is appended to; the wording of the day it was written, which never
-     *                        changes, because nothing rewraps an envelope sealed before
+     * @param string $purpose the prefix of the additional authenticated data, which never changes
      * @param string $contents how a failure names what the envelope holds ("key", "secret")
      */
     public function __construct(

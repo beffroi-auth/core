@@ -14,10 +14,6 @@ use Beffroi\Core\Port\PasswordHasherInterface;
 use SensitiveParameter;
 use function sprintf;
 
-/**
- * Routes each hash to the hasher of its algorithm; new hashes use the default one. The port the use cases
- * see, over the hashers that name their algorithms.
- */
 final readonly class PasswordHasherRegistry implements PasswordHasherInterface
 {
     /**
@@ -29,7 +25,6 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
 
     /**
      * @param iterable<AlgorithmPasswordHasherInterface> $hashers
-     * @param PasswordAlgorithmsInterface $algorithms the wiring, whose first algorithm is what a new hash is made with
      */
     public function __construct(iterable $hashers, PasswordAlgorithmsInterface $algorithms)
     {
@@ -54,9 +49,6 @@ final readonly class PasswordHasherRegistry implements PasswordHasherInterface
         return $this->hasherFor($hash->algorithm)->verify($hash, $plainPassword);
     }
 
-    /**
-     * A hash of another algorithm than the default needs a rehash.
-     */
     public function needsRehash(PasswordHash $hash): bool
     {
         $hasher = $this->hasherFor($hash->algorithm);

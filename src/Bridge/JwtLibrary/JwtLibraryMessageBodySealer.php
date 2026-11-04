@@ -14,18 +14,6 @@ use Jose\Component\Encryption\Serializer\CompactSerializer;
 use function sprintf;
 use Throwable;
 
-/**
- * Seals a message body to the key the tenant keeps for it (decision 0020), on web-token/jwt-library.
- *
- * **The KMS is asked nothing.** What seals is the public half, which the key carries in the clear on the
- * line, so a provider that raises several events while answering a browser pays no round trip for them and
- * holds no key material in the process that answers browsers. The ephemeral key of the sender makes every
- * body its own secret, which is what the key management algorithm of the pair gives.
- *
- * The protected header names the key, the two algorithms and the scope. The scope is in there and not only
- * in a header of the transport because the protected header is what the sealing authenticates: a body
- * moved to the queue of another tenant does not open there.
- */
 final readonly class JwtLibraryMessageBodySealer implements MessageBodySealerInterface
 {
     private JWEBuilder $builder;
@@ -56,8 +44,7 @@ final readonly class JwtLibraryMessageBodySealer implements MessageBodySealerInt
                     'kid' => $key->kid,
                     SealedMessageBody::TENANT_HEADER => $tenant->slug,
                 ])
-                // the pair is named by what the tenant keeps it for and the JWE by what JOSE calls what
-                // seals it (MessageSeal), so the key is handed over under the name it is sealed under
+                // Under the JWE's "alg", not the tenant's name for the pair: the library refuses any other.
                 ->addRecipient(new JWK([
                     ...$key->publicJwk,
                     'alg' => $alg,

@@ -14,21 +14,8 @@ use Beffroi\Core\Exception\RuntimeException;
 use Beffroi\Core\Port\KeySealerInterface;
 
 /**
- * The private halves a process holds open, asked of the KMS once and kept for as long as they are what
- * answers (decision 0018, architecture §3.3). A worker lives long enough for one opening to cover every
- * signature of a key and every message of a vintage, which is what keeps the KMS off the path of a
- * request; a process that is rebuilt at each request pays an opening at each request.
- *
- * What is held is ranged by tenant **and** by "kid", as the envelope that carries it is bound to both: a
- * "kid" is the thumbprint of the public key (RFC 7638), so two tenants that hold the same material name
- * it the same. What the additional authenticated data of an envelope bind to a tenant, this memory binds
- * too, instead of answering one with what was opened for the other.
- *
- * Forgetting is the other half of the same job and it is written here, once, rather than at each place
- * that answers: a private half that is no longer an answer has no reason to stay in the process. Two
- * gestures cover it, a key named by its "kid", which is what a retirement means for the key a subscription
- * or a sealed body names, and the others of a tenant and of an algorithm, which is what a rotation seen by
- * a worker leaves behind.
+ * Held by tenant and by "kid": a "kid" is the RFC 7638 thumbprint, the same for two tenants holding the same
+ * material.
  */
 final class OpenedKeys
 {
@@ -43,10 +30,7 @@ final class OpenedKeys
     }
 
     /**
-     * The key with its private half in the clear, opened by the KMS the first time and handed back as it
-     * is afterwards.
-     *
-     * @throws KmsUnavailableException when the KMS does not answer to open the key, which is not open yet
+     * @throws KmsUnavailableException
      * @throws RuntimeException when the envelope was not sealed by this use for this tenant
      */
     public function open(Tenant $tenant, TenantKey $key): UnsealedKey
@@ -54,31 +38,17 @@ final class OpenedKeys
         return $this->opened[self::index($tenant, $key->kid)] ??= new UnsealedKey($key, $this->sealer->unseal($tenant, $key->sealedPrivateJwk));
     }
 
-    /**
-     * The key of that tenant named by that "kid" is out of the process; asking for it again opens it
-     * again. A "kid" that is not open is not an error: what answers reads the store on each call, so a
-     * refusal forgets whether or not that key had ever been opened.
-     */
     public function forget(Tenant $tenant, string $kid): void
     {
         unset($this->opened[self::index($tenant, $kid)]);
     }
 
-    /**
-     * The keys of that tenant and of the algorithm of that key, other than that key itself, are out of the
-     * process: a tenant holds one key per algorithm that answers, and the one answered with is the one
-     * worth keeping open.
-     */
     public function forgetOthers(Tenant $tenant, TenantKey $answered): void
     {
         $this->keepOnly($tenant, $answered->algorithm, [$answered->kid]);
     }
 
     /**
-     * The keys of that tenant and of that algorithm, other than those named, are out of the process: what answers for
-     * an algorithm with several keys at once, the keys in service the key of a SAML identity provider is tried among,
-     * names them all, and a key that has left the service since is no longer among them.
-     *
      * @param list<string> $kids
      */
     public function keepOnly(Tenant $tenant, KeyAlgorithmInterface $algorithm, array $kids): void

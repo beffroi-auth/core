@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Session;
 
 /**
- * A proof of possession of a key, "swk" or "hwk" (OpenID Connect EAP ACR Values 1.0, "phr"): a passkey,
- * synced or bound to its authenticator.
+ * OpenID Connect EAP ACR Values 1.0, "phr"
  */
 final readonly class PhishingResistant extends AuthenticationPredicate
 {
@@ -18,8 +17,7 @@ final readonly class PhishingResistant extends AuthenticationPredicate
     }
 
     /**
-     * One key proof is the whole of this predicate, so a login satisfies it exactly when one of its
-     * proofs is a method it reads, which is the question admits() asks of a credential.
+     * One key proof is the whole of this predicate, so it holds exactly when it admits.
      */
     public function isSatisfiedBy(array $methods): bool
     {

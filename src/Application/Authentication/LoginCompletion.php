@@ -13,13 +13,7 @@ use Beffroi\Core\Exception\KmsUnavailableException;
 use SensitiveParameter;
 
 /**
- * The second step of a login (architecture §3.2): the code typed for a login the first step held, verified
- * by TotpAuthentication for the user the login names, and the session opened through the SessionOpener
- * on both what the first step proved and "otp", every method dated now, because this is when the
- * authentication took place in the sense of auth_time. What the held login must still be is
- * PendingLoginVerification's, which the firewall asks the same question of (issue #130); the code itself
- * is refused, counted and announced by TotpAuthentication. The counterpart of PasswordAuthenticator,
- * which holds the login this completes.
+ * Dates every method now, the password of the first step included: auth_time is when the login completes.
  */
 final readonly class LoginCompletion
 {
@@ -32,7 +26,7 @@ final readonly class LoginCompletion
 
     /**
      * @throws AuthenticationFailedException
-     * @throws KmsUnavailableException when the KMS of the tenant does not open the secret of the code: nothing counted, nothing announced
+     * @throws KmsUnavailableException with nothing counted or announced
      */
     public function complete(
         Tenant $tenant,

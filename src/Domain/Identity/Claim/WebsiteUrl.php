@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * A site of the person (OIDC Core §5.1, "website").
+ * OIDC Core §5.1, "website"
  */
 final readonly class WebsiteUrl extends ProfileClaim
 {

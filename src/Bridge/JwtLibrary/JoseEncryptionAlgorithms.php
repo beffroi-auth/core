@@ -7,10 +7,8 @@ namespace Beffroi\Core\Bridge\JwtLibrary;
 use Jose\Component\Core\AlgorithmManager;
 
 /**
- * The algorithms a JWE is made and opened with, the two registries of one use read as one: web-token/
- * jwt-library takes the key management algorithms and the content encryption ones in a single manager,
- * and a builder and a reader are given the same one, so the provider cannot mint what it cannot open, nor
- * open what it would refuse to mint.
+ * The key management and content encryption algorithms read as one: web-token/jwt-library takes both in a
+ * single manager.
  */
 final readonly class JoseEncryptionAlgorithms
 {

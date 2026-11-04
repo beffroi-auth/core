@@ -10,16 +10,11 @@ use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Domain\Listing\Period;
 
-/**
- * A companion of CredentialRepositoryInterface: one page of the credentials of one kind a person holds, for
- * the table of their account that shows them (architecture §5.2). The kind is a class, as it is there: a
- * page of their passkeys is read by the page of their passkeys and names no other kind.
- */
 interface CanPageCredentialsInterface
 {
     /**
      * @param class-string<Credential> $kind
-     * @param Period|null $period the stretch of time they were enrolled over, all of them when null
+     * @param Period|null $period when they were enrolled
      *
      * @return Listing<Credential> the most recently enrolled first
      */

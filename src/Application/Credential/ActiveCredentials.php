@@ -11,12 +11,6 @@ use Beffroi\Core\Domain\Credential\RevocableCredentialInterface;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 
-/**
- * The credentials a user can still authenticate with: the repository keeps a revoked one for the audit
- * trail (CredentialRevocation), and every login that asks what a user holds means the ones that are left.
- * The one place that tells the two apart, so that a kind which cannot be revoked at all (a password, which
- * is replaced) needs no exception and no caller repeats the question.
- */
 final readonly class ActiveCredentials
 {
     public function __construct(
@@ -25,13 +19,11 @@ final readonly class ActiveCredentials
     }
 
     /**
-     * Oldest first, as the repository lists them.
-     *
      * @template T of Credential
      *
      * @param class-string<T> $kind
      *
-     * @return list<T>
+     * @return list<T> oldest first
      */
     public function of(User $user, string $kind = Credential::class): array
     {

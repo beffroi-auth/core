@@ -17,18 +17,12 @@ use Webauthn\MetadataService\Statement\StatusReport;
 use Webauthn\MetadataService\StatusReportRepository;
 
 /**
- * The models the FIDO metadata of the store name (architecture §3.4), a blob the console verified under the
- * root it pins or a statement it imported as given: the description of the statement as the name (FIDO
- * Metadata Statement v3.1.1 §4), its icon, the one §4 gives a light page, as the logo of every page, webauthn-lib
- * 5.3 reading no "iconDark", and the certification its status reports leave the model with. An icon that is
- * not an image of a data: URL is no logo, and the name stands without one.
+ * FIDO Metadata Statement v3.1.1 §4
+ *
+ * The icon is the logo of every page, light or dark: webauthn-lib 5.3 reads no "iconDark".
  */
 final readonly class MetadataAuthenticatorModels implements AuthenticatorModelSourceInterface
 {
-    /**
-     * The name of this source: the FIDO metadata of the store, whether the service signed them or the console
-     * imported them.
-     */
     public const string SOURCE = 'fido-metadata';
 
     public function __construct(

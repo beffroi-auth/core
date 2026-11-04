@@ -11,28 +11,19 @@ use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Exception\KmsUnavailableException;
 
 /**
- * What opens what a peer encrypted to a key the tenant keeps out of its JWK Set: the keys of that algorithm the caller
- * names by their "kid", opened by the KMS, every other key of that algorithm the process holds forgotten.
- *
- * Apart from DecryptionKeyProviderInterface, whose keys are those the JWK Set publishes for a client to encrypt a JWE
- * to: a key kept is never handed to what opens a JWE, nor a key of the set to what opens anything else (decision 0020).
- * The algorithm is asked with the "kid" because the algorithm is what a key belongs to: the key of one SAML identity
- * provider is never answered to a caller asking for the keys of another, whatever "kid" it names.
+ * Only the keys the tenant keeps, and only those of the algorithm named, whatever "kid" the caller names.
  */
 interface KeptDecryptionKeyProviderInterface
 {
     /**
-     * The keys named, opened, in the order named; a key of that algorithm the process holds open and the caller does
-     * not name is forgotten, so that a key that has retired since the last call does not stay in the process. None
-     * named forgets them all.
+     * A key held open and not named is forgotten, so that a key retired since does not stay in the process.
      *
-     * @param list<string> $kids the keys in service of that algorithm, as the caller read them
+     * @param list<string> $kids
      *
-     * @throws KeyNotFoundException when the tenant holds no key under one of those identifiers, holds one of another
-     *                              algorithm or of the other use, or held one that has retired since
-     * @throws KmsUnavailableException when the KMS does not answer to open a key, which is not open yet
+     * @throws KeyNotFoundException
+     * @throws KmsUnavailableException
      *
-     * @return list<UnsealedKey>
+     * @return list<UnsealedKey> in the order named
      */
     public function keptDecryptionKeys(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, array $kids): array;
 }

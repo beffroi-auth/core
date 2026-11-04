@@ -8,20 +8,6 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use function sprintf;
 
-/**
- * The stretch of time a table of the account is read over (architecture §5.2): from a day, to a day, or
- * either of the two alone.
- *
- * A reader looking for one afternoon in a journal of a year is reading a stretch of time and not a page
- * number, so a table that grows without end is filtered before it is paged. Both ends are open, because
- * what somebody asks of a journal is as often "since Monday" as it is "that week": a period that names
- * neither end is no period at all and is nothing rather than every row.
- *
- * The ends are days and not instants: that is what a person types and what a browser offers, and what it
- * means is the whole of both days, the first from its first second and the last to its last. A period that
- * ends before it starts is refused rather than read as empty, a table that answers nothing to a question
- * nobody can have meant being a page somebody reloads.
- */
 final readonly class Period
 {
     /**
@@ -41,8 +27,7 @@ final readonly class Period
     }
 
     /**
-     * The whole of both days the two ends name, the first from its first second and the last to its last;
-     * null for an end nobody named, and null for a period that names neither.
+     * From the first second of the first day to the last second of the last.
      *
      * @throws InvalidArgumentException when the last day is before the first
      */
@@ -58,10 +43,6 @@ final readonly class Period
         );
     }
 
-    /**
-     * Whether a moment is inside this stretch of time: an end nobody named holds everything on that side.
-     * What a store compares is one clock and not two, the ends being instants by the time they are here.
-     */
     public function holds(DateTimeImmutable $moment): bool
     {
         return ($this->from === null || $moment >= $this->from) && ($this->to === null || $moment <= $this->to);

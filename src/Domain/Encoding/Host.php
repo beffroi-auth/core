@@ -7,20 +7,14 @@ namespace Beffroi\Core\Domain\Encoding;
 use function preg_match;
 
 /**
- * The host of a URL this provider hands a browser or names in a Content-Security-Policy (RFC 3986 §3.2.2): a name for
- * the DNS, letters, digits, hyphens and dots (RFC 1123 §2.1), which an IPv4 address is too, or an IPv6 literal between
- * brackets.
+ * RFC 3986 §3.2.2, RFC 1123 §2.1
  *
- * The reg-name of RFC 3986 admits more, and none of it is a host here: its sub-delimiters, the ";" that ends a
- * directive of a policy and the "," that ends a policy among them, a percent-encoded octet, and a name outside ASCII,
- * which the DNS knows by its A-label (RFC 5890 §2.3.2.1). One rule for every package that reads such a URL, the
- * endpoints of a SAML service provider, the URIs a client registers and the origins a page names, so that what one of
- * them accepts the others never refuse.
+ * Narrower than the reg-name: a ";" or a "," would end a directive or a policy of a Content-Security-Policy.
  */
 final readonly class Host
 {
     /**
-     * The grammar without its anchors, for a pattern that reads the URL around the host.
+     * Without anchors: other patterns embed it.
      */
     public const string PATTERN = '(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])';
 

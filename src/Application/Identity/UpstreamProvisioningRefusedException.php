@@ -8,13 +8,8 @@ use Beffroi\Core\Exception\ExceptionInterface;
 use RuntimeException;
 
 /**
- * An upstream provider named a person this provider does not create or write (decision 0029). Raised before
- * anything is written, or once what was written is taken back, so a refusal creates nobody and changes
- * nobody.
- *
- * **One message, whatever the reason.** The reason is for the audit trail; the message names neither the
- * address, which is a personal datum and goes wherever an exception is logged, nor the reason, which would
- * tell whoever reads it whether somebody of the tenant holds that address.
+ * One message whatever the reason: the address is a personal datum, logged wherever the exception is, and the
+ * reason would tell whether somebody of the tenant holds it.
  */
 final class UpstreamProvisioningRefusedException extends RuntimeException implements ExceptionInterface
 {

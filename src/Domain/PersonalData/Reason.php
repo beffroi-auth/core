@@ -5,15 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\PersonalData;
 
 /**
- * The sentences that say why a dump of a readable field gives nothing away, for the fields of the model
- * that share one: the four categories of decision 0011 among them.
- *
- * A reason is a sentence and not a category, because a person reads it: the page for a RSSI (issue #411)
- * is written from these lines, and a field whose reason no sentence here says as well carries one of its
- * own. The sentences live in one place because two places that must agree are one place, and in this
- * package because it is the one both the core and the protocol declare their fields from; what they say
- * is read by a person, which is why one of them may name what a client or a request did without the core
- * knowing either.
+ * The sentences that say why a readable field gives nothing away, for the fields that share one.
  */
 final readonly class Reason
 {

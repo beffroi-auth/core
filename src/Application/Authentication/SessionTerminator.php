@@ -12,9 +12,6 @@ use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Ends one session and says so; every ended session leaves the same trace.
- */
 final readonly class SessionTerminator
 {
     public function __construct(

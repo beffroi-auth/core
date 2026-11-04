@@ -13,27 +13,15 @@ use Stringable;
 use function strtolower;
 
 /**
- * Where the logo of a tenant is served from (issue #449): an absolute HTTPS URL, no fragment, no
- * credentials, a host of letters, digits, hyphens and dots or an IP address (Host); plain HTTP on a
- * loopback host only, as the issuer of a development stack is.
- *
- * The browser of whoever reads the page loads it, never the provider, so what this holds is handed to a
- * browser and named in a Content-Security-Policy; that is why the origin is derived here, once, and not
- * by whoever writes a policy. Every page that shows the logo names that origin (issue #926), so a host
- * a policy would split, a ";" or a "," that RFC 3986 §3.2.2 admits in a registered name, is refused here,
- * where a deployment names it, and never reaches a page.
- *
- * The same rails guard what a client registers (ClientUri), and the two are not one class: that one
- * belongs to the protocol, refuses in the words of RFC 6749 §3.1.2 and answers questions about a
- * redirection; this one is of the core, which knows no protocol, and answers one question about an image.
+ * Its origin is named in a Content-Security-Policy, so a host holding a ";" or a ",", which RFC 3986 §3.2.2
+ * admits, is refused.
  */
 final readonly class LogoUri implements Stringable
 {
     public string $value;
 
     /**
-     * RFC 6454 §3.2: the scheme, the host and the port, which is what a source expression of a policy
-     * names (CSP Level 3 §2.3) and all it may name.
+     * RFC 6454 §3.2
      */
     public string $origin;
 

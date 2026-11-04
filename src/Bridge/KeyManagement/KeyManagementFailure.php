@@ -13,14 +13,8 @@ use Symfony\Component\KeyManagement\Exception\UnsupportedOperationException;
 use Throwable;
 
 /**
- * What a failure of symfony/key-management means for the provider, decided once for both sealers and for the
- * data key store of the application. A backend that did not answer or refused (a transport failure, an error of the
- * KMS, a master key the KMS does not hold when it seals) is an outage, KmsUnavailableException: the call is
- * served again once the KMS is back. An envelope the component refuses is a RuntimeException as before, a bug
- * or an attack: invalid, tampered, foreign to this use or this tenant, and what the component deliberately
- * makes indistinguishable from it (a key the KMS does not know when it opens, a version of the master key
- * Vault no longer decrypts). So is what a backend cannot do by configuration, and any failure that is not the
- * component's.
+ * A backend that did not answer or refused is an outage. An envelope the component refuses is a bug or an attack,
+ * and so is what it deliberately makes indistinguishable from one, or what a backend cannot do by configuration.
  */
 final readonly class KeyManagementFailure
 {
@@ -29,10 +23,6 @@ final readonly class KeyManagementFailure
         return self::outageOf($cause, $message) ?? new RuntimeException($message, 0, $cause);
     }
 
-    /**
-     * The outage the failure is, null when it is none: what a caller bound to the contract of the component
-     * reports as the outage it is, and leaves as the component threw it otherwise.
-     */
     public static function outageOf(Throwable $cause, string $message): ?KmsUnavailableException
     {
         if ($cause instanceof DecryptionFailedException || $cause instanceof DataKeyNotFoundException || $cause instanceof UnsupportedOperationException) {

@@ -11,8 +11,9 @@ use function sprintf;
 use Stringable;
 
 /**
- * A value of the "amr" claim (RFC 8176 §2). The registered values are constants; any other well-formed
- * value is accepted, as a federated login carries whatever the upstream provider sent.
+ * RFC 8176 §2
+ *
+ * An unregistered value is accepted: a federated login carries whatever the upstream provider sent.
  */
 final readonly class AuthenticationMethod implements Stringable
 {
@@ -66,9 +67,6 @@ final readonly class AuthenticationMethod implements Stringable
         }
     }
 
-    /**
-     * What each registered value proves (RFC 8176 §2).
-     */
     private const array FACTORS = [
         self::PASSWORD => AuthenticationFactor::Knowledge,
         self::PIN => AuthenticationFactor::Knowledge,
@@ -93,12 +91,9 @@ final readonly class AuthenticationMethod implements Stringable
     }
 
     /**
-     * The distinct kinds of factor a set of methods proves, in the order the methods come. Two proofs of
-     * the same kind are one factor (NIST SP 800-63B §2), and a method that proves none is not counted.
-     *
      * @param list<self> $methods
      *
-     * @return list<AuthenticationFactor>
+     * @return list<AuthenticationFactor> each kind once
      */
     public static function factorsOf(array $methods): array
     {
@@ -113,17 +108,11 @@ final readonly class AuthenticationMethod implements Stringable
         return $factors;
     }
 
-    /**
-     * Null when the method proves no factor by itself ("mfa", "user", the context values, an unknown value).
-     */
     public function factor(): ?AuthenticationFactor
     {
         return self::FACTORS[$this->value] ?? null;
     }
 
-    /**
-     * RFC 8176 §2 "mfa": multiple factors asserted without naming them.
-     */
     public function isMultipleFactors(): bool
     {
         return $this->value === self::MULTIPLE_FACTORS;

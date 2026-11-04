@@ -7,9 +7,6 @@ namespace Beffroi\Core\Bridge\Random;
 use Beffroi\Core\Port\RandomnessInterface;
 use function random_bytes;
 
-/**
- * The random source of the platform, which is the one every secret of this provider is made of.
- */
 final readonly class PlatformRandomness implements RandomnessInterface
 {
     public function bytes(int $length): string

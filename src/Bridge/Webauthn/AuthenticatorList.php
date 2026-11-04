@@ -22,34 +22,19 @@ use stdClass;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * The list of passkey providers the community keeps (aaguid.json of github.com/passkeydeveloper/passkey-
- * authenticator-aaguids, architecture §3.4): a JSON object whose members are AAGUIDs, each naming a model with
- * a name and, when it has them, a logo for a light page ("icon_light") and one for a dark page ("icon_dark"),
- * the one standing for the other when a model has one. It is held to what a page shows rather than to the
- * schema of that repository alone: a member is an AAGUID, a name is not empty, and a logo is a PNG or an SVG
- * image of a base64 data: URL, where the schema asks for an SVG. A list that is anything else is refused whole,
- * as is an object that names nothing: the README of the repository says that a retired list becomes an empty
- * object. A member of a model the schema does not define is left aside.
- *
- * Nobody signs the list and it carries no licence, so nothing ships it: a deployment downloads it, and what it
- * names is what it is, a name somebody gave an AAGUID, which the FIDO metadata are asked about first.
+ * The aaguid.json of github.com/passkeydeveloper/passkey-authenticator-aaguids, held to what a page shows
+ * rather than to its schema alone. An object that names nothing is refused: the README of that repository
+ * says a retired list becomes one.
  */
 final readonly class AuthenticatorList implements AuthenticatorModelSourceInterface
 {
-    /**
-     * The name of this source, the repository that keeps the list.
-     */
     public const string SOURCE = 'passkey-authenticator-aaguids';
 
-    /**
-     * Deep enough for a member a model may gain, an object or a list in it; the list nests no further.
-     */
     private const int DEPTH = 16;
 
     /**
-     * An AAGUID as a UUID is written, in either case (RFC 9562 §4), whatever its variant: WebAuthn Level 3 §6
-     * makes it 128 bits a maker chooses, and the one of Proton Pass, "ProtonPassProton" in ASCII, carries the
-     * variant RFC 9562 §4.1 reserves for backward compatibility with NCS.
+     * RFC 9562 §4, whatever the variant: WebAuthn Level 3 §6 lets a maker choose all 128 bits, and Proton Pass
+     * carries the variant RFC 9562 §4.1 reserves for NCS.
      */
     private const string AAGUID = '/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/Di';
 
@@ -94,9 +79,6 @@ final readonly class AuthenticatorList implements AuthenticatorModelSourceInterf
         return $this->models[$aaguid->toRfc4122()] ?? null;
     }
 
-    /**
-     * How many models the list names.
-     */
     public function count(): int
     {
         return count($this->models);

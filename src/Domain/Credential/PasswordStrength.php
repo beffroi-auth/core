@@ -11,28 +11,11 @@ use SensitiveParameter;
 use function strlen;
 
 /**
- * How hard a password is to guess, in bits, and the rung that number falls on (NIST SP 800-63B §3.1.1.2).
- *
- * **It is an estimate of entropy and never a composition rule.** The same section asks a verifier not to
- * impose one: a password is not refused for holding no digit and no capital, it is refused for being
- * short of alphabet and short of length at once, which is what this counts. The alphabets the password
- * actually draws from give the size of the pool, the distinct characters give what each position is
- * worth, and a character written twice is worth less than the first one, so "aaaaaaaaaaaa" does not pass
- * for twelve characters of entropy.
- *
- * **It is counted over the bytes of the password**, which is what the script of the login page counts
- * too (`password-strength.js`): the two agree on what they can, and the server is what pronounces.
- *
- * The rungs are the five of symfony/validator's `PasswordStrength`, which is also what the meter of
- * symfony/ux#1179 drew, so a deployment that already told its people what "medium" means does not have to
- * tell them something else here.
+ * Counted over bytes, as password-strength.js counts, so the page and the server agree.
+ * The rungs are those of symfony/validator's PasswordStrength.
  */
 final readonly class PasswordStrength
 {
-    /**
-     * Nothing of a password: fewer than sixty bits, which is a word of a dictionary with a digit behind
-     * it.
-     */
     public const int NOTHING = 0;
 
     public const int WEAK = 1;
@@ -44,10 +27,7 @@ final readonly class PasswordStrength
     public const int VERY_STRONG = 4;
 
     /**
-     * What each rung costs, in bits, from the strongest down: the first one the estimate reaches is the
-     * rung it is on.
-     *
-     * @var array<int, int>
+     * @var array<int, int> bits by rung, strongest first
      */
     private const array BITS_PER_RUNG = [
         self::VERY_STRONG => 120,
@@ -56,12 +36,6 @@ final readonly class PasswordStrength
         self::WEAK => 60,
     ];
 
-    /**
-     * The alphabets a byte can belong to and what each one adds to the pool: the twenty-six letters count
-     * once for the capitals and once for the rest. One byte belongs to one alphabet, and a password that
-     * draws from an alphabet at all pays for the whole of it, which is what makes this an estimate of the
-     * search space and not a count of the characters that are there.
-     */
     private const int CONTROL = 33;
 
     private const int DIGITS = 10;
@@ -73,13 +47,7 @@ final readonly class PasswordStrength
     private const int BEYOND_ASCII = 128;
 
     private function __construct(
-        /**
-         * The size of the search space, in bits.
-         */
         public float $bits,
-        /**
-         * Which of the five rungs the estimate falls on.
-         */
         public int $rung,
     ) {
     }
@@ -97,17 +65,13 @@ final readonly class PasswordStrength
         return new self($bits, self::NOTHING);
     }
 
-    /**
-     * Whether this estimate reaches the rung asked of it.
-     */
     public function reaches(int $rung): bool
     {
         return $this->rung >= $rung;
     }
 
     /**
-     * The distinct bytes pay for the pool they are drawn from, the repeated ones for the alphabet the
-     * password itself turned out to use, which is smaller.
+     * A repeated byte pays only for the distinct bytes, so "aaaaaaaaaaaa" is not twelve characters of entropy.
      */
     private static function bitsOf(#[SensitiveParameter] string $password): float
     {

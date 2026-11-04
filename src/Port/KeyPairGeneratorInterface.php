@@ -11,9 +11,7 @@ use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 interface KeyPairGeneratorInterface
 {
     /**
-     * @throws UnsupportedAlgorithmException when the algorithm is not one this provider is wired with:
-     *                                       a key is generated for what the deployment holds, never for
-     *                                       a name it was handed
+     * @throws UnsupportedAlgorithmException
      */
     public function generate(KeyAlgorithmInterface $algorithm): GeneratedKeyPair;
 }

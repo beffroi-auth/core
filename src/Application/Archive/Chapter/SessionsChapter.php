@@ -10,14 +10,6 @@ use Beffroi\Core\Port\ArchiveChapterInterface;
 use Beffroi\Core\Port\AuthenticationSessionRepositoryInterface;
 use Psr\Clock\ClockInterface;
 
-/**
- * Where a person is signed in, in the archive they ask for (issue #453): one line per session open in
- * their name, what it proved, when it was opened and what the last request on it carried.
- *
- * The sessions open and not every session there ever was: a session that has ended is a row this provider
- * keeps for as long as the protocol needs it and never a place a person is signed in, and what the acts of
- * their history were is the journal, which is its own chapter.
- */
 final readonly class SessionsChapter implements ArchiveChapterInterface
 {
     public function __construct(

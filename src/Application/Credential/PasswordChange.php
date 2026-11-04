@@ -21,31 +21,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
 
 /**
- * A person replaces their own password, from a session they already hold (architecture §3.1). Not
- * UserProvisioner::setPassword(), which is an operator writing a password for somebody: here the person
- * proves the one in use before the one they pose is written.
- *
- * **The password in use is typed again and verified.** A session is not a proof that whoever holds it
- * knows the password, which is exactly what matters here: a session somebody else took over does not get
- * to replace the password it signed in with and lock its owner out.
- *
- * **What the guess costs is not counted against the login.** The attempts of a password login are counted
- * per user (PasswordAttemptLimiterInterface, the window being the application's: RateLimitedAttempts), and
- * counting these there would let whoever holds a session spend the budget of the person whose session it
- * is, which is the owner locked out by the form meant to protect them. What bounds a guess here is that
- * one has to be signed in as that person to make it.
- *
- * **What happens to the other sessions is the caller's policy**, as it is for every act on a credential:
- * this writes the password and says so.
- *
- * **What a list of compromised passwords says of the one posed is asked last**, after the two refusals
- * this provider pronounces on its own: a person who mistyped the password they use now is answered
- * without a prefix of anything leaving, and a password this provider will not hold is not sent out to be
- * counted either.
- *
- * A tenant that signs its users in without a password holds none to replace (issue #327), which is the
- * first thing this answers: the floor of the tenant is read before a row is, so a password a hardening
- * has not swept away yet is not replaced either.
+ * A wrong password in use is not counted against the login, or a stolen session could lock its owner out.
+ * What happens to the other sessions is the caller's policy.
  */
 final readonly class PasswordChange
 {
@@ -61,15 +38,8 @@ final readonly class PasswordChange
     }
 
     /**
-     * @param string $inUse what was typed as the password in use, which is never what is stored
-     * @param PlainPassword $posed what the person wants instead, built where what a password has to be is
-     *                             checked
-     *
-     * @throws PasswordChangeRefusedException when the password in use was not typed, when the one posed is
-     *                                        the one already held, when this person holds none, or when they
-     *                                        are of a federated domain
-     * @throws PasswordRefusedException when a list of compromised passwords counts the one posed, or could
-     *                                 not be asked
+     * @throws PasswordChangeRefusedException
+     * @throws PasswordRefusedException when a list of compromised passwords counts it or cannot be asked
      * @throws LogicException when no hasher of this deployment handles the algorithm the stored hash names
      */
     public function change(
@@ -80,17 +50,13 @@ final readonly class PasswordChange
         PlainPassword $posed,
         RequestContext $context,
     ): void {
-        // a tenant that hardened holds no password of anybody (issue #327): the hardening forgot them, so
-        // this is the row a store left behind, and the person is answered what they are told when they
-        // hold none, which is what they do hold here
+        // Checked before the row is read: a password row left behind by a hardening counts as none.
         if (! $user->tenant->loginFloor->admits([PasswordCredential::method()])) {
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::NoPasswordHeld,
                 'The tenant signs its users in without a password; there is nothing to replace.',
             );
         }
-        // and a person of a federated domain holds none either, whatever a store kept of the time before (decision
-        // 0029): replacing it would be posing a local credential for them
         if (! $this->federated->admitsLocalCredentials($user)) {
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::FederatedDomain,
@@ -116,8 +82,7 @@ final readonly class PasswordChange
                 'The password posed is the one already held.',
             );
         }
-        // last of the refusals, because it is the only one that leaves this process: a person who typed
-        // the wrong password in use, or the one they already hold, is told so without anybody being asked
+        // Last, being the one check that leaves this process: a refused change sends nothing out.
         $count = $this->breaches->count($posed);
         $now = $this->clock->now();
         $credential->changePassword($this->hasher->hash($posed->value), $now);

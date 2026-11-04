@@ -19,9 +19,6 @@ final class InMemoryTenantKeyRepository implements TenantKeyRepositoryInterface
      */
     private array $keys = [];
 
-    /**
-     * For tests that must see a write happen on an object they already hold.
-     */
     public private(set) int $saves = 0;
 
     public function find(Tenant $tenant, string $kid): ?TenantKey

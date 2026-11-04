@@ -9,9 +9,6 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\GroupAlreadyExistsException;
 use Beffroi\Core\Port\GroupRepositoryInterface;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- */
 final class InMemoryGroupRepository implements GroupRepositoryInterface
 {
     /**

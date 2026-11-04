@@ -10,26 +10,12 @@ use function preg_match;
 use function sprintf;
 
 /**
- * What a tenant gives the pages of its provider besides its name (issue #449): a logo and the two colours
- * that go together, the one its buttons and its links are drawn in and the one what is written on them is
- * drawn in.
- *
- * **Two colours and not one**, because a colour alone cannot be applied: a pale accent with white on it
- * is unreadable, and whoever gives the first has to answer for the second. Either both or neither.
- *
- * **A colour is six or three hexadecimal digits and nothing else.** It is handed to a browser inside a
- * style attribute, so anything a tenant could write there is what a page would carry: a named colour, a
- * function, a variable and a semicolon are all refused rather than escaped (decision 0006). What a look
- * cannot express is a look nobody has asked for yet.
- *
- * A tenant that declares none of it is "nothing" and renders the pages exactly as a deployment that never
- * heard of a look: this object says what is absent, it never fills it in.
+ * A colour is three or six hexadecimal digits and nothing else: it is written into a style attribute.
  */
 final readonly class TenantLook
 {
     /**
-     * CSS Color 4 §5.1: three or six hexadecimal digits, with their alpha forms left out, a transparent
-     * accent being a mistake and not a brand.
+     * CSS Color 4 §5.1
      */
     private const string COLOR = '/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/Di';
 
@@ -52,23 +38,12 @@ final readonly class TenantLook
         }
     }
 
-    /**
-     * The look of a tenant that declared none: what every deployment has been served so far.
-     */
     public static function none(): self
     {
         return new self();
     }
 
     /**
-     * The document a column holds a look as: the URL of the logo and the two colours, each absent from it
-     * when the tenant declared none, so that what a tenant declared is what the column holds and not
-     * three nulls.
-     *
-     * A tenant that declared nothing is therefore an empty document, which PHP writes as "[]" where the
-     * default of the column is "{}"; both are read back as the same look, and nothing queries a value of
-     * that column.
-     *
      * @return array<string, string>
      */
     public function toDocument(): array
@@ -88,14 +63,9 @@ final readonly class TenantLook
     }
 
     /**
-     * What a look is given back is what refuses a row somebody edited by hand: a colour that is not
-     * hexadecimal and a logo that is not an absolute HTTPS URL are refused here as they are refused at
-     * the configuration.
-     *
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when a member of the document is not a string, or is not what a
-     *                                 look accepts
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {
@@ -109,10 +79,6 @@ final readonly class TenantLook
         );
     }
 
-    /**
-     * Whether anything here reaches a page at all, which is what tells a template to render the brand of
-     * a tenant or nothing in its place.
-     */
     public function isDeclared(): bool
     {
         return $this->logoUri !== null || $this->primaryColor !== null;

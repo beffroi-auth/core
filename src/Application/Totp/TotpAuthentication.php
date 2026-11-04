@@ -25,16 +25,10 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
 
 /**
- * Verifies a code for a user who already named themself (a second factor comes after a first one): the
- * code of the authenticator, accepted once within one step of drift (RFC 6238 §5.2), or one of the backup
- * codes, spent once. What it proves is "otp" either way, and that is what it hands back; which of the two
- * was accepted is the act it announces (TotpUsed, BackupCodeUsed), a code the user no longer has not being
- * the same line of their journal as a code their authenticator will compute again. What the caller does
- * with the proof (open the session, add it to one) is the caller's. The attempts are counted before anything is verified, because
- * six digits are guessable: the limit is read before the secret is opened, so that no code reaches the
- * KMS past it, and the attempt is counted once the secret is open, so that a KMS that does not open it
- * costs the user nothing. Every outcome of the user is an event carrying the request context; a failure
- * of the KMS is not an outcome of the user and goes on as it came.
+ * RFC 6238 §5.2
+ *
+ * The limit of attempts is read before the secret is opened, so that no code reaches the KMS past it, and an
+ * attempt is counted once the secret is open, so that a KMS that does not open it costs the user nothing.
  */
 final readonly class TotpAuthentication
 {
@@ -55,7 +49,7 @@ final readonly class TotpAuthentication
      * A disabled user is refused after the code was checked, so that a refusal costs the same as a wrong code.
      *
      * @throws AuthenticationFailedException
-     * @throws KmsUnavailableException when the KMS of the tenant does not open the secret: nothing counted, nothing announced
+     * @throws KmsUnavailableException
      */
     public function authenticate(User $user, #[SensitiveParameter] string $code, RequestContext $context): AuthenticationMethod
     {
@@ -95,8 +89,7 @@ final readonly class TotpAuthentication
     }
 
     /**
-     * The position of the unspent backup code that was typed; every unspent one is verified, so that the
-     * time a refusal takes does not say how many are left.
+     * Every unspent code is verified, so that the time a refusal takes does not say how many are left.
      */
     private function matchingBackupCode(TotpCredential $credential, #[SensitiveParameter] string $typed): ?int
     {
@@ -111,11 +104,6 @@ final readonly class TotpAuthentication
         return $matched;
     }
 
-    /**
-     * Every refusal here is the same statement, whatever the reason: this user, in their tenant, having
-     * claimed an "otp". What it announces and what it hands back to throw is the AuthenticationRefusal's,
-     * as for every other login.
-     */
     private function refuse(User $user, RequestContext $context, AuthenticationFailureReason $reason): AuthenticationFailedException
     {
         return $this->refusals->refuse($user->tenant, $context, $reason, TotpCredential::method(), $user->username, $user);

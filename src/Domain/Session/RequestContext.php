@@ -14,18 +14,12 @@ use function mb_substr;
 use function sprintf;
 use function trim;
 
-/**
- * Where a request came from and with what, carried by every session and event (architecture §3.5).
- * Enrichments (location, device) are asynchronous.
- */
 final readonly class RequestContext
 {
     public const int USER_AGENT_MAX_LENGTH = 1024;
 
     /**
-     * The format of the moment in the document: to the second and with no offset, which is the precision
-     * the columns it replaced held (`TIMESTAMP(0) WITHOUT TIME ZONE`), read back in the default timezone,
-     * which is what the Doctrine type of a datetime did.
+     * To the second, with no offset: read back in the default timezone, as the Doctrine datetime type does.
      */
     private const string RECEIVED_AT = 'Y-m-d H:i:s';
 
@@ -69,15 +63,6 @@ final readonly class RequestContext
     }
 
     /**
-     * The document one column holds a provenance as, the two enrichments nested in it rather than held
-     * beside it: **one column and not five**, which is what lets the column seal, the family a sealed
-     * column belongs to being its table (decisions 0011 and 0018).
-     *
-     * `received_at` joins the document rather than keeping a column. It is a date and says nothing of a
-     * person, so it could have stayed in the clear, but a column of its own would be a second column per
-     * provenance and the dates the tables that hold one actually query are their own (`established_at`,
-     * `issued_at`, `expires_at`).
-     *
      * @return array<string, mixed>
      */
     public function toDocument(): array
@@ -94,8 +79,7 @@ final readonly class RequestContext
     /**
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when the document says nothing of when the request was received,
-     *                                  or when a member of it is not what a provenance holds
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {

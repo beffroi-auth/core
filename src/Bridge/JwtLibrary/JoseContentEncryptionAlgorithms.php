@@ -7,10 +7,6 @@ namespace Beffroi\Core\Bridge\JwtLibrary;
 use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Beffroi\Core\Port\ContentEncryptionAlgorithmsInterface;
 
-/**
- * The JWE content encryption algorithms the wiring gave the provider, read by the decrypter and by the
- * discovery document alike.
- */
 final readonly class JoseContentEncryptionAlgorithms implements ContentEncryptionAlgorithmsInterface
 {
     /**
@@ -19,7 +15,7 @@ final readonly class JoseContentEncryptionAlgorithms implements ContentEncryptio
     private WiredAlgorithms $wired;
 
     /**
-     * @param iterable<JoseContentEncryptionAlgorithmInterface> $algorithms in the order they are wired, none of them twice
+     * @param iterable<JoseContentEncryptionAlgorithmInterface> $algorithms
      */
     public function __construct(iterable $algorithms)
     {

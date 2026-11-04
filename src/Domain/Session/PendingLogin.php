@@ -10,20 +10,17 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * A login whose first factor was verified and which is held until the second one (architecture §3.2):
- * who proved what, and until when a code completes it; past that, the first factor is proven again. It
- * opens no session and grants nothing: what an integration keeps between the two steps is this, and no
- * session of the core; LoginCompletion is what turns it into one.
+ * A login whose first factor was verified, waiting for the second: it opens no session and grants nothing.
  */
 final readonly class PendingLogin
 {
     /**
-     * Five minutes to type a code, ten times what a step of the authenticator lasts.
+     * Ten times what a step of an authenticator lasts.
      */
     public const string LIFETIME = 'PT5M';
 
     /**
-     * @param non-empty-list<AuthenticationMethod> $methods what the first step proved
+     * @param non-empty-list<AuthenticationMethod> $methods
      */
     public function __construct(
         public Uuid $userId,

@@ -18,28 +18,15 @@ use function json_encode;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * Builds the archive a person asked for (issue #453), off the request.
- *
- * **It knows no table.** What is in the document is what the chapters answer, each one a class tagged into
- * the wiring, so a kind of fact this provider comes to hold about a person is a chapter added and nothing
- * here is edited (ArchiveChapterInterface). One of them lives in the module of the protocol, which is why
- * the chapters are a port of the core: the core cannot read what a protocol calls a consent.
- *
- * **It is built once.** An archive answers the question asked at the moment it was asked, so a second run
- * for the same row does nothing: a retry of the message after the document was written is not a second
- * document, and a row that expired while its message waited is not built at all.
- */
 final readonly class ArchiveAssembly
 {
     /**
-     * The key the document says of itself, which no chapter may take.
+     * No chapter may take this key.
      */
     public const string ABOUT = 'archive';
 
     /**
-     * @param iterable<ArchiveChapterInterface> $chapters in the order they are wired, which is the order
-     *                                                    the document holds them
+     * @param iterable<ArchiveChapterInterface> $chapters
      */
     public function __construct(
         private PersonalArchiveRepositoryInterface $archives,
@@ -59,9 +46,6 @@ final readonly class ArchiveAssembly
         $this->archives->save($archive);
     }
 
-    /**
-     * What the person downloads: what the archive says of itself, then one chapter per kind of fact.
-     */
     private function document(PersonalArchive $archive, DateTimeImmutable $builtAt): string
     {
         $document = [

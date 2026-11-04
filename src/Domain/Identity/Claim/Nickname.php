@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * The casual name, which may be nothing like the given one (OIDC Core §5.1).
+ * OIDC Core §5.1
  */
 final readonly class Nickname extends ProfileClaim
 {

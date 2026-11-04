@@ -23,10 +23,9 @@ use Webauthn\PublicKeyCredentialRpEntity;
 use Webauthn\PublicKeyCredentialUserEntity;
 
 /**
- * The registration ceremony (WebAuthn Level 3 §7.1) on webauthn-lib: the relying party is named by its
- * identifier alone (§5.4.2), a passkey is a discoverable credential (residentKey required, §5.4.6), user
- * verification is asked for and not required, so that a hardware key without a PIN enrols, and no
- * attestation is asked for (§5.4.7).
+ * WebAuthn Level 3 §7.1
+ *
+ * User verification is asked for and not required, so that a hardware key without a PIN enrols.
  */
 final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterface
 {
@@ -40,7 +39,7 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
         $tenant = $user->tenant;
 
         return PublicKeyCredentialCreationOptions::create(
-            // no name: deprecated by webauthn-lib 5.3, the JSON carries the relying party identifier as the name
+            // No name: deprecated by webauthn-lib 5.3, the JSON carries the relying party identifier as the name.
             PublicKeyCredentialRpEntity::create('', WebauthnCeremonies::relyingPartyId($tenant)),
             PublicKeyCredentialUserEntity::create($user->username, $userHandle->value, $user->profile->name ?? $user->username),
             random_bytes(WebauthnCeremonies::CHALLENGE_LENGTH),

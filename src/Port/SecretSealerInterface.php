@@ -10,21 +10,18 @@ use Beffroi\Core\Exception\RuntimeException;
 use SensitiveParameter;
 
 /**
- * Seals a shared secret of a user (the secret of a TOTP) for storage and opens it back in memory, under
- * the KMS of the tenant like a signing key (architecture §3.3), in an envelope of its own use: sealed
- * for one tenant, it does not open for another; sealed as a secret, it does not open as a key.
+ * Sealed for one tenant, a secret does not open for another; sealed as a secret, it does not open as a key.
  */
 interface SecretSealerInterface
 {
     /**
-     * @throws KmsUnavailableException when the KMS of the tenant does not answer or refuses to seal
-     * @throws RuntimeException when the envelope cannot be made for another reason
-     * @return string opaque bytes, safe to store
+     * @throws KmsUnavailableException
+     * @throws RuntimeException
      */
     public function seal(Tenant $tenant, #[SensitiveParameter] string $secret): string;
 
     /**
-     * @throws KmsUnavailableException when the KMS of the tenant does not answer or refuses to open
+     * @throws KmsUnavailableException
      * @throws RuntimeException when the envelope was not sealed by this use for this tenant
      */
     public function unseal(Tenant $tenant, #[SensitiveParameter] string $sealed): string;

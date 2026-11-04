@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * What a key pair generator returns, for either use; the kid is an RFC 7638 thumbprint.
+ * The kid is an RFC 7638 thumbprint.
  */
 final readonly class GeneratedKeyPair
 {

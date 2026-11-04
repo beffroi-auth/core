@@ -8,16 +8,12 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 
 /**
- * The logo of a model of authenticator, as a source of names gives it: an image in a data: URL (RFC 2397), PNG
- * or SVG as the FIDO metadata carry it (FIDO Metadata Statement v3.1.1 §4, "icon"), SVG as the list of the
- * community does, in base64, so that a page shows it without fetching anything and under an "img-src" that
- * admits "data:". One image for a light page and one for a dark page, the same one twice when the source has one.
+ * RFC 2397, FIDO Metadata Statement v3.1.1 §4
  */
 final readonly class AuthenticatorLogo
 {
     /**
-     * An image that loads nothing else: a raster, or an SVG, which a page shows as an image, where it runs no
-     * script and fetches nothing. Possessive, so that a long image costs one pass.
+     * Shown as an image, an SVG runs no script and fetches nothing; possessive, so a long image costs one pass.
      */
     private const string DATA_IMAGE = '/^data:image\/(?:png|svg\+xml);base64,[A-Za-z0-9+\/]++={0,2}$/D';
 
@@ -30,17 +26,11 @@ final readonly class AuthenticatorLogo
         }
     }
 
-    /**
-     * The logo of a source that has one image for every page.
-     */
     public static function single(string $image): self
     {
         return new self($image, $image);
     }
 
-    /**
-     * Whether a dark page shows another image than a light one.
-     */
     public function hasDarkVariant(): bool
     {
         return $this->dark !== $this->light;

@@ -7,25 +7,20 @@ namespace Beffroi\Core\Port;
 use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
-/**
- * The password algorithms the wiring gives the provider, the one source of truth over them: what a new
- * hash is made with, and what a stored hash is read back as. A name that nothing wired carries is a hash
- * this deployment cannot account for, and it is refused rather than guessed.
- */
 interface PasswordAlgorithmsInterface
 {
     /**
-     * @return non-empty-list<PasswordAlgorithmInterface> in the order they are wired, the default first
+     * @return non-empty-list<PasswordAlgorithmInterface>
      */
     public function all(): array;
 
     /**
-     * @throws UnsupportedAlgorithmException when nothing wired carries that name
+     * @throws UnsupportedAlgorithmException
      */
     public function named(string $name): PasswordAlgorithmInterface;
 
     /**
-     * What a new hash is made with: the first wired one.
+     * The first one wired.
      */
     public function defaultAlgorithm(): PasswordAlgorithmInterface;
 }

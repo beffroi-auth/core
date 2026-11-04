@@ -10,14 +10,10 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use function preg_match;
 use function str_contains;
 
-/**
- * What a user agent string says, coarse enough for a session list ("Firefox on Linux, desktop").
- */
 final readonly class Device
 {
     /**
-     * The needle each browser is recognised by, most particular first: every browser built on Chromium
-     * says "Chrome" of itself, and the one that says only that is Chrome.
+     * Most particular first: every browser built on Chromium also says "Chrome".
      *
      * @var array<string, string>
      */
@@ -34,8 +30,7 @@ final readonly class Device
     ];
 
     /**
-     * The needle each system is recognised by, most particular first: a telephone on Android says "Linux"
-     * of itself, and an iPhone says "like Mac OS X".
+     * Most particular first: Android also says "Linux", and an iPhone "like Mac OS X".
      *
      * @var array<string, array{string, DeviceType}>
      */
@@ -50,10 +45,6 @@ final readonly class Device
         'Linux' => ['Linux', DeviceType::Desktop],
     ];
 
-    /**
-     * A program that names itself and the version it is at, which is what the user agent of a tool looks
-     * like ("curl/8.18.0"): the name is what it called itself, and nothing says it is a browser.
-     */
     private const string PROGRAM_PATTERN = '/^([A-Za-z][A-Za-z.+-]*)\/([0-9][0-9A-Za-z.-]*)/D';
 
     public function __construct(
@@ -65,16 +56,6 @@ final readonly class Device
     ) {
     }
 
-    /**
-     * What the user agent of a request says, read where a page needs it and not written anywhere
-     * (architecture §3.5): the string the browser sent is what a context holds, because that is what was
-     * received and the only thing a reading can be checked against. A row whose device was read when it
-     * was written carries that one, and this answers for every other.
-     *
-     * **It names what it recognises and nothing else.** A user agent is a declaration nobody verifies, so
-     * a reading that invented a name would be one nobody could tell from a true one: an agent this
-     * recognises nothing in is nothing, and the caller then shows the string as it stands.
-     */
     public static function readFrom(?string $userAgent): ?self
     {
         if ($userAgent === null || $userAgent === '') {
@@ -91,10 +72,6 @@ final readonly class Device
     }
 
     /**
-     * The document a column holds a device as, and the document the provenance of a request nests it in
-     * (RequestContext::toDocument()): one encoding, written here, so that a nested document and a column
-     * of its own cannot drift apart.
-     *
      * @return array<string, mixed>
      */
     public function toDocument(): array
@@ -109,13 +86,9 @@ final readonly class Device
     }
 
     /**
-     * A device names its type: the four other members say what was recognised, and the type says what
-     * kind of thing it was, which no absence stands for.
-     *
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when the document names no type of device, or names one this
-     *                                  provider has no kind for
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {

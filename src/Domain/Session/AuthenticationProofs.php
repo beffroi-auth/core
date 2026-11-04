@@ -13,10 +13,6 @@ use function is_int;
 use function is_string;
 use function max;
 
-/**
- * The methods proven for a session and when each was proven last (the shape of symfony/symfony#66064).
- * "amr" is the list of keys, "auth_time" the most recent proof.
- */
 final readonly class AuthenticationProofs
 {
     /**
@@ -47,8 +43,6 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * Several methods proven at once, as an assertion of a passkey does (RFC 8176 §2 lists them all).
-     *
      * @param non-empty-list<AuthenticationMethod> $methods
      */
     public static function ofAll(array $methods, DateTimeImmutable $provenAt): self
@@ -61,9 +55,6 @@ final readonly class AuthenticationProofs
         return new self($entries);
     }
 
-    /**
-     * The newest proof of a method replaces the older one.
-     */
     public function with(AuthenticationMethod $method, DateTimeImmutable $provenAt): self
     {
         $entries = $this->entries;
@@ -85,9 +76,6 @@ final readonly class AuthenticationProofs
         return $this->entries[$method->value] ?? null;
     }
 
-    /**
-     * The "auth_time" (OIDC Core §2).
-     */
     public function latest(): DateTimeImmutable
     {
         return max($this->entries);
@@ -102,9 +90,7 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * The distinct kinds of factor, in the order they were proven.
-     *
-     * @return list<AuthenticationFactor>
+     * @return list<AuthenticationFactor> each kind once
      */
     public function factors(): array
     {
@@ -112,8 +98,7 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * The "amr" claim values (RFC 8176 §2): the methods, and "mfa" when two factors of different kinds
-     * were proven, since §2 lets the specific methods stand next to it.
+     * RFC 8176 §2
      *
      * @return non-empty-list<string>
      */
@@ -136,13 +121,9 @@ final readonly class AuthenticationProofs
     }
 
     /**
-     * The proofs back, out of the document a column holds them as, which is the shape above: a method
-     * reference on the Unix timestamp it was last proven at, and nothing else.
-     *
      * @param array<array-key, mixed> $timestamps
      *
-     * @throws InvalidArgumentException when an entry is not a method reference on a Unix timestamp, or
-     *                                  when there is no entry at all
+     * @throws InvalidArgumentException when empty, or when an entry is not a method reference on a Unix timestamp
      */
     public static function fromTimestamps(array $timestamps): self
     {

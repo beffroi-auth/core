@@ -8,9 +8,7 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
 /**
- * The size of an RSA modulus, in bits: 2048 at the least (RFC 7518 §3.3), 3072 by default, which is 128
- * bits of security (NIST SP 800-57 Part 1 Rev. 5 §5.6). Shared by the RSA algorithms, so that the rule
- * is written once.
+ * RFC 7518 §3.3, NIST SP 800-57 Part 1 Rev. 5 §5.6
  */
 final readonly class RsaKeyBits
 {

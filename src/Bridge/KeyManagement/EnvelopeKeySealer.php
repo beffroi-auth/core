@@ -17,18 +17,10 @@ use SensitiveParameter;
 use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
 
-/**
- * Seals private JWKs as symfony/key-management envelopes; the private JWK never reaches the KMS. A JWK
- * goes in the envelope as JSON, which is all this adds to the TenantEnvelope of its use.
- */
 final readonly class EnvelopeKeySealer implements KeySealerInterface
 {
     /**
-     * What the envelope of a key of a tenant is, whatever the key is published for: it tells a key
-     * envelope from a secret one (EnvelopeSecretSealer) and one tenant from another, never one use of a
-     * key from the other, which the key itself carries. The wording is the one of the day it was written
-     * and it does not change: every envelope sealed before the encryption keys of issue #164 opens under
-     * it, and nothing rewraps an envelope (architecture §3.3).
+     * Never changes, though it says "signing-key" of every key: nothing rewraps an envelope sealed under it.
      */
     private const string AAD = 'beffroi:signing-key:v2:';
 

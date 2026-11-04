@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * The full name of the person, as they write it (OIDC Core §5.1).
+ * OIDC Core §5.1
  */
 final readonly class Name extends ProfileClaim
 {

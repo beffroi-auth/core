@@ -12,23 +12,10 @@ use function in_array;
 use function is_string;
 use function sprintf;
 
-/**
- * The source that created a person and holds its attributes (decision 0002): local, for a person a console,
- * a fixture or an import created, or an upstream provider, named as a linked identity names its own
- * (`LinkedIdentity::$provider`), with the claims of OIDC Core §5.1 it holds of that person, by their names.
- *
- * **Not an enumeration, as the source of a group is.** An upstream provider is what a deployment declares,
- * so a set the wiring decides: SCIM and an OpenID Connect federation are one more provider each, a name and
- * the claims it holds, and no case of a class is added for either.
- *
- * **What a source holds, a manual description does not change** (`assertLeaves()`): the next sign-in
- * through that provider would write it again, and a client would read the edit in between. A local source
- * holds nothing, so whatever a description says of a local person is written.
- */
 final readonly class UserSource
 {
     /**
-     * @var list<string> the names of the claims the provider holds, each once, in the order it named them
+     * @var list<string> OIDC Core §5.1 names
      */
     public array $claims;
 
@@ -59,16 +46,13 @@ final readonly class UserSource
         $this->claims = $held;
     }
 
-    /**
-     * A person a console, a fixture or an import created, which is every person no provider created.
-     */
     public static function local(): self
     {
         return new self();
     }
 
     /**
-     * @param list<string> $claims the names of the claims of OIDC Core §5.1 the provider holds
+     * @param list<string> $claims OIDC Core §5.1 names
      */
     public static function upstream(string $provider, array $claims): self
     {
@@ -86,12 +70,7 @@ final readonly class UserSource
     }
 
     /**
-     * The profile as this source writes it from what its provider says now: each claim it holds that the
-     * provider said, as the provider said it, and every other claim left as it was. A claim the provider
-     * stops saying, its source stops holding (`UpstreamProvider::source()`), so nothing is cleared here. A
-     * local source holds nothing, so the profile comes back as it was.
-     *
-     * @param array<string, string> $said what the provider said, by the names of OIDC Core §5.1
+     * @param array<string, string> $said by OIDC Core §5.1 name
      *
      * @throws InvalidArgumentException when a claim it holds is said in a form the profile refuses
      */
@@ -108,10 +87,9 @@ final readonly class UserSource
     }
 
     /**
-     * A manual description that changes these claims of the person, refused when the source holds any of
-     * them, naming the provider and what it holds.
+     * What a source holds is its own: the next sign-in would write it back, a client reading the edit meanwhile.
      *
-     * @param list<string> $changed the names of the claims the description says otherwise
+     * @param list<string> $changed
      *
      * @throws InvalidArgumentException when the source holds one of them
      */
@@ -135,9 +113,6 @@ final readonly class UserSource
     }
 
     /**
-     * The document a column holds it as: the provider and the claims it holds, and nothing for a local
-     * source, which holds nothing and has nothing to write.
-     *
      * @return array{provider: string, claims: list<string>}|null
      */
     public function toDocument(): ?array
@@ -153,11 +128,9 @@ final readonly class UserSource
     }
 
     /**
-     * No document is a local source; a document names its provider, or it is not one this object wrote.
-     *
      * @param array<array-key, mixed>|null $document
      *
-     * @throws InvalidArgumentException when the document is not what this object writes
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(?array $document): self
     {

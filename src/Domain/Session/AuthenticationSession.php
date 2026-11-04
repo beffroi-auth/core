@@ -16,10 +16,6 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\LogicException;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * Who is authenticated at the provider, since when, how and from where. Tokens point at a session, which
- * makes them revocable together at logout. "How" is a map of proofs; "acr" is read from it, never stored.
- */
 final class AuthenticationSession implements ClassifiedFieldsInterface
 {
     public private(set) AuthenticationProofs $proofs;
@@ -55,25 +51,18 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
         $this->lastSeenAt = $establishedAt;
     }
 
-    /**
-     * The "auth_time" (OIDC Core §2): the most recent proof.
-     */
     public function authenticatedAt(): DateTimeImmutable
     {
         return $this->proofs->latest();
     }
 
-    /**
-     * The "acr" (OIDC Core §2) when no class is requested: the first class of the policy of the tenant the
-     * proofs satisfy (decision 0010).
-     */
     public function authenticationContextClass(): AuthenticationContextClass
     {
         return $this->tenant->authenticationContextPolicy->classOf($this->proofs);
     }
 
     /**
-     * OIDC Core §5.5.1.1: the requested class may be below the strongest one satisfied.
+     * OIDC Core §5.5.1.1
      */
     public function satisfies(AuthenticationContextClass $class): bool
     {
@@ -81,9 +70,7 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * A re-authentication or a step-up: one more proof, dated when the request arrived, or at $provenAt when what
-     * proved it dates it (the AuthnInstant of an upstream identity provider, beffroi/saml S-57), never later than the
-     * request; the newest proof of a method is kept (AuthenticationProofs::with()).
+     * Dated at $provenAt when given, else when the request arrived, and never later than the request.
      */
     public function recordProof(AuthenticationMethod $method, RequestContext $context, ?DateTimeImmutable $provenAt = null): void
     {
@@ -99,10 +86,7 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * The instant an upstream identity provider allows the session it vouches for (the SessionNotOnOrAfter of SAML
-     * Core §2.7.2, beffroi/saml S-57): the session expires no later than that, and a bound later than its expiry
-     * changes nothing, so that the provider shortens a session and never lengthens one. Reaching it ends nothing
-     * (decision 0031).
+     * SAML Core §2.7.2
      */
     public function expireNoLaterThan(DateTimeImmutable $notOnOrAfter): void
     {
@@ -112,14 +96,7 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * The places the enrichment found for the two provenances of this session (issue #473). It happens
-     * after the request that opened the session and never in it (architecture §3.5), so this is the one
-     * thing on a session that is written long after the fact, and it is written on an ended session too:
-     * a message that arrives after a logout is late, not wrong.
-     *
-     * **It takes the places and not the provenances**: what a request carried, the address, the user agent
-     * and the moment it reached this provider, is what reached this provider, and nothing that runs later
-     * rewrites it.
+     * Written on an ended session too: an enrichment that arrives after a logout is late, not wrong.
      */
     public function locate(?GeoLocation $createdIn, ?GeoLocation $lastSeenIn): void
     {
@@ -127,9 +104,6 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
         $this->lastSeenFrom = $this->lastSeenFrom->withLocation($lastSeenIn);
     }
 
-    /**
-     * The lifetime policy (sliding, absolute) belongs to the caller.
-     */
     public function touch(RequestContext $context, DateTimeImmutable $expiresAt): void
     {
         if ($this->endedAt !== null) {
@@ -166,7 +140,7 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * @return non-empty-list<string> the "amr" claim values
+     * @return non-empty-list<string>
      */
     public function methodReferences(): array
     {
@@ -174,10 +148,6 @@ final class AuthenticationSession implements ClassifiedFieldsInterface
     }
 
     /**
-     * The two provenances of a session are sealed under its own family, each holding the address, the user agent,
-     * the place and the device of a moment in one field; what the session proved stays in the clear, every token
-     * issued from it carrying the same.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

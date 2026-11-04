@@ -7,9 +7,7 @@ namespace Beffroi\Core\Domain\PersonalData;
 use function sprintf;
 
 /**
- * A personal datum that is not sealed yet, named with the issue that seals it, on the model of the
- * "known" list of CONFORMANCE_PLANS: the line says what is owed and who owes it, and the day the field is
- * found sealed the walk of the schema fails, so the line is deleted rather than carried.
+ * A personal datum not sealed yet, named with the issue that seals it; once it is sealed, the walk fails.
  */
 final readonly class Owed implements FieldClassificationInterface
 {

@@ -9,14 +9,6 @@ use InvalidArgumentException;
 use function max;
 use function sprintf;
 
-/**
- * The page of a list that was asked for (architecture §5.2): which one, and how many rows it holds.
- *
- * A table of the account is read by a person who goes back and forth over a handful of pages of their own
- * rows, so a page here is a number and the rows it skips. What walks a whole journal once reads past the
- * last row it read instead (ActsOfAPersonInterface::everyActOf): the two are not the same question, and
- * neither one's page is the other's.
- */
 final readonly class Pagination
 {
     /**
@@ -34,18 +26,13 @@ final readonly class Pagination
         }
     }
 
-    /**
-     * How many rows of the list come before this page.
-     */
     public function offset(): int
     {
         return ($this->number - 1) * $this->size;
     }
 
     /**
-     * This page, held inside a list of that many rows: a page past the last one is the last one, so a link
-     * somebody kept or a number they typed reads rows, and never an empty table under a count saying there
-     * are some. A list that holds nothing is one page, which is the page that says it holds nothing.
+     * A page past the last one of a list of that many rows is the last one.
      */
     public function within(int $total): self
     {

@@ -14,19 +14,8 @@ use Beffroi\Core\Port\UpstreamProvidersInterface;
 use function str_contains;
 
 /**
- * The e-mail domains of a tenant that are federated to an upstream provider, and what follows from it
- * (decision 0029): **a domain declared for a provider signs in through that provider and through nothing
- * else**. The login page sends an address of such a domain to its provider, and every login of a local
- * credential refuses a person of it, so that a company that federates its domain keeps its accounts in its
- * directory, and a person it lets go is let go here too.
- *
- * Every domain is read by EmailDomain and by nothing else, the one rule the first sign-in through a provider
- * reads too (UpstreamProvider::answersFor()): the three places agree on an address in capitals, in Unicode or
- * with a final dot, because none of them reads one its own way.
- *
- * Nothing here reads a person who is not handed to it: which provider an address goes to is a function of its
- * domain and of the declarations of the tenant, so that the answer is the same whether somebody holds that
- * address or not.
+ * Every domain is read by EmailDomain alone, so that every reading agrees on capitals, Unicode and a final dot.
+ * The provider of an address depends on its domain alone, never on whether somebody holds it.
  */
 final readonly class FederatedDomains
 {
@@ -35,20 +24,13 @@ final readonly class FederatedDomains
     ) {
     }
 
-    /**
-     * Whether the tenant declares an upstream provider, which is when the login page asks for an address first.
-     */
     public function federates(Tenant $tenant): bool
     {
         return $this->providers->of($tenant) !== [];
     }
 
     /**
-     * The provider the domain of what was typed is federated to. A value without an "@" is a username, of no
-     * domain, and federated to nobody.
-     *
-     * @throws InvalidArgumentException when it holds an "@" and its domain is none the rule reads: refused, and
-     *                                  never taken for an address of a domain nobody federates
+     * @throws InvalidArgumentException when it holds an "@" and a domain the rule cannot read
      */
     public function providerOf(Tenant $tenant, string $identifier): ?UpstreamProvider
     {
@@ -61,10 +43,8 @@ final readonly class FederatedDomains
     }
 
     /**
-     * Whether a local credential, a password, a passkey or a code, may sign that person in: not when one of their
-     * addresses, their mailbox, verified or not, or their username when it holds an "@", is of a federated domain.
-     * On a tenant that federates a domain, an address of theirs whose domain the rule does not read counts as one
-     * of a federated domain: what cannot be read cannot be told apart from it.
+     * Every address counts, verified or not, and the username when it holds an "@". On a tenant that federates a
+     * domain, an address the rule cannot read counts as federated.
      */
     public function admitsLocalCredentials(User $user): bool
     {

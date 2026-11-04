@@ -11,19 +11,10 @@ use Beffroi\Core\Domain\Key\KeyUse;
 use Jose\Component\Core\JWK;
 
 /**
- * The key pair of a tenant that what it writes to a transport is sealed to (decision 0020): the public
- * half seals, on the path of a request and without asking the KMS anything, and the private half opens, in
- * the worker that consumes.
+ * The key pair a tenant seals the bodies it writes to a transport to.
  *
- * "MESSAGE-SEAL" is what this tenant calls the pair and not a JOSE algorithm name, for the reason the key
- * it hands out to browsers has one of its own (Vapid): a tenant holds one active key per algorithm
- * (TenantKeyRepositoryInterface::findActive()), so a pair answering to "ECDH-ES+A256KW" would be the pair
- * clients encrypt to, which the JWK Set publishes, sealing the bodies of this provider. What the sealed
- * body carries is the JOSE pair below, both wired, so nothing is sealed that this provider would refuse
- * to open.
- *
- * The pair is of the shape of the key management algorithm it seals under, which is what draws it: one
- * algorithm decides the curve, the size and the "kty", here as everywhere else.
+ * "MESSAGE-SEAL" is no JOSE algorithm name: a tenant holds one active key per algorithm, and a pair named
+ * "ECDH-ES+A256KW" would be the one the JWK Set publishes for clients to encrypt to.
  */
 final readonly class MessageSeal implements JoseMessageSealingAlgorithmInterface
 {
@@ -43,11 +34,6 @@ final readonly class MessageSeal implements JoseMessageSealingAlgorithmInterface
         return $this->keyEncryption->keyType();
     }
 
-    /**
-     * RFC 7517 §4.2: what the pair does is receive a JWE. It is asserted against the algorithm like every
-     * other key of the tenant, and it says nothing of whether the tenant publishes it, which is the
-     * business of PublishedKeyAlgorithmInterface.
-     */
     public function keyUse(): KeyUse
     {
         return KeyUse::Encryption;
@@ -64,9 +50,8 @@ final readonly class MessageSeal implements JoseMessageSealingAlgorithmInterface
     }
 
     /**
-     * The pair the wired key management algorithm draws, under the name of this one: what the JWK carries
-     * in its "alg" is what the tenant calls the pair, so a key read back from the store is read back as
-     * the key it is and not as one clients encrypt to.
+     * The JWK carries the name of this algorithm in its "alg", so that a key read back from the store is never
+     * taken for one clients encrypt to.
      */
     public function generateKey(): JWK
     {

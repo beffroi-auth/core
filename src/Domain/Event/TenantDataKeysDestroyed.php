@@ -8,24 +8,10 @@ use DateTimeImmutable;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
-/**
- * The data keys of a tenant are gone, and with them every personal datum that tenant had sealed: the
- * columns hold their ciphertexts and nothing opens them again, by anybody.
- *
- * It is the one event of this provider that records an erasure rather than a change, which is why it says
- * how many keys and over how many scopes: after it, that is what cannot be counted any more.
- */
 final readonly class TenantDataKeysDestroyed implements DomainEventInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'tenant.data_keys_destroyed';
 
-    /**
-     * @param int $keys how many wrapped keys were erased
-     * @param int $scopes over how many scopes, which is how many families of columns the tenant had sealed
-     */
     public function __construct(
         public Tenant $tenant,
         public int $keys,

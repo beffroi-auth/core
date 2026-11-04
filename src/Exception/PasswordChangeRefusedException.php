@@ -8,8 +8,7 @@ use Beffroi\Core\Domain\Credential\PasswordChangeRefusal;
 use RuntimeException;
 
 /**
- * The password of a person was not replaced, and the reason is on the exception because the page that
- * offers the change says which of them it was. The message is for the audit trail.
+ * The message is for the audit trail.
  */
 final class PasswordChangeRefusedException extends RuntimeException implements ExceptionInterface
 {

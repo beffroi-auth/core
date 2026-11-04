@@ -10,20 +10,6 @@ use Beffroi\Core\Domain\Session\RequestContext;
 use DateTimeImmutable;
 use DateTimeInterface;
 
-/**
- * The readings every chapter of an archive shares (issue #453): a moment, an act of the journal, and what
- * a request carried of where it came from. A named mapper beside the objects it reads, so that two
- * readings writing the same fact write it the same way and a reader of the document learns one shape. The
- * console writes an act with it too (issue #591), a register attached to an answer being the same document
- * as the chapter of an archive.
- *
- * A moment is written in the shape of RFC 3339, which is what RGPD article 20 means by machine readable.
- * Dates are held in UTC in this schema, so what a person reads here is UTC whatever their own clock says;
- * the pages of their account are where a date is shown in their time zone and their language (issue #469).
- *
- * A document is JSON, so a fact that is not text passes through here on its way in: a chapter never hands
- * raw octets to the encoder, which is the one way a chapter can leave a person with no document at all.
- */
 final readonly class ArchivedFacts
 {
     public static function moment(?DateTimeImmutable $moment): ?string
@@ -32,10 +18,6 @@ final readonly class ArchivedFacts
     }
 
     /**
-     * One act of the journal: what happened, when, on behalf of which application, and what the request
-     * carried of where it came from. Never the subject, because whose journal it is is said once, by the
-     * document or by the reading that asked for it.
-     *
      * @return array<string, mixed>
      */
     public static function act(JournalEntry $act): array
@@ -49,9 +31,7 @@ final readonly class ArchivedFacts
     }
 
     /**
-     * Raw octets a fact holds (a credential ID as a WebAuthn authenticator issued it), base64url, which is
-     * the alphabet the column holding them uses: what the row says and what the archive says of it are one
-     * text, and a reader comparing the two compares the same thing.
+     * Base64url: raw octets handed to the JSON encoder would leave a person with no document.
      */
     public static function octets(?string $octets): ?string
     {
@@ -59,10 +39,6 @@ final readonly class ArchivedFacts
     }
 
     /**
-     * What the request carried: the address and the user agent as they reached this provider, and what the
-     * enrichment made of them when it ran. It is in the archive because it is a personal datum this
-     * provider holds, which is the whole question article 15 asks.
-     *
      * @return array<string, mixed>
      */
     public static function context(RequestContext $context): array

@@ -31,15 +31,11 @@ use Webauthn\MetadataService\CertificateChain\CertificateToolbox;
 use Webauthn\MetadataService\Service\MetadataBLOBPayload;
 
 /**
- * Verifies a Metadata BLOB as the FIDO Metadata Service v3.1.1 (§3.1.7, §3.2) has a relying party verify
- * it: a compact JWS with one signature, whose protected header carries the certificate chain of the
- * signer (RFC 7515 §4.1.6, "x5c"), the signature checked with the key of the first certificate, the chain
- * checked up to the root the caller pins (never one the token names), the payload read as a blob. A
- * certificate of the chain that carries the name and the key of the pinned root is that root issued by
- * another, and the chain stops before it (upToThePinnedRoot()). What the library ships for this
- * (FidoAllianceCompliantMetadataService) fetches the root over HTTP at every load and swallows a refusal
- * into an empty repository; this one refuses aloud and reads nothing from the network, the console does
- * that once.
+ * FIDO Metadata Service v3.1.1 §3.1.7, §3.2
+ *
+ * The chain is checked up to the root the caller pins, never one the token names. Not the library's
+ * FidoAllianceCompliantMetadataService, which fetches the root over HTTP at every load and swallows a refusal
+ * into an empty repository.
  */
 final readonly class MetadataBlobVerifier
 {
@@ -51,7 +47,7 @@ final readonly class MetadataBlobVerifier
         private CertificateChainValidator $chains,
     ) {
         $this->serializer = new WebauthnSerializerFactory(AttestationStatementSupportManager::create())->create();
-        // what the FIDO Alliance signs with today (RS256) and what a test service may (ES256), nothing else
+        // RS256 is what the FIDO Alliance signs with, ES256 what a test service may use.
         $this->verifier = new JWSVerifier(new AlgorithmManager([new ES256(), new RS256()]));
     }
 
@@ -118,12 +114,9 @@ final readonly class MetadataBlobVerifier
     }
 
     /**
-     * The chain up to the pinned root. A trust anchor is a name and a key (RFC 5280 §6.1.1 (d)), so a certificate
-     * after the signer that carries the name and the key of the pinned root is that root, issued by another
-     * one: the chain stops before it, and the pinned root takes its place. The chain of the FIDO Alliance ends
-     * with GlobalSign Root R46 issued by GlobalSign Root CA - R3, and verifies under GlobalSign Root R46, the
-     * root the FIDO Alliance names, once that certificate is left out. A certificate this cannot read stays
-     * where it is, for the chain to be refused on it.
+     * RFC 5280 §6.1.1 (d): a certificate after the signer that carries the name and the key of the pinned
+     * root is that root issued by another, and the chain stops before it. The chain of the FIDO Alliance ends
+     * with one, GlobalSign Root R46 issued by GlobalSign Root CA - R3.
      *
      * @param non-empty-list<string> $chain
      *
@@ -155,10 +148,11 @@ final readonly class MetadataBlobVerifier
     }
 
     /**
-     * The chain of the signer, the signing certificate first (RFC 7515 §4.1.6).
+     * RFC 7515 §4.1.6
+     *
+     * @return non-empty-list<string> the signing certificate first
      *
      * @throws MetadataBlobRefusedException
-     * @return non-empty-list<string>
      */
     private static function chain(JWS $jws): array
     {

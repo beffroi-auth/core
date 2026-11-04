@@ -11,9 +11,6 @@ use Beffroi\Core\Port\LinkedIdentitiesOfAPersonInterface;
 use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
 use function usort;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- */
 final class InMemoryLinkedIdentityRepository implements LinkedIdentitiesOfAPersonInterface, LinkedIdentityRepositoryInterface
 {
     /**

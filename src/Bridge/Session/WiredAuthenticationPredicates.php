@@ -11,13 +11,6 @@ use Beffroi\Core\Port\AuthenticationPredicatesInterface;
 use function implode;
 use function sprintf;
 
-/**
- * The authentication predicates the wiring gave the provider (decision 0010), held and looked up as every
- * other wiring of this provider is (WiredAlgorithms): the order they are wired in, each name held once,
- * and the lookup of a name among them. A provider wired with none is refused here, where the wiring is
- * collected: every session has an "acr" (architecture §4.6), so a provider no policy can be written for
- * is not one it can be.
- */
 final readonly class WiredAuthenticationPredicates implements AuthenticationPredicatesInterface
 {
     /**

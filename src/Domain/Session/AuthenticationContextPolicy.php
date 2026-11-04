@@ -13,15 +13,6 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use function in_array;
 use function sprintf;
 
-/**
- * The "acr" vocabulary of a tenant (decision 0010): an ordered list of classes, each a name on one of the
- * predicates of the provider. No hierarchy: a session satisfies every class whose predicate holds, the
- * order only says which one it is answered with when nothing is requested. What decision 0006 forbids a
- * policy is refused here: "0" (OIDC Core §2 defines it as no confidence at all), a name twice, an empty
- * policy, and a policy no session could be answered in, that is one with no class on a predicate that
- * holds on every login (AuthenticationPredicateInterface::holdsOnEveryLogin()), since every session has
- * an "acr" (architecture §4.6). What a name may mean is the class's own (AuthenticationContextClass).
- */
 final readonly class AuthenticationContextPolicy
 {
     /**
@@ -55,10 +46,6 @@ final readonly class AuthenticationContextPolicy
         $this->classes = $classes;
     }
 
-    /**
-     * What a tenant that configures nothing speaks, strongest first: the two names of OpenID Connect EAP
-     * ACR Values 1.0 and the two levels Keycloak emits by default.
-     */
     public static function default(): self
     {
         return new self([
@@ -69,10 +56,6 @@ final readonly class AuthenticationContextPolicy
         ]);
     }
 
-    /**
-     * The class of a name of this policy; null for a name the tenant did not declare, which the provider
-     * never asserts (OIDC Core §2).
-     */
     public function named(string $name): ?AuthenticationContextClass
     {
         foreach ($this->classes as $class) {
@@ -84,9 +67,6 @@ final readonly class AuthenticationContextPolicy
         return null;
     }
 
-    /**
-     * What a session is answered with when no class is requested: the first class it satisfies.
-     */
     public function classOf(AuthenticationProofs $proofs): AuthenticationContextClass
     {
         foreach ($this->classes as $class) {
@@ -99,10 +79,6 @@ final readonly class AuthenticationContextPolicy
     }
 
     /**
-     * The classes a login able to prove these methods, all of them together, can satisfy: what the
-     * discovery announces as "acr_values_supported" and what a step-up may ask for (decision 0010). A
-     * predicate never stops holding when a proof is added, so proving everything at once is the question.
-     *
      * @param non-empty-list<AuthenticationMethod> $methods
      *
      * @return list<AuthenticationContextClass> in the order of the policy
@@ -120,9 +96,6 @@ final readonly class AuthenticationContextPolicy
         return array_map(static fn (AuthenticationContextClass $class): string => $class->value, $this->classes);
     }
 
-    /**
-     * Same names on the same predicates, in the same order.
-     */
     public function equals(self $other): bool
     {
         if (count($this->classes) !== count($other->classes)) {

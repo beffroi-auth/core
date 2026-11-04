@@ -8,7 +8,7 @@ use Beffroi\Core\Domain\Encoding\Document;
 use Beffroi\Core\Exception\InvalidArgumentException;
 
 /**
- * The OIDC Core §5.1.1 address claim; an address with no field at all is not an address.
+ * OIDC Core §5.1.1
  */
 final readonly class Address
 {
@@ -23,9 +23,6 @@ final readonly class Address
     }
 
     /**
-     * The document a column holds an address as: the six fields of §5.1.1 under their own names, written
-     * whether they are there or not, so that what the column holds reads as the claim does.
-     *
      * @return array<string, string|null>
      */
     public function toDocument(): array
@@ -43,7 +40,7 @@ final readonly class Address
     /**
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when a field of the document is not a string
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {

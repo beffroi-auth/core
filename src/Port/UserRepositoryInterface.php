@@ -19,10 +19,7 @@ interface UserRepositoryInterface
     public function findByUsername(Tenant $tenant, string $username): ?User;
 
     /**
-     * Every person of the tenant who holds that mailbox, compared without regard to case
-     * (`EmailAddress::isTheSameMailboxAs()`). Nothing says two persons may not share an address, so the
-     * answer is all of them, in no order a caller may read anything into: what asks is whether somebody
-     * holds it, and whether that somebody is someone else.
+     * Compared without regard to case, in no order a caller may rely on.
      *
      * @return list<User>
      */

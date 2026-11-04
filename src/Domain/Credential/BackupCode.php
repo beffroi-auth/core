@@ -13,16 +13,10 @@ use SensitiveParameter;
 use function str_split;
 use function strtoupper;
 
-/**
- * One of the codes a user falls back on when the authenticator of their TOTP is out of reach: a hash of
- * the code, typed like a password hash, and the instant it was spent, because each one is accepted once.
- * The code itself is shown at enrolment and kept nowhere.
- */
 final readonly class BackupCode
 {
     /**
-     * The alphabet of RFC 4648 §6, which has no character a reader mistakes for another; ten of them are
-     * fifty bits of entropy.
+     * RFC 4648 §6
      */
     public const string ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -35,11 +29,9 @@ final readonly class BackupCode
     }
 
     /**
-     * The code in clear the drawn bytes spell, in two groups of five for the eye ("K7Q2M-X9PL4"); what the
-     * user writes down. One byte per character, its low five bits picking one of the thirty-two: no bias,
-     * 256 being a multiple of 32.
+     * The low five bits of each byte pick a character: no bias, 256 being a multiple of 32.
      *
-     * @param string $bytes LENGTH bytes, drawn where every secret of this provider is (RandomnessInterface)
+     * @param string $bytes LENGTH bytes from RandomnessInterface
      */
     public static function spelledBy(#[SensitiveParameter] string $bytes): string
     {
@@ -51,9 +43,6 @@ final readonly class BackupCode
         return implode('-', str_split($characters, 5));
     }
 
-    /**
-     * What the user typed, as it is compared: upper case, the separators and the spaces dropped.
-     */
     public static function normalize(#[SensitiveParameter] string $typed): string
     {
         return strtoupper((string) preg_replace('/[\s-]+/', '', $typed));
@@ -64,9 +53,6 @@ final readonly class BackupCode
         return $this->usedAt !== null;
     }
 
-    /**
-     * The same code, spent: a value object, so the credential replaces its entry.
-     */
     public function spend(DateTimeImmutable $now): self
     {
         if ($this->usedAt !== null) {

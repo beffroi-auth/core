@@ -16,12 +16,10 @@ use Webauthn\AttestationStatement\TPMAttestationStatementSupport;
 use Webauthn\PublicKeyCredentialParameters;
 
 /**
- * The algorithms of the provider (decision 0033): EdDSA over Ed25519, ES256 and RS256 (RFC 9053 §2.2, RFC 8812
- * §2), from the strongest to the weakest as w3c/webauthn#2448 proposes; the options offer them in that order
- * and the signatures are verified with them alone. ES384 is neither offered nor verified: Windows Hello creates
- * a passkey of it when the options name it first, and Chrome on Windows does not survive that passkey. What
- * signs over SHA-1 is neither offered nor verified: an attestation statement signed with RS1 is refused before
- * the library reads it, whatever its format.
+ * RFC 9053 §2.2, RFC 8812 §2
+ *
+ * No ES384: Windows Hello creates a passkey of it when the options name it first, and Chrome on Windows does
+ * not survive that passkey.
  */
 final readonly class ProviderPasskeyAlgorithms implements PasskeyAlgorithms
 {

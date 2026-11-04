@@ -7,16 +7,8 @@ namespace Beffroi\Core\Domain\PersonalData;
 use function sprintf;
 
 /**
- * A personal datum, sealed at rest under the data key of its tenant and of its family (decisions 0011 and
- * 0018). The family is the scope that key is shared over, so two fields of one family share one key and
- * one unwrap.
- *
- * **A field seals under the family of its own table**, and that is the one thing this line checks beyond
- * the sealing itself: a field sealed under another family is a value written into the scope of a table
- * that is not its own, which no destruction of its tenant's keys for that table would reach. Two shapes
- * of a mapping can do it, a family typed wrong and an embeddable, whose fields land on every entity that
- * embeds it; neither is visible in the mapping that would be wrong, so the walk of the schema reads it
- * here.
+ * A personal datum, sealed under the family of its own table: sealed under another family, it would escape
+ * the destruction of that table's keys.
  */
 final readonly class Sealed implements FieldClassificationInterface
 {

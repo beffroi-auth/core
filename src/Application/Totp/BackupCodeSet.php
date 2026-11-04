@@ -11,16 +11,6 @@ use Beffroi\Core\Port\PasswordHasherInterface;
 use Beffroi\Core\Port\RandomnessInterface;
 use SensitiveParameter;
 
-/**
- * The set of backup codes a TOTP is handed: how many of them there are, where their bytes come from and
- * what the credential holds of them. The enrolment draws one and the renewal draws another, and the loop
- * that draws them and the map that hashes them are written here once.
- *
- * **The drawing and the hashing are two acts because the enrolment holds them apart**: a set is drawn
- * before any credential exists, shown to whoever asked, and hashed only once a first code has proved the
- * authenticator, so an enrolment abandoned in between has cost no hashing and left nothing. A renewal
- * does both at once, having nothing to wait for.
- */
 final readonly class BackupCodeSet
 {
     public function __construct(
@@ -30,10 +20,9 @@ final readonly class BackupCodeSet
     }
 
     /**
-     * The codes as they are spelled to the person, shown this once and kept nowhere, each one drawn where
-     * every secret of this provider is.
+     * Shown to the person once and kept nowhere.
      *
-     * @return list<string> exactly the number a credential holds
+     * @return list<string>
      */
     public function draw(): array
     {
@@ -46,9 +35,7 @@ final readonly class BackupCodeSet
     }
 
     /**
-     * What the credential holds of them: the hash of each one, as a password is.
-     *
-     * @param list<string> $spelled the codes draw() answered, in their order
+     * @param list<string> $spelled
      *
      * @return list<BackupCode>
      */

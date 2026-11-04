@@ -20,12 +20,6 @@ use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
 use function usort;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- *
- * It bounds no run of the retention, having no table to hold: what the contract of the port means by
- * bounded is a store that would otherwise delete a year of rows in one statement.
- */
 final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, ChangesOfAPersonInterface, ClaimHistoryInterface
 {
     /**

@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * The family name (OIDC Core §5.1).
+ * OIDC Core §5.1
  */
 final readonly class FamilyName extends ProfileClaim
 {

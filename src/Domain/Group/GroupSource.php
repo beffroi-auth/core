@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Group;
 
-/**
- * Where a group or a membership comes from; the source wins over a manual edit (decision 0002).
- */
 enum GroupSource: string
 {
     case Local = 'local';

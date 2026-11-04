@@ -14,13 +14,12 @@ use function preg_match;
 use function sprintf;
 
 /**
- * The standard profile of OIDC Core §5.1, protocol-neutral; the mapping to claim names belongs to the modules.
+ * OIDC Core §5.1
  */
 final readonly class Profile
 {
     /**
-     * What a year withheld is read as when a day is checked: a leap year, so that the 29th of February stays a
-     * day somebody who keeps their year to themselves was born on.
+     * A leap year, so that 0000-02-29 stays a valid birthdate.
      */
     private const int WITHHELD_YEAR_READ_AS = 2000;
 
@@ -53,9 +52,7 @@ final readonly class Profile
     }
 
     /**
-     * OIDC Core §5.1: "YYYY-MM-DD", or "YYYY" when only the year is given, the year "0000" when it is withheld.
-     * A date names a day of the calendar, and its shape alone does not make it one (issue #846): "2024-13-45" is
-     * refused as "21/05/1990" is.
+     * OIDC Core §5.1
      */
     private static function isABirthdate(string $birthdate): bool
     {
@@ -71,18 +68,9 @@ final readonly class Profile
     }
 
     /**
-     * The document a column holds a profile as. **It names no claim and no field.** The document is the
-     * properties of the object, written by their own names and read back as named arguments of its
-     * constructor, so a claim added to this object is a claim the document carries without a line: the
-     * names of §5.1 are matched with the fields that hold them in `describedWith()`, and a fourth place
-     * to be wrong is not opened here.
+     * Read back as named arguments of the constructor: every property must be one of its parameters.
      *
-     * Every property of this object is public and holds a string or nothing, which is the convention of a
-     * value object here, so what `get_object_vars()` reads is what a reader of the object sees. What a
-     * profile holds nothing of is absent from the document rather than written null, which is what the
-     * constructor already answers for.
-     *
-     * @return array<array-key, string> keyed by the names of the properties that hold a claim
+     * @return array<array-key, string> by property name
      */
     public function toDocument(): array
     {
@@ -97,12 +85,9 @@ final readonly class Profile
     }
 
     /**
-     * A key the constructor does not answer to, or a value that is not a string, is a profile this
-     * provider did not write and never a guess.
-     *
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when the document is not what this object writes
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {
@@ -122,20 +107,7 @@ final readonly class Profile
     }
 
     /**
-     * The same profile with the claims given said otherwise (issue #452): a claim absent from the map is
-     * left as it was, and a claim present with null is one the person took back.
-     *
-     * The one place the names of OIDC Core §5.1 are matched with the fields that hold them, with `claims()`
-     * beside it for the other direction, because this is the object whose shape they describe; every claim of
-     * Domain\Identity\Claim writes through here, so a claim added is a class added and a line here and
-     * there, and never a reading of a field by name.
-     *
-     * **A key here is a name of the specification and never a field of this object** (issue #626): three
-     * of them differ, "profile", "picture" and "website" being held by `profileUrl`, `pictureUrl` and
-     * `websiteUrl`, and a field is nobody's claim. So what a caller writes is what a module announces and
-     * what a tenant opens, and the name of a field stops existing outside this object.
-     *
-     * @param array<string, string|null> $claims
+     * @param array<string, string|null> $claims by OIDC Core §5.1 name; null clears, absent leaves as is
      */
     public function describedWith(array $claims): self
     {
@@ -157,14 +129,7 @@ final readonly class Profile
     }
 
     /**
-     * What the profile says under each name of OIDC Core §5.1, null where it says nothing: the inverse of
-     * `describedWith()`, written beside it so that the two directions of one match are read together, and
-     * held together by a test that says every claim back through the other.
-     *
-     * It is what a caller compares claim by claim, by the names a source holds them under (`UserSource`),
-     * and never a reading of a field by name.
-     *
-     * @return array<string, string|null>
+     * @return array<string, string|null> by OIDC Core §5.1 name
      */
     public function claims(): array
     {
@@ -186,9 +151,7 @@ final readonly class Profile
     }
 
     /**
-     * The same profile, read in another language (issue #471): what the person said of themselves is
-     * untouched, the "locale" claim alone being replaced. A copy and not a setter, a profile being held
-     * whole by whoever holds it, and the rule of the claim living where the claim does.
+     * The same profile with only its "locale" claim replaced.
      */
     public function readIn(string $locale): self
     {

@@ -20,11 +20,7 @@ use Webauthn\MetadataService\Statement\MetadataStatement;
 use Webauthn\MetadataService\StatusReportRepository;
 
 /**
- * The metadata the ceremonies check an attestation against (WebAuthn Level 3 §7.1 step 22, FIDO Metadata
- * Service v3 §3.2): the entries of every document of the store, by AAGUID, with their status reports in
- * the order the service issued them, read once and kept for the life of the process. An AAGUID that two
- * documents describe is the one of the document read last, the documents coming in the order of their
- * names. An empty store knows no authenticator, which is what a provider that never refreshed has.
+ * WebAuthn Level 3 §7.1 step 22, FIDO Metadata Service v3 §3.2
  */
 final class StoredMetadata implements MetadataStatementRepository, StatusReportRepository
 {
@@ -71,10 +67,6 @@ final class StoredMetadata implements MetadataStatementRepository, StatusReportR
         return $this->entries = $entries;
     }
 
-    /**
-     * A document of the store is what the console verified: one that does not read is a defect of the
-     * store, not an unknown authenticator.
-     */
     private function read(string $name, string $payload): MetadataBLOBPayload
     {
         try {

@@ -8,13 +8,9 @@ use Beffroi\Core\Domain\Identity\User;
 use DateTimeImmutable;
 
 /**
- * The telephone number of the person (OIDC Core §5.1). It is not a claim of the profile and does not
- * extend ProfileClaim, for the reason it is written differently: a number carries whether this provider
- * has verified it, and a person who writes a new one has verified nothing.
+ * OIDC Core §5.1
  *
- * So saying it takes the verification back, which is the only honest answer: what was proved was proved of
- * the number that is gone. A deployment that verifies numbers verifies this one again afterwards, and
- * until then no client is told that it is verified.
+ * Not a ProfileClaim: a number the person writes takes back the verification the previous one had.
  */
 final readonly class PhoneNumber implements ClaimInterface
 {

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Key;
 
-/**
- * A compact JWS whose signature was verified against a published key of the tenant.
- */
 final readonly class VerifiedJws
 {
     /**

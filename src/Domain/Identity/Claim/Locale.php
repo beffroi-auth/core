@@ -7,14 +7,12 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * The language the person reads, which this provider writes to them in when no request of theirs says one (UserLocale, issue #471).
+ * OIDC Core §5.1
  */
 final readonly class Locale extends ProfileClaim
 {
     /**
-     * @param array<string, string> $known the languages a person may say they read, each with its own name
-     *                                     in itself, which only the integration knows (KnownLocales); a
-     *                                     deployment that names none offers something to type
+     * @param array<string, string> $known each language's name in itself, by locale; none offers a line of text
      */
     public function __construct(
         private array $known = [],
@@ -32,13 +30,7 @@ final readonly class Locale extends ProfileClaim
     }
 
     /**
-     * A choice of the languages that exist and not of the ones these pages are translated into (issue
-     * #479): "locale" is a claim of OIDC Core §5.1 and not a setting of this provider, so it is the
-     * language the person reads, which a relying party consumes to dress its own pages. What language a
-     * page of this provider is in degrades to one it has, which is read where it is read (ServedLocales).
-     *
-     * Several hundred names are typed into with the set suggested rather than chosen from a list, which
-     * the field says of itself (`ClaimField::isPicked()`).
+     * Every language and not only those these pages are translated into: a relying party reads the claim.
      */
     public function field(): ClaimField
     {

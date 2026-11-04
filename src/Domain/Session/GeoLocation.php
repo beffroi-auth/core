@@ -35,10 +35,6 @@ final readonly class GeoLocation
     }
 
     /**
-     * The document a column holds a place as, and the document the provenance of a request nests it in
-     * (RequestContext::toDocument()): one encoding, written here, so that a nested document and a column
-     * of its own cannot drift apart.
-     *
      * @return array<string, mixed>
      */
     public function toDocument(): array
@@ -57,7 +53,7 @@ final readonly class GeoLocation
     /**
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when a member of the document is not what a place holds
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(array $document): self
     {

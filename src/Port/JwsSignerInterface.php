@@ -12,12 +12,12 @@ use Beffroi\Core\Exception\KmsUnavailableException;
 interface JwsSignerInterface
 {
     /**
-     * The compact serialization (RFC 7515 §7.1); "alg" and "kid" are set here, the rest by the caller.
+     * RFC 7515 §7.1
      *
-     * @param array<string, mixed> $protectedHeader
+     * @param array<string, mixed> $protectedHeader the members besides "alg" and "kid", which are set here
      *
-     * @throws KeyNotFoundException when the tenant has no active key for the algorithm
-     * @throws KmsUnavailableException when the KMS does not answer to open the key that signs
+     * @throws KeyNotFoundException
+     * @throws KmsUnavailableException
      */
     public function sign(Tenant $tenant, SignatureAlgorithmInterface $algorithm, string $payload, array $protectedHeader = []): string;
 }

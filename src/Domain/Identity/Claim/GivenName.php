@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * The given name, which is not the first word of the full name in every culture (OIDC Core §5.1).
+ * OIDC Core §5.1
  */
 final readonly class GivenName extends ProfileClaim
 {

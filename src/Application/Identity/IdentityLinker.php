@@ -11,18 +11,6 @@ use Beffroi\Core\Port\LinkedIdentityRepositoryInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 
-/**
- * Says that a user of the tenant is a given subject at a given upstream provider (decision 0002), from a
- * console, a fixture or an import. Synchronous writes, no session, no event, as the provisioning of a user is.
- *
- * It is the one way a row of that table comes to exist outside a flow that receives one: whoever presents that
- * subject at that provider is that user, and nothing infers such a row. A grant that reads an assertion of a
- * trusted issuer (RFC 7523 §3) resolves its subject through one and creates none, so an identity that was never
- * written is an assertion nobody is.
- *
- * Linking the same identity again is what an import does on its second run: the claims are refreshed and the
- * row keeps its user. Linking it to somebody else is refused, because a subject names one user of a tenant.
- */
 final readonly class IdentityLinker
 {
     public function __construct(
@@ -33,10 +21,10 @@ final readonly class IdentityLinker
     }
 
     /**
-     * @param array<string, mixed> $claims the last snapshot the provider gave of that subject, empty when it gave none
+     * @param array<string, mixed> $claims
      *
-     * @throws InvalidArgumentException when the provider or the subject is empty
-     * @throws IdentityAlreadyLinkedException when another user of the tenant is already that identity
+     * @throws InvalidArgumentException
+     * @throws IdentityAlreadyLinkedException
      */
     public function link(User $user, string $provider, string $subject, array $claims = []): LinkedIdentity
     {

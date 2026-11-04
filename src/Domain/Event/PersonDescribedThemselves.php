@@ -11,18 +11,10 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use DateTimeImmutable;
 
 /**
- * A person said something of themselves, on a page of their own account (issue #452).
- *
- * It carries the name of the claim and **never the value**: the journal of the acts writes this act down
- * (§3.5), and what a person said of themselves is a personal datum that belongs in the row of that person
- * and not in a second copy nobody would think to erase. That somebody changed their own name is the act;
- * what the name is now is read where names are read.
+ * Carries the name of the claim, never its value: a personal datum stays in the row of its person.
  */
 final readonly class PersonDescribedThemselves implements ConcernsAPersonInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'person.described_themselves';
 
     public Tenant $tenant;

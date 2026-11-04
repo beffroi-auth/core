@@ -11,8 +11,9 @@ use Stringable;
 use function strlen;
 
 /**
- * The "sub" claim (OIDC Core §2): at most 255 ASCII characters, never changed, never reassigned, distinct
- * from the technical id so that an import keeps it.
+ * OIDC Core §2
+ *
+ * Distinct from the technical id, so that an import keeps the subjects it brings.
  */
 final readonly class Subject implements Stringable
 {

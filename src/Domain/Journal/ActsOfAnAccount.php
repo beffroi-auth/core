@@ -24,41 +24,20 @@ use Beffroi\Core\Domain\Event\PersonTookTheirArchive;
 use Beffroi\Core\Domain\Event\TotpUsed;
 use Beffroi\Core\Domain\Event\UserAuthenticated;
 
-/**
- * Which acts of the journal are what happened to an account (issue #571): what the page a person opens of
- * their own journal asks for, and what the command that reads it over a period asks for when it is asked
- * for nothing in particular.
- *
- * **The acts are named and the question is not the whole journal**, because the journal of a person holds
- * the protocol as well: a token issued, a consent granted, a read that handed them over to an application
- * are acts of theirs too (issues #588 to #590), and they are read where they mean something, by
- * application, beside what that application was given. What is here is the account itself: which provider
- * created it, who got in and how, who tried, what signed out, what changed of the means of signing in, and
- * what the person did of their own record.
- *
- * **It is one list and a walk holds it to the events**: every act of this package that names a person is
- * here or is named in the test as one that is not theirs, so an act added to the package is put on the
- * page deliberately rather than forgotten (ActsOfAnAccountTest).
- */
 final class ActsOfAnAccount
 {
     /**
      * @var list<string>
      */
     public const array NAMES = [
-        // where the account came from, when a provider created it
         PersonProvisioned::NAME,
-        // who got in, and who tried
         UserAuthenticated::NAME,
         AuthenticationFailed::NAME,
-        // how: every proof is an act of its own, and no column holds a mode
         PasswordUsed::NAME,
         PasskeyUsed::NAME,
         TotpUsed::NAME,
         BackupCodeUsed::NAME,
-        // what closed
         AuthenticationSessionEnded::NAME,
-        // what changed of the means of signing in
         CredentialEnrolled::NAME,
         CredentialRevoked::NAME,
         CredentialForgotten::NAME,
@@ -66,7 +45,6 @@ final class ActsOfAnAccount
         CredentialRenamed::NAME,
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,
-        // what the person did of their own record
         PersonDescribedThemselves::NAME,
         PersonAskedForTheirArchive::NAME,
         PersonTookTheirArchive::NAME,

@@ -9,13 +9,6 @@ use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\MessageSealingAlgorithmsInterface;
 use Jose\Component\Core\AlgorithmManager;
 
-/**
- * The algorithms of the keys the tenant seals what leaves the process to, as the wiring gave them. The
- * first is the one a body is sealed to the key of.
- *
- * An empty one is a deployment that seals nothing, and a deployment that seals nothing writes no message:
- * the refusal says so, rather than a body going out in the clear (decision 0020).
- */
 final readonly class JoseMessageSealingAlgorithms implements JoseAlgorithmRegistryInterface, MessageSealingAlgorithmsInterface
 {
     /**
@@ -24,8 +17,7 @@ final readonly class JoseMessageSealingAlgorithms implements JoseAlgorithmRegist
     private WiredAlgorithms $wired;
 
     /**
-     * @param iterable<JoseMessageSealingAlgorithmInterface> $algorithms in the order they are wired, the
-     *                                                                   one a body is sealed under first
+     * @param iterable<JoseMessageSealingAlgorithmInterface> $algorithms the one a body is sealed under first
      */
     public function __construct(iterable $algorithms)
     {
@@ -66,10 +58,6 @@ final readonly class JoseMessageSealingAlgorithms implements JoseAlgorithmRegist
         );
     }
 
-    /**
-     * What seals a body and what opens one are given the same manager, built from this one list: the
-     * provider cannot seal under something it would refuse to open.
-     */
     public function manager(): AlgorithmManager
     {
         $jose = [];

@@ -14,17 +14,12 @@ use const STR_PAD_LEFT;
 use function strlen;
 use function substr;
 
-/**
- * For tests and for the examples: the bytes they wrote, in the order they wrote them, then a sequence
- * that repeats nothing. A test that cares what a value will be says so and reads it back; one that does
- * not still gets a different draw at every call.
- */
 final class FixedRandomness implements RandomnessInterface
 {
     private int $drawn = 0;
 
     /**
-     * @param list<string> $bytes handed back in order, each one of the length it is asked for
+     * @param list<string> $bytes handed back in order, each of the length asked for
      */
     public function __construct(
         private array $bytes = [],

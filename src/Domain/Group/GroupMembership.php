@@ -16,9 +16,6 @@ use Symfony\Component\Uid\Uuid;
 
 final class GroupMembership implements ClassifiedFieldsInterface
 {
-    /**
-     * Restated from the group (decision 0002).
-     */
     public readonly Tenant $tenant;
 
     public function __construct(
@@ -35,8 +32,6 @@ final class GroupMembership implements ClassifiedFieldsInterface
     }
 
     /**
-     * A membership is three identifiers and where it came from, and it names nobody without the tables it joins.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

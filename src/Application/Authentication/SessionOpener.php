@@ -19,17 +19,6 @@ use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-/**
- * Opens one session on what was just proven and says so; every opened session leaves the same trace,
- * whatever proved it (a password, a passkey, an upstream provider). The counterpart of SessionTerminator.
- * The lifetime policy is the one place it lives; how a session is extended is the caller's (touch()).
- *
- * **It is where the floor of the tenant holds** (issue #327): every login of this provider ends here, so a
- * session that does not satisfy the predicate the tenant requires is refused here and in no second place.
- * A login that proves too little for its tenant is refused and not held: what one more proof would reach
- * is a step-up, decided against a request (decision 0010), where this is what the tenant requires of
- * everybody whoever asked.
- */
 final readonly class SessionOpener
 {
     public function __construct(
@@ -43,15 +32,7 @@ final readonly class SessionOpener
     }
 
     /**
-     * @param non-empty-list<AuthenticationMethod> $methods what was proven, every one dated now, or at $provenAt
-     * @param DateTimeImmutable|null $provenAt when what proved them dates it, the AuthnInstant of an upstream identity
-     *                                         provider (beffroi/saml S-57); never later than now, a clock ahead of
-     *                                         ours within its skew dated by ours, no proof being later than the
-     *                                         session that holds it
-     * @param DateTimeImmutable|null $notOnOrAfter when what proved them allows the session to expire at the latest,
-     *                                             the SessionNotOnOrAfter of an upstream identity provider
-     *                                             (beffroi/saml S-57); the session expires at the earlier of its
-     *                                             lifetime and that instant
+     * @param non-empty-list<AuthenticationMethod> $methods
      *
      * @throws AuthenticationFailedException when what was proven is under the floor of the tenant
      */

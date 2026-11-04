@@ -13,8 +13,7 @@ use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
- * A credential leaves use without leaving its row, whatever its kind: revoked by the user or by an
- * operator, it never authenticates again. What happens to the sessions it opened is the caller's policy.
+ * Ends none of the sessions the credential opened: that is the caller's policy.
  */
 final readonly class CredentialRevocation
 {
@@ -25,9 +24,6 @@ final readonly class CredentialRevocation
     ) {
     }
 
-    /**
-     * A second revocation changes nothing and announces nothing.
-     */
     public function revoke(Credential&RevocableCredentialInterface $credential, RequestContext $context): void
     {
         if ($credential->isRevoked()) {

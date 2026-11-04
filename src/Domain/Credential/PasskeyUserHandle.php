@@ -11,9 +11,9 @@ use function sprintf;
 use function strlen;
 
 /**
- * The "user.id" of WebAuthn Level 3 §5.4.3, what an authenticator stores with a passkey and hands back
- * with an assertion: 64 random bytes drawn once per user, never the "sub" nor the e-mail (§14.6.1, a user
- * handle carries no personal information), and shared by every passkey of the user.
+ * WebAuthn Level 3 §5.4.3, §14.6.1
+ *
+ * Random bytes, never the "sub" nor the e-mail: a user handle carries no personal information.
  */
 final readonly class PasskeyUserHandle
 {
@@ -27,17 +27,13 @@ final readonly class PasskeyUserHandle
         }
     }
 
-    /**
-     * The sixty-four octets as a column holds them, base64url without padding (RFC 4648 §5): the alphabet
-     * of the core, which is also the one the document a person downloads writes those same bytes in.
-     */
     public function toDocument(): string
     {
         return Base64Url::encode($this->value);
     }
 
     /**
-     * @throws InvalidArgumentException when the text is not base64url, or is not sixty-four octets
+     * @throws InvalidArgumentException
      */
     public static function fromDocument(string $document): self
     {

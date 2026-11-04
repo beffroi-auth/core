@@ -8,9 +8,6 @@ use Beffroi\Core\Domain\Identity\UpstreamProvider;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Port\UpstreamProvidersInterface;
 
-/**
- * For tests and for the examples: the upstream providers declared for each tenant, none by default.
- */
 final class InMemoryUpstreamProviders implements UpstreamProvidersInterface
 {
     /**

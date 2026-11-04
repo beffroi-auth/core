@@ -15,28 +15,8 @@ use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use function sprintf;
 
-/**
- * The step of the life of a key nobody asks for (issue #455, architecture §3.3): an active key that has
- * worked for the age a deployment gives one gets a successor of its own algorithm. The counterpart of
- * KeyStaging, KeyTakeOver and KeyRetirement.
- *
- * **Staged and not rotated**, because that is the whole point of the staging window: a relying party sees
- * the new "kid" in the JWK Set before anything is signed with it, and the two steps beside this one finish
- * the work, the take-over when the window ends and the retirement when the old key has nothing left alive.
- * A step that rotated would make a rotation without an outage out of a rotation nobody watched.
- *
- * **Idempotent by what it looks at and not by a flag**: a key gets a successor only when its algorithm has
- * no staged key, so the tick that follows finds the one this call staged and stages nothing. The reading is
- * one pass over the keys in service, the staged ones included.
- *
- * **Each key is old by the age of its family** (issue #738): a SAML key works a year, every rotation of it
- * being a step for whoever pinned its certificate, while a key of the JWK Set works a quarter.
- */
 final readonly class KeySuccession
 {
-    /**
-     * @param RotationSchedulesInterface $schedules how long a key of each family works before a successor is staged for it, counted from its activation
-     */
     public function __construct(
         private TenantKeyRepositoryInterface $keys,
         private KeyStaging $staging,
@@ -47,12 +27,10 @@ final readonly class KeySuccession
     }
 
     /**
-     * @return list<TenantKey> the successors staged by this call
+     * @return list<TenantKey>
      *
-     * @throws LogicException if the age is not longer than the retirement window of what the key is for:
-     *                        each successor would then start retiring before the previous key had
-     *                        retired, and the JWK Set would grow with every rotation; or if no family
-     *                        holds the algorithm of a key
+     * @throws LogicException when an age does not outlast its retirement window, or no family holds the algorithm
+     *                        of a key
      */
     public function stageSuccessorsDue(Tenant $tenant, RequestContext $context): array
     {
@@ -82,10 +60,8 @@ final readonly class KeySuccession
     }
 
     /**
-     * The age has to outlast what a key of that use holds back, and the comparison is made here because
-     * here is the one place both numbers exist: the age is the family's and the window is the tenant's,
-     * read from the kinds of artifact that name the use. A deployment that got it wrong hears it on the
-     * first tick rather than finding its JWK Set grown a quarter later.
+     * A shorter age would start each successor retiring before its predecessor had, growing the JWK Set with every
+     * rotation.
      *
      * @throws LogicException
      */

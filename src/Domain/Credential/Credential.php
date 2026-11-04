@@ -13,14 +13,8 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * A way for a user to prove who they are; a user has N of them.
- */
 abstract class Credential implements ClassifiedFieldsInterface
 {
-    /**
-     * Restated from the user (decision 0002).
-     */
     public readonly Tenant $tenant;
 
     public private(set) ?DateTimeImmutable $lastUsedAt = null;
@@ -33,24 +27,15 @@ abstract class Credential implements ClassifiedFieldsInterface
         $this->tenant = $user->tenant;
     }
 
-    /**
-     * What the kind is called, for a console or an audit trail: "password", "passkey". Each kind names
-     * itself; nothing reads a class name.
-     */
     abstract public function kind(): string;
 
-    /**
-     * What the user called it, when the kind lets them name one (a passkey); null otherwise.
-     */
     public function label(): ?string
     {
         return null;
     }
 
     /**
-     * Restates when the credential was last used: what a store replays and what an import brings. A
-     * login does not call this, it calls the recordUse() of the kind, which holds what a use of that
-     * kind means (a sign count, a spent code, a date).
+     * For a store or an import: a login calls recordUse(), which also moves a sign count or a spent code.
      */
     public function markUsed(DateTimeImmutable $now): void
     {
@@ -58,9 +43,6 @@ abstract class Credential implements ClassifiedFieldsInterface
     }
 
     /**
-     * What every credential of a person holds, whichever kind it is: the lines the tables of the three kinds share
-     * are declared here once, as their mapping is.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

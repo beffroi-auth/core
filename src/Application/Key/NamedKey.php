@@ -10,11 +10,6 @@ use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use function sprintf;
 
-/**
- * The key an operator named, or the refusal. Two steps of the life of a key are asked for by identifier
- * rather than handed a key, the take-over of one staged key and the retirement of one retiring key, so a
- * tenant that has no such key hears it in one place and in the same words.
- */
 final readonly class NamedKey
 {
     public function __construct(
@@ -23,7 +18,7 @@ final readonly class NamedKey
     }
 
     /**
-     * @throws KeyNotFoundException when the tenant holds no key of that identifier
+     * @throws KeyNotFoundException
      */
     public function of(Tenant $tenant, string $kid): TenantKey
     {

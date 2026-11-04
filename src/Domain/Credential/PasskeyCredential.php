@@ -23,10 +23,7 @@ use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\TrustPath\EmptyTrustPath;
 
 /**
- * A passkey (WebAuthn Level 3 §4, a discoverable credential): the credential record of §6.1.4, with the
- * name the user gave it and its revocation, which keeps the row for the audit trail. Several per user.
- * The provider holds the public key only: the private key never leaves the authenticator, and a passkey
- * has no member the provider could leak.
+ * WebAuthn Level 3 §4, §6.1.4
  */
 final class PasskeyCredential extends RevocableCredential implements
     ExternallyIdentifiedCredentialInterface,
@@ -36,46 +33,23 @@ final class PasskeyCredential extends RevocableCredential implements
 {
     public const int NAME_MAX_LENGTH = 255;
 
-    /**
-     * The one type of WebAuthn Level 3 §5.8.2.
-     */
     private const string TYPE = PublicKeyCredentialDescriptor::CREDENTIAL_TYPE_PUBLIC_KEY;
 
     public private(set) string $name;
 
     public private(set) int $signCount;
 
-    /**
-     * The BE flag the credential was created with (WebAuthn Level 3 §6.1.3): set by
-     * authenticatorMakeCredential, the same for the whole life of the credential, and the one an assertion
-     * is compared with rather than writing over it.
-     */
     public readonly bool $backupEligible;
 
-    /**
-     * The BS flag of the latest ceremony (§6.1.4): whether the key is backed up as things stand.
-     */
     public private(set) bool $backedUp;
 
-    /**
-     * The credential ID (WebAuthn Level 3 §6.3.2), as the authenticator issued it: what a party presents
-     * before anything is verified, unique in the tenant (§7.1, step 26), stored under this name whatever the
-     * kind that is presented by one.
-     */
     public readonly string $externalId;
 
-    /**
-     * The credential ID by the name WebAuthn gives it.
-     */
     public string $credentialId {
         get => $this->externalId;
     }
 
     /**
-     * How the passkey is reached, in the terms of WebAuthn Level 3 §5.8.4: the transports its authenticator
-     * declared that the specification defines, in the order they were declared. Another value stays in
-     * $transports, a hint for the next ceremony (§5.2.1), and says nothing to a person.
-     *
      * @var list<AuthenticatorTransport>
      */
     public array $reachedThrough {
@@ -83,9 +57,9 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * @param string $credentialId the credential ID (WebAuthn Level 3 §6.3.2), as the authenticator issued it
-     * @param string $publicKey the public key as a COSE_Key (RFC 9052 §7), as the authenticator encoded it
-     * @param list<string> $transports the transports the authenticator declared (§5.8.4), hints for the next ceremony
+     * @param string $credentialId as the authenticator issued it
+     * @param string $publicKey a COSE_Key (RFC 9052 §7)
+     * @param list<string> $transports as declared, unknown values kept (WebAuthn Level 3 §5.2.1)
      */
     public function __construct(
         Uuid $id,
@@ -122,8 +96,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * From the record the registration ceremony of webauthn-lib returns (WebAuthn Level 3 §7.1, step 26):
-     * the backup flags are those of the authenticator data, never assumed.
+     * WebAuthn Level 3 §7.1, step 26
      */
     public static function fromRecord(Uuid $id, User $user, string $name, CredentialRecord $record, DateTimeImmutable $createdAt): self
     {
@@ -151,8 +124,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * The record the authentication ceremony of webauthn-lib verifies an assertion against (§7.2). The
-     * attestation is not kept: verified when present at enrolment, never required, no policy reads it later.
+     * The attestation is not kept, hence "none": verified at enrolment when present, nothing reads it later.
      */
     public function record(): CredentialRecord
     {
@@ -177,10 +149,6 @@ final class PasskeyCredential extends RevocableCredential implements
         return 'passkey';
     }
 
-    /**
-     * The name its holder gave it, which is theirs to correct: the same rule as the one it was enrolled
-     * under, so a name this object would not have accepted then is not accepted now.
-     */
     public function rename(string $name): void
     {
         $this->name = self::normalizeName($name);
@@ -192,11 +160,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * What an assertion of this passkey may prove (architecture §4.3): the key as its backup eligibility
-     * says, "swk" for a synced passkey and "hwk" for one bound to its authenticator, and "user", the
-     * presence WebAuthn Level 3 §7.2 requires of every assertion (step 16). Not "mfa": the provider asks
-     * the authenticator to verify the user when it can (userVerification "preferred") and learns whether
-     * it did from the flags of the assertion, so it promises nothing of it ahead. Nothing for a revoked passkey.
+     * Not "mfa": user verification is only preferred, so it is read from an assertion and never promised ahead.
      */
     public function provableMethods(): array
     {
@@ -208,13 +172,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * What an assertion proves, as "amr" values (RFC 8176 §2): "hwk" for a key bound to its authenticator
-     * and "swk" for a synced passkey, whose key lives wherever the provider of the user copies it, as the
-     * BE flag of the enrolment says, WebAuthn Level 3 §6.1.3 fixing it for the life of the credential so
-     * that no assertion moves it; then what this ceremony did, read in the flags of its authenticator data
-     * (§6.1): "user" when the authenticator tested that a user is present (UP, §6.2.4); "mfa" when it
-     * verified the user (UV, §6.2.3): the key was unlocked by a PIN or a biometric the authenticator does
-     * not name, the multi-factor cryptographic authenticator of NIST SP 800-63B §3.1.7.1.
+     * RFC 8176 §2, WebAuthn Level 3 §6.1, NIST SP 800-63B §3.1.7.1
      *
      * @return non-empty-list<AuthenticationMethod>
      */
@@ -232,10 +190,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * The check of webauthn-lib (the CheckCounter step, Counter\ThrowExceptionIfInvalid), made a question:
-     * when either count is non-zero, a count that did not grow means a cloned authenticator or a replay
-     * (WebAuthn Level 3 §6.1.1), and the assertion is refused (decision 0034); a synced passkey keeps both
-     * counts at zero, which is never a regression.
+     * WebAuthn Level 3 §6.1.1
      */
     public function signCountRegresses(AuthenticatorData $data): bool
     {
@@ -243,12 +198,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * Whether the assertion claims a backup eligibility that is not the one the credential was enrolled
-     * with: "The value of the BE flag is set during authenticatorMakeCredential operation and MUST NOT
-     * change" (WebAuthn Level 3 §6.1.3), so the stored flag is the anchor and never a fact to refresh,
-     * where the backup state is "the latest value of the BS flag from any ceremony" (§6.1.4). Asked where
-     * signCountRegresses() is asked, and refused as that one is: a key that is suddenly bound to
-     * its authenticator, or suddenly synced, is not the key the provider enrolled.
+     * WebAuthn Level 3 §6.1.3
      */
     public function backupEligibilityChanged(AuthenticatorData $data): bool
     {
@@ -256,10 +206,7 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * WebAuthn Level 3 §7.2, step 26: the sign count and the backup state of the assertion replace the
-     * stored ones. The backup eligibility is not one of them, §6.1.3 fixing it at the creation of the
-     * credential: an assertion that carries another one is refused, as one backed up without being
-     * eligible for backup is.
+     * WebAuthn Level 3 §7.2, step 26
      */
     public function recordUse(AuthenticatorData $data, DateTimeImmutable $now): void
     {
@@ -275,12 +222,6 @@ final class PasskeyCredential extends RevocableCredential implements
         $this->markUsed($now);
     }
 
-    /**
-     * Where the key lives, as an "amr" value (RFC 8176 §2): "swk" for a synced passkey, the BE flag of the
-     * enrolment set (WebAuthn Level 3 §6.1.3), "hwk" for one bound to its authenticator. The one flag the
-     * provider holds answers it, before a ceremony as after one, that flag being the same for the life of
-     * the credential.
-     */
     private function keyMethod(): AuthenticationMethod
     {
         return new AuthenticationMethod($this->backupEligible ? AuthenticationMethod::SOFTWARE_KEY : AuthenticationMethod::HARDWARE_KEY);
@@ -297,9 +238,6 @@ final class PasskeyCredential extends RevocableCredential implements
     }
 
     /**
-     * What the authenticator and the browser published is public by construction; the one value a person typed is
-     * the name they gave the key, and it is sealed.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

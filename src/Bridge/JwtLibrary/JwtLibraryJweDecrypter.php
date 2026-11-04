@@ -17,11 +17,9 @@ use Jose\Component\Encryption\Serializer\CompactSerializer;
 use Throwable;
 
 /**
- * Opens a JWE a client encrypted to the provider (RFC 7516 §7.1). The key is chosen by the "kid" of the
- * header alone, among the encryption keys the tenant publishes: a set of keys is not a set of keys to
- * try, and an object that names none is refused rather than opened by trial. The "alg" and the "enc" are
- * the ones the provider is wired with (RFC 8725 §3.1), and the key the header names has to be published
- * for encryption and still published, which is what makes a retirement a refusal and not a decryption.
+ * RFC 7516 §7.1, RFC 8725 §3.1
+ *
+ * The key is the one the "kid" of the header names, never one found by trial among the published keys.
  */
 final readonly class JwtLibraryJweDecrypter implements JweDecrypterInterface
 {

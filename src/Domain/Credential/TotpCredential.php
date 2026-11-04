@@ -17,29 +17,26 @@ use function sprintf;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * A time-based one-time password (RFC 6238) as a second factor on a password account: the shared secret
- * sealed by the KMS of the tenant (an envelope, never the secret), the last time step whose code was
- * accepted so that a code is accepted once (§5.2), the backup codes, and its revocation, which keeps the
- * row for the audit trail. One active per user; the parameters are those every authenticator implements
- * (§5.1: thirty seconds, six digits, HMAC-SHA-1) and are not a choice. While one is active, the password
- * of the user signs nobody in on its own (SecondFactorCredentialInterface).
+ * RFC 6238
  */
 final class TotpCredential extends RevocableCredential implements SecondFactorCredentialInterface, ProvingCredentialInterface
 {
     /**
-     * RFC 6238 §5.2: thirty seconds.
+     * RFC 6238 §5.2
      */
     public const int PERIOD = 30;
 
     public const int DIGITS = 6;
 
     /**
-     * RFC 6238 §5.1: HMAC-SHA-1, what Google Authenticator and the others implement.
+     * RFC 6238 §5.1
+     *
+     * SHA-1 is what Google Authenticator and the others implement.
      */
     public const string ALGORITHM = 'sha1';
 
     /**
-     * RFC 6238 §5.2: at most one time step of clock drift on each side.
+     * RFC 6238 §5.2
      */
     public const int DRIFT = 1;
 
@@ -53,9 +50,8 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
     public private(set) array $backupCodes;
 
     /**
-     * @param string $sealedSecret the envelope the SecretSealerInterface wrote, opaque bytes
      * @param list<BackupCode> $backupCodes
-     * @param int $lastAcceptedStep the time step of the code that completed the enrolment: a credential exists only once a code was verified
+     * @param int $lastAcceptedStep the step of the code that completed the enrolment
      */
     public function __construct(
         Uuid $id,
@@ -84,26 +80,18 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
         return 'totp';
     }
 
-    /**
-     * What a code proves, as an "amr" value (RFC 8176 §2): "otp", a backup code as much as a TOTP.
-     */
     public static function method(): AuthenticationMethod
     {
         return new AuthenticationMethod(AuthenticationMethod::ONE_TIME_PASSWORD);
     }
 
-    /**
-     * What a code of this credential may prove (architecture §4.3): "otp", the password it follows being
-     * the password's to declare. Nothing for a revoked one.
-     */
     public function provableMethods(): array
     {
         return $this->isRevoked() ? [] : [self::method()];
     }
 
     /**
-     * RFC 6238 §5.2: a code is accepted once, and the accepted step moves forward, never back; the code
-     * of an earlier step, whatever the drift, is refused after a later one was accepted.
+     * RFC 6238 §5.2
      */
     public function acceptsStep(int $step): bool
     {
@@ -121,15 +109,10 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
     }
 
     /**
-     * Another set of backup codes, drawn because the person asked for one (architecture §3.1): the codes
-     * they had are gone, spent or not, which is what asking for new ones means. What the authenticator
-     * proves is untouched, so this is not the enrolment of a second credential, and the date of the last
-     * use is a fact about this one and stays.
-     *
      * @param list<BackupCode> $backupCodes
      *
-     * @throws InvalidArgumentException when they are not as many as a credential of this kind holds
-     * @throws LogicException when the credential is revoked: it proves nothing to renew codes for
+     * @throws InvalidArgumentException when they are not as many as a credential holds
+     * @throws LogicException when the credential is revoked
      */
     public function renewBackupCodes(array $backupCodes): void
     {
@@ -140,9 +123,6 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
         $this->backupCodes = $backupCodes;
     }
 
-    /**
-     * The code at that position of the list is spent and the credential used.
-     */
     public function spendBackupCode(int $index, DateTimeImmutable $now): void
     {
         $this->refuseIfRevoked();
@@ -152,9 +132,6 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
     }
 
     /**
-     * The secret is an envelope the KMS of the tenant sealed and the backup codes are digests: nothing in this
-     * table produces a code.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

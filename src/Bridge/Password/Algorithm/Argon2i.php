@@ -7,7 +7,7 @@ namespace Beffroi\Core\Bridge\Password\Algorithm;
 use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 
 /**
- * Argon2i (RFC 9106 §4), verified and re-hashed: what a provider that chose the side-channel-resistant variant left behind.
+ * RFC 9106 §4
  */
 final readonly class Argon2i implements PasswordAlgorithmInterface
 {

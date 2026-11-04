@@ -10,14 +10,8 @@ use Beffroi\Core\Domain\Key\TenantKey;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
-/**
- * A key left the JWK Set: every JWS naming its "kid" is refused from now on.
- */
 final readonly class TenantKeyRetired implements DomainEventInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'tenant.key_retired';
 
     public Tenant $tenant;

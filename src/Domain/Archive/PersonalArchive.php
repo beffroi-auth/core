@@ -17,61 +17,21 @@ use function sprintf;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Everything this provider knows of one person, in one file they asked for (RGPD articles 15 and 20,
- * issue #453): a row from the moment they ask, a document once it has been built, and nothing at all once
- * it has expired.
- *
- * **It is the one file where every sealed column stands in clear at once**, which is what makes it the
- * most dangerous row of this schema and why three rules hold it.
- *
- * - **It is sealed at rest like everything else** (decision 0011). The column is sealed under the data key
- *   of the tenant, in a scope of its own, and it carries no exemption: a file that gathers what every
- *   other family seals separately cannot be the one thing a dump reads.
- * - **It expires, and the duration is not configurable.** Every day it exists is a day that file exists,
- *   so a deployment is not offered the chance to keep it for a year (decision 0006). A week is what a
- *   person who asked on a Friday has.
- * - **The expiry is counted from the moment it was asked for** and not from the moment it was built, so a
- *   row always carries the date it goes away on, whatever happened to the build: one that never ran is
- *   forgotten on the same date as one that did.
- *
- * **A build is given a delay and no more** (BUILT_WITHIN_MINUTES). Nothing comes back to say a build threw
- * or that nobody was consuming the lane, so a row past that delay and still empty is a row this provider
- * says it is not building: what a page may not do is show a week of "being built" for work nobody is
- * doing, and what a person may not be is stuck behind it.
- *
- * It names itself by its identifier and never by the person, because what a person downloads carries that
- * name in a header a proxy writes to a log.
+ * RGPD articles 15 and 20
  */
 final class PersonalArchive implements ClassifiedFieldsInterface
 {
-    /**
-     * How long an archive is kept once it has been asked for. A week, which is what a person who asked on
-     * a Friday has, and a figure in code rather than an option: see above.
-     */
     public const int KEPT_FOR_DAYS = 7;
 
     /**
-     * How long a build is given before this provider says it did not come back. The lane gives up on a
-     * message in under a minute of tries, so a quarter of an hour is a build that failed and not a build
-     * that is slow, and the figure is in code for the reason the duration above is.
+     * The lane gives up on a message within a minute, so a build still empty after this has failed.
      */
     public const int BUILT_WITHIN_MINUTES = 15;
 
-    /**
-     * What a person downloads, which is what RGPD article 20 asks for: a format that is structured,
-     * commonly used and machine readable.
-     */
     public const string MEDIA_TYPE = 'application/json';
 
-    /**
-     * The extension the plain file carries. A container that wraps it names its own (issue #483,
-     * ArchiveContainerInterface), and the name itself is built here either way.
-     */
     public const string EXTENSION = 'json';
 
-    /**
-     * Restated from the person, as everything that hangs off a user restates it (decision 0002).
-     */
     public readonly Tenant $tenant;
 
     public private(set) ?string $content = null;
@@ -90,17 +50,13 @@ final class PersonalArchive implements ClassifiedFieldsInterface
         $this->tenant = $user->tenant;
     }
 
-    /**
-     * The archive a person has just asked for: a row, a date it goes away on, and no document yet.
-     */
     public static function asked(Uuid $id, User $user, DateTimeImmutable $now): self
     {
         return new self($id, $user, $now, $now->modify(sprintf('+%d days', self::KEPT_FOR_DAYS)));
     }
 
     /**
-     * @throws InvalidArgumentException if it has already been built, an archive being built once: a second
-     *                                  build would answer a question asked at another moment
+     * @throws InvalidArgumentException when it has already been built
      */
     public function fill(string $content, DateTimeImmutable $now): void
     {
@@ -124,23 +80,13 @@ final class PersonalArchive implements ClassifiedFieldsInterface
         return $now >= $this->expiresAt;
     }
 
-    /**
-     * Asked for, still empty, and the delay a build is given has passed: nobody is building this one.
-     *
-     * A row that has expired is nothing to a reader whether or not its build ever ran, so a caller reads
-     * hasExpired() first, as ArchivePage and ArchiveRequest do.
-     */
     public function hasStalled(DateTimeImmutable $now): bool
     {
         return ! $this->isReady() && $now >= $this->askedAt->modify(sprintf('+%d minutes', self::BUILT_WITHIN_MINUTES));
     }
 
     /**
-     * The name of the file a person downloads: the archive and never the person, a file name travelling in
-     * a header that proxies and browsers write down.
-     *
-     * @param string $extension what the file is, the plain document unless a container wrapped it (issue
-     *                          #483): the name is one rule and not one per form of the file
+     * Names the archive, never the person: a file name travels in a header that proxies and browsers log.
      */
     public function fileName(string $extension = self::EXTENSION): string
     {
@@ -148,8 +94,7 @@ final class PersonalArchive implements ClassifiedFieldsInterface
     }
 
     /**
-     * The one field of this model where everything the other families seal stands in the clear at once, which is
-     * why it is sealed like the rest and carries no exemption: a dump that read this one would read all of it.
+     * Sealed with no exemption: the archive holds in clear what every other family seals.
      *
      * @return array<string, FieldClassificationInterface>
      */

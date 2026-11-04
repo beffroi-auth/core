@@ -12,11 +12,6 @@ use Beffroi\Core\Port\PasswordAlgorithmsInterface;
 use function implode;
 use function sprintf;
 
-/**
- * The password algorithms the wiring gave the provider, held and looked up as every other wiring of
- * algorithms is (WiredAlgorithms). The first one is what a new hash is made with, which is why a
- * deployment that reorders this list changes what it produces and nothing of what it reads.
- */
 final readonly class WiredPasswordAlgorithms implements PasswordAlgorithmsInterface
 {
     /**
@@ -25,8 +20,7 @@ final readonly class WiredPasswordAlgorithms implements PasswordAlgorithmsInterf
     private WiredAlgorithms $wired;
 
     /**
-     * @var non-empty-list<PasswordAlgorithmInterface> the same list, narrowed by the check the
-     * constructor makes: a provider hashes a password with at least one algorithm
+     * @var non-empty-list<PasswordAlgorithmInterface>
      */
     private array $algorithms;
 

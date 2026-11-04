@@ -7,7 +7,7 @@ namespace Beffroi\Core\Domain\Key;
 use SensitiveParameter;
 
 /**
- * A key of a tenant with its private JWK in clear, in memory only: what signs, and what opens a JWE.
+ * A key of a tenant with its private JWK in clear, held in memory only.
  */
 final readonly class UnsealedKey
 {

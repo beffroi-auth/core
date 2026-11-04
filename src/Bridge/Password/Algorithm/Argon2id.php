@@ -7,7 +7,7 @@ namespace Beffroi\Core\Bridge\Password\Algorithm;
 use Beffroi\Core\Domain\Credential\PasswordAlgorithmInterface;
 
 /**
- * Argon2id (RFC 9106 §4), what this provider makes a new hash with: the memory-hard function the RFC names for password hashing when the side channels of Argon2i and the tradeoffs of Argon2d are both a concern.
+ * RFC 9106 §4
  */
 final readonly class Argon2id implements PasswordAlgorithmInterface
 {

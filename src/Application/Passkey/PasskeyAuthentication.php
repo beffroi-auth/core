@@ -23,11 +23,6 @@ use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Webauthn\PublicKeyCredentialRequestOptions;
 
-/**
- * Authenticates a user with a passkey and opens a session, through the SessionOpener, on what the assertion
- * proved (the ceremony behind PasskeyAuthenticatorInterface, WebAuthn Level 3 §7.2). Every outcome is an
- * event carrying the request context, as with a password.
- */
 final readonly class PasskeyAuthentication
 {
     public function __construct(
@@ -42,10 +37,6 @@ final readonly class PasskeyAuthentication
     ) {
     }
 
-    /**
-     * The passkeys a user who named themself can still sign in with; none when the authenticator is to
-     * pick a discoverable credential.
-     */
     public function requestOptions(Tenant $tenant, ?User $user = null): PublicKeyCredentialRequestOptions
     {
         $allowed = $user === null ? [] : $this->active->of($user, PasskeyCredential::class);
@@ -54,9 +45,7 @@ final readonly class PasskeyAuthentication
     }
 
     /**
-     * An assertion whose backup eligibility is not the one of the enrolment or whose sign count did not grow
-     * (decision 0034), a revoked passkey, a disabled user and a person of a federated domain (decision 0029)
-     * are refused after the signature was checked, so that a refusal costs the same as a wrong signature.
+     * Every refusal comes after the signature was checked, so that it costs the same as a wrong signature.
      *
      * @throws AuthenticationFailedException
      */

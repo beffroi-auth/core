@@ -16,18 +16,7 @@ use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * What lets one person reach one enrolment once, without a session (issue #613): a value drawn for them,
- * dated, spendable once, handed over by whoever issued it. It is how somebody poses a first passkey on a
- * tenant that signs its users in by passkey and holds no password of theirs to sign in with (decision
- * 0025).
- *
- * **It is not a credential and it proves no login.** It opens an enrolment, and the session that follows
- * comes from the passkey that was just posed. A ticket that opened a session would be a login by
- * possession of whatever carried it, which is another thing with another decision behind it.
- *
- * **What the row holds is a hash and never the value**, as a backup code does (`BackupCode`): the URL
- * carries the identifier and the value, the row holds the identifier and the hash, so a store read by
- * somebody else opens nothing. The identifier is what the lookup is made by, the value being salted.
+ * Opens one enrolment once without a session; it is no credential and proves no login.
  */
 final class EnrolmentTicket implements ClassifiedFieldsInterface
 {
@@ -37,8 +26,7 @@ final class EnrolmentTicket implements ClassifiedFieldsInterface
 
     public function __construct(
         /**
-         * On every entity the identifier is private(set), not readonly: a mapper building lazy references
-         * assigns it twice.
+         * Not readonly: a mapper building lazy references assigns it twice.
          */
         public private(set) Uuid $id,
         public readonly User $user,
@@ -67,19 +55,13 @@ final class EnrolmentTicket implements ClassifiedFieldsInterface
         return $now >= $this->expiresAt;
     }
 
-    /**
-     * Whether it still opens the enrolment it was issued for: it was not spent, it is in time, and the
-     * person it names can still sign in at all.
-     */
     public function opensAnEnrolment(DateTimeImmutable $now): bool
     {
         return ! $this->isSpent() && ! $this->isExpired($now) && $this->user->isEnabled();
     }
 
     /**
-     * Spent once the enrolment it opened is in the rows. A second spending is refused rather than
-     * ignored: whoever spends one has just written a credential, and doing it twice would be two
-     * credentials from one ticket.
+     * A second spending is refused, not ignored: it would be a second credential from one ticket.
      *
      * @throws InvalidArgumentException
      */
@@ -92,9 +74,6 @@ final class EnrolmentTicket implements ClassifiedFieldsInterface
     }
 
     /**
-     * Nothing a ticket holds opens: the value its URL carries is here as a digest of it, and the rest is three
-     * instants and two identifiers drawn at random.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

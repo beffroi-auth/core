@@ -12,9 +12,7 @@ use Jose\Component\Encryption\Algorithm\KeyEncryptionAlgorithm as JoseAlgorithm;
 use Jose\Component\KeyManagement\JWKFactory;
 
 /**
- * RSAES OAEP with SHA-256 (RFC 7518 §4.3), the algorithm a client that has no elliptic curve stack
- * encrypts with. RSA1_5 is not wired anywhere (RFC 8725 §3.4), and the modulus is the one the RSA
- * signature algorithms take, so the rule on key sizes is written once.
+ * RFC 7518 §4.3
  */
 final readonly class RsaOaep256 implements JoseKeyEncryptionAlgorithmInterface
 {

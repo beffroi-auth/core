@@ -11,9 +11,6 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Port\UserRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- */
 final class InMemoryUserRepository implements UserRepositoryInterface
 {
     /**

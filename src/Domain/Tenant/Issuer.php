@@ -18,8 +18,7 @@ use function substr;
 use function trim;
 
 /**
- * The issuer identifier of a tenant (OIDC Discovery §3, RFC 8414 §2): an absolute HTTPS URL with no query
- * and no fragment. Plain HTTP is tolerated on a loopback host only (RFC 6761 §6.3).
+ * OIDC Discovery §3, RFC 8414 §2
  */
 final readonly class Issuer implements Stringable
 {
@@ -58,12 +57,7 @@ final readonly class Issuer implements Stringable
     }
 
     /**
-     * The issuer without its path: the scheme, the host and the port it names, which is what a browser
-     * calls the origin (RFC 6454 §3.2). The one place it is derived, because everything that speaks of
-     * this provider to a browser has to say the same thing: the origin a WebAuthn ceremony accepts
-     * (WebAuthn Level 3 §13.4.9), the one the metadata of RFC 8414 §3 hangs its path under, and the one
-     * a router builds an absolute URL from. Two of them disagreeing is a ceremony that refuses without
-     * saying why.
+     * RFC 6454 §3.2
      */
     public function origin(): string
     {
@@ -81,7 +75,7 @@ final readonly class Issuer implements Stringable
     }
 
     /**
-     * RFC 6761 §6.3: "localhost" and every name under it, 127.0.0.0/8 and ::1.
+     * RFC 6761 §6.3
      *
      * @param string $host as parse_url() gives it, lowercased; an IPv6 literal keeps its brackets
      */

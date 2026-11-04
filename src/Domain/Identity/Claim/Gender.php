@@ -7,7 +7,9 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * What the person says of their gender, a free string on purpose (OIDC Core §5.1).
+ * OIDC Core §5.1
+ *
+ * A free string on purpose.
  */
 final readonly class Gender extends ProfileClaim
 {

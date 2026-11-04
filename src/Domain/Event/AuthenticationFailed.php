@@ -13,15 +13,8 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 
 final readonly class AuthenticationFailed implements ConcernsAPersonInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'authentication.failed';
 
-    /**
-     * @param AuthenticationMethod|null $method what the attempt claimed, null when a ceremony refused a passkey before naming one
-     * @param string|null $identifier kept as typed, for the audit trail; null when nothing was typed (a passkey)
-     */
     public function __construct(
         public DateTimeImmutable $occurredAt,
         public Tenant $tenant,

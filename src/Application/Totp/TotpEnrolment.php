@@ -23,13 +23,7 @@ use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
- * A TOTP enters the identity model in two steps, from a session the user already holds: the provisioning
- * is the challenge (the secret, the URI the authenticator scans, the backup codes shown once), a first code
- * the answer, and the credential exists only once it holds (RFC 6238 §5.2, the same window as a login);
- * abandoned before, nothing is left. The secret is sealed by the KMS of the tenant before it is stored,
- * the backup codes hashed like passwords; the step of the first code is the last accepted one, so that it
- * does not sign the user in a second time. One active TOTP per user, and it carries no name: nothing
- * distinguishes one authenticator app from another.
+ * The step of the first code is the last accepted one, so that it does not sign the user in a second time.
  */
 final readonly class TotpEnrolment
 {
@@ -49,11 +43,7 @@ final readonly class TotpEnrolment
     }
 
     /**
-     * The issuer of the URI is the name of the tenant, the account the username, as the Key Uri Format
-     * shows them in the authenticator. Nothing is stored here: an enrolment abandoned after this step
-     * leaves nothing behind.
-     *
-     * @throws CredentialEnrolmentFailedException when the user holds an active TOTP already
+     * @throws CredentialEnrolmentFailedException
      */
     public function begin(User $user): TotpProvisioning
     {
@@ -64,11 +54,8 @@ final readonly class TotpEnrolment
     }
 
     /**
-     * @param TotpProvisioning $challenge what begin() issued for this user
-     * @param string $code the first code of the authenticator, as the integration received it
-     *
      * @throws CredentialEnrolmentFailedException
-     * @throws KmsUnavailableException when the KMS of the tenant does not answer; nothing is written
+     * @throws KmsUnavailableException
      */
     public function complete(User $user, TotpProvisioning $challenge, string $code, RequestContext $context): TotpCredential
     {
@@ -98,13 +85,6 @@ final readonly class TotpEnrolment
     }
 
     /**
-     * @throws CredentialEnrolmentFailedException
-     */
-    /**
-     * What both steps refuse before anything is drawn or written: a second TOTP, and a TOTP at all where
-     * the floor of the tenant admits none (issue #327) or for a person of a federated domain (decision
-     * 0029), so that nobody is shown a secret to scan that would prove no login here.
-     *
      * @throws CredentialEnrolmentFailedException
      */
     private function refuseASecondOne(User $user): void

@@ -15,26 +15,13 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * The identity a user has at an upstream provider, recognised by (provider, subject); the claims are the
- * last snapshot received.
- */
 final class LinkedIdentity implements ClassifiedFieldsInterface
 {
-    /**
-     * Restated from the user (decision 0002).
-     */
     public readonly Tenant $tenant;
 
     /**
-     * The blind indexes of the provider and of the subject, which is what the unique constraint of this
-     * table is held on and what a federated login will match an identity by: both columns are sealed, and a
-     * sealed column holds a different ciphertext for every write of the same value, so neither a constraint
-     * nor a lookup on them would do anything at all (decision 0011).
-     *
-     * They sit on an entity that knows nothing of a database for the reason the two of `User` do: a column
-     * is written by the mapping of a property, and a tag has to be written in the same statement as the
-     * value it indexes. Nothing of the domain derives them, and nothing can.
+     * Blind indexes of the provider and of the subject, filled by the storage on every write: a sealed column
+     * can be neither unique nor looked up.
      */
     public private(set) string $providerIndex = '';
 
@@ -71,9 +58,6 @@ final class LinkedIdentity implements ClassifiedFieldsInterface
     }
 
     /**
-     * What an upstream provider calls a person, and the snapshot it answered with, are sealed under the family of
-     * this table; the two tags beside them are what a federated login matches on.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

@@ -12,9 +12,6 @@ use DateTimeImmutable;
 use function count;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- */
 final class InMemoryPersonalArchiveRepository implements PersonalArchiveRepositoryInterface
 {
     /**
@@ -64,9 +61,6 @@ final class InMemoryPersonalArchiveRepository implements PersonalArchiveReposito
         return $forgotten;
     }
 
-    /**
-     * How many archives are held, for a test that says a run of the retention forgot what it said it did.
-     */
     public function count(): int
     {
         return count($this->archives);

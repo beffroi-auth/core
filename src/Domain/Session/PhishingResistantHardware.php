@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Session;
 
 /**
- * A proof of possession of a key held in hardware, "hwk" (OpenID Connect EAP ACR Values 1.0, "phrh"): a
- * passkey bound to its authenticator, where PhishingResistant takes a synced one too.
+ * OpenID Connect EAP ACR Values 1.0, "phrh"
  */
 final readonly class PhishingResistantHardware extends AuthenticationPredicate
 {
@@ -18,8 +17,7 @@ final readonly class PhishingResistantHardware extends AuthenticationPredicate
     }
 
     /**
-     * One hardware key proof is the whole of this predicate, so a login satisfies it exactly when it
-     * admits one of its proofs (PhishingResistant).
+     * One hardware key proof is the whole of this predicate, so it holds exactly when it admits.
      */
     public function isSatisfiedBy(array $methods): bool
     {

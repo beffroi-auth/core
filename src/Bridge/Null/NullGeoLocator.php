@@ -7,9 +7,6 @@ namespace Beffroi\Core\Bridge\Null;
 use Beffroi\Core\Domain\Session\GeoLocation;
 use Beffroi\Core\Port\GeoLocatorInterface;
 
-/**
- * No database, no location.
- */
 final class NullGeoLocator implements GeoLocatorInterface
 {
     public function locate(string $ipAddress): ?GeoLocation

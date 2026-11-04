@@ -14,22 +14,15 @@ use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Signature\Algorithm\SignatureAlgorithm as JoseAlgorithm;
 use function sprintf;
 
-/**
- * The algorithms the wiring gave the provider, and the algorithm manager web-token/jwt-library signs and
- * verifies with, built from the same list: the document cannot announce an algorithm the signer refuses,
- * nor the signer accept one the document leaves out. The first wired one is the default.
- */
 final readonly class JoseSignatureAlgorithms implements JoseAlgorithmRegistryInterface, SignatureAlgorithmsInterface
 {
     /**
-     * @var WiredAlgorithms<JoseSignatureAlgorithmInterface> the wiring, held and looked up as in every registry
+     * @var WiredAlgorithms<JoseSignatureAlgorithmInterface>
      */
     private WiredAlgorithms $wired;
 
     /**
-     * @var non-empty-list<JoseSignatureAlgorithmInterface> the same list, narrowed by the check the
-     * constructor makes: a provider signs with at least one algorithm, which is a promise of this
-     * registry and of no other, and what "defaultAlgorithm()" rests on
+     * @var non-empty-list<JoseSignatureAlgorithmInterface>
      */
     private array $algorithms;
 
@@ -70,10 +63,6 @@ final readonly class JoseSignatureAlgorithms implements JoseAlgorithmRegistryInt
         return $this->find($name) ?? throw $this->refusalOf($name);
     }
 
-    /**
-     * One sentence and no branch on an empty wiring: this registry refuses one at boot, so there is always
-     * something to list.
-     */
     public function refusalOf(string $name): UnsupportedAlgorithmException
     {
         return new UnsupportedAlgorithmException(sprintf(
@@ -88,9 +77,6 @@ final readonly class JoseSignatureAlgorithms implements JoseAlgorithmRegistryInt
         return $this->algorithms[0];
     }
 
-    /**
-     * What a builder and a verifier of the library are given.
-     */
     public function manager(): AlgorithmManager
     {
         return $this->manager;

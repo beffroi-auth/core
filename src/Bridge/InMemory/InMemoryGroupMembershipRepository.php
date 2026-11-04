@@ -10,9 +10,6 @@ use Beffroi\Core\Port\GroupMembershipRepositoryInterface;
 use Beffroi\Core\Port\GroupsOfAPersonInterface;
 use function usort;
 
-/**
- * For tests and for the examples: nothing here survives the process.
- */
 final class InMemoryGroupMembershipRepository implements GroupMembershipRepositoryInterface, GroupsOfAPersonInterface
 {
     /**

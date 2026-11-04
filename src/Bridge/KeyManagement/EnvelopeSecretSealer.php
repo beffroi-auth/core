@@ -10,13 +10,6 @@ use SensitiveParameter;
 use Symfony\Component\KeyManagement\EnvelopeDecrypterInterface;
 use Symfony\Component\KeyManagement\EnvelopeEncrypterInterface;
 
-/**
- * Seals the shared secrets of the users as symfony/key-management envelopes under the KMS key of the
- * tenant, the same envelopes and the same KMS as the signing keys (EnvelopeKeySealer); the secret never
- * reaches the KMS. A secret goes in the envelope as it is, so this is a TenantEnvelope of its own use and
- * nothing more: an envelope of a signing key does not open as a secret, nor a secret of one tenant for
- * another.
- */
 final readonly class EnvelopeSecretSealer implements SecretSealerInterface
 {
     private const string AAD = 'beffroi:shared-secret:v1:';

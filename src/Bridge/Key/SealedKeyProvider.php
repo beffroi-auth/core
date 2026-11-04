@@ -26,25 +26,8 @@ use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use function sprintf;
 
 /**
- * Says which key of the store answers which question: which key is the one asked for is read from the
- * repository on each call, so that a rotation, and a retirement, are seen at once. The material opened
- * with the KMS is held by OpenedKeys, which this tells what is no longer an answer.
- *
- * The capabilities of a key store are a port each here, and a caller holds the one it uses: what signs
- * asks for the active key of an algorithm, what opens a JWE asks for the published encryption key a
- * header names, what publishes asks for the set, what pushes to a browser asks for the key that browser
- * was handed, what writes to a transport asks for the key the tenant seals to, what signs a SAML message
- * asks for the active key of a family the tenant keeps, what opens a SAML assertion asks for a key of the
- * algorithm of the identity provider that encrypted it. A key that signs is never
- * handed out to open a JWE, nor one that opens a JWE to sign: the use is asserted here and not deduced
- * from the caller (RFC 7517 §4.2), and a family of keys is never answered to the caller of another.
- *
- * The JWK Set is what the tenant publishes to whoever reads its issuer, so the keys it keeps are not in
- * it and are never answered to a reader of it: the key the browser is given is given by the page it
- * subscribes on, and the key a message body is sealed to would make that body forgeable by anyone who
- * read the set (decision 0020). Which keys those are is read from the algorithm
- * (PublishedKeyAlgorithmInterface) and not enumerated here, so a family added to either side needs no
- * line in this class.
+ * Which key answers is read from the repository on each call, so that a rotation or a retirement is seen at
+ * once. The use of a key is asserted here, never deduced from the caller (RFC 7517 §4.2).
  */
 final readonly class SealedKeyProvider implements
     ApplicationServerKeyProviderInterface,
@@ -114,7 +97,6 @@ final readonly class SealedKeyProvider implements
 
     public function keptDecryptionKeys(Tenant $tenant, KeptEncryptionAlgorithmInterface $algorithm, array $kids): array
     {
-        // what the caller no longer names has left the service since its last call, or is not its to open
         $this->opened->keepOnly($tenant, $algorithm, $kids);
         $opened = [];
         foreach ($kids as $kid) {
@@ -142,7 +124,7 @@ final readonly class SealedKeyProvider implements
                 $tenant->slug,
             ));
         }
-        // the algorithm names whom the key belongs to: the key of another holder is never answered, whatever its kid
+        // The algorithm names whom the key belongs to: another holder's key is never answered, whatever its kid.
         if ($key->algorithm->name() !== $algorithm->name()) {
             throw new KeyNotFoundException(sprintf(
                 'The key "%s" of tenant "%s" is a key of %s, not of %s.',
@@ -160,8 +142,8 @@ final readonly class SealedKeyProvider implements
     public function sealingKey(Tenant $tenant, MessageSealingAlgorithmInterface $algorithm): TenantKey
     {
         $sealing = null;
-        // the newest in service and not the active one: the keys come in creation order, and a key the
-        // tenant never publishes has nobody to wait through a staging window for (issue #548)
+        // The newest in service, the keys coming in creation order, and not the active one: a key the tenant never
+        // publishes has nobody to wait through a staging window for.
         foreach ($this->keys->findInService($tenant) as $key) {
             if ($key->algorithm->name() === $algorithm->name()) {
                 $sealing = $key;
@@ -238,9 +220,6 @@ final readonly class SealedKeyProvider implements
     }
 
     /**
-     * The store could hold a key of the other use under that identifier; it is refused rather than used
-     * for what it was not published for.
-     *
      * @throws KeyNotFoundException
      */
     private static function assertUse(TenantKey $key, KeyUse $expected): void

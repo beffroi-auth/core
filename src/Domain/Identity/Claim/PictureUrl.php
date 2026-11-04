@@ -7,7 +7,9 @@ namespace Beffroi\Core\Domain\Identity\Claim;
 use Beffroi\Core\Domain\Identity\User;
 
 /**
- * A picture of the person, somewhere else; this provider never fetches it (OIDC Core §5.1, "picture").
+ * OIDC Core §5.1, "picture"
+ *
+ * Never fetched by this provider.
  */
 final readonly class PictureUrl extends ProfileClaim
 {

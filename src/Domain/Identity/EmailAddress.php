@@ -26,13 +26,7 @@ final readonly class EmailAddress implements Stringable
     }
 
     /**
-     * An address as somebody wrote it, typed at a login page or asserted by an upstream provider, in capitals or with
-     * its domain in a U-label: its domain written as its A-label by the one rule that reads the domain of an address
-     * (EmailDomain::ofAddress(), decision 0029), its local part as it was written. The address this class holds then
-     * has its domain in ASCII, which the constructor demands.
-     *
-     * @throws InvalidArgumentException when it holds no "@", when the rule refuses its domain, or when the address is
-     *                                  none this class reads
+     * @throws InvalidArgumentException
      */
     public static function ofAnySpelling(string $address): self
     {
@@ -47,10 +41,9 @@ final readonly class EmailAddress implements Stringable
     }
 
     /**
-     * What follows the last "@", without regard to ASCII case, which is how a domain name is compared (RFC
-     * 4343 §3): the domain of a mailbox, as isTheSameMailboxAs() compares two. Which upstream provider a
-     * domain is federated to is read by EmailDomain::ofAddress() and never here (decision 0029). The address
-     * is valid, so there is one "@" at least.
+     * RFC 4343 §3
+     *
+     * Federation reads the domain through EmailDomain::ofAddress(), never through this.
      */
     public function domain(): string
     {
@@ -58,11 +51,8 @@ final readonly class EmailAddress implements Stringable
     }
 
     /**
-     * The same mailbox, as this provider counts one: without regard to case, the local part included (issue
-     * #781). RFC 5321 §2.4 leaves the case of a local part to the receiving server, and every server a person
-     * reads their mail on ignores it, so `Bob@acme.example` and `bob@acme.example` are one person's mail and
-     * never two persons'. It is what the projection the blind index of an address is derived under keeps of
-     * an address, so that an adapter in memory finds what the storage finds.
+     * The local part too ignores case, as the blind index of an address does; RFC 5321 §2.4 leaves it to the
+     * receiving server.
      */
     public function isTheSameMailboxAs(self $other): bool
     {

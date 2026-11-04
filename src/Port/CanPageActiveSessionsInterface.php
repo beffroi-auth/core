@@ -11,14 +11,10 @@ use Beffroi\Core\Domain\Listing\Period;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
 use DateTimeImmutable;
 
-/**
- * A companion of AuthenticationSessionRepositoryInterface: one page of the sessions open in the name of one
- * person, for the table of their account that ends one of them (issue #450).
- */
 interface CanPageActiveSessionsInterface
 {
     /**
-     * @param Period|null $period the stretch of time the sessions were opened over, all of them when null
+     * @param Period|null $period when the sessions were opened
      *
      * @return Listing<AuthenticationSession>
      */

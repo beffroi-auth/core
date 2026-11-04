@@ -7,16 +7,10 @@ namespace Beffroi\Core\Bridge\JwtLibrary;
 use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Jose\Component\Core\JWK;
 
-/**
- * One algorithm a key pair is generated for, as web-token/jwt-library knows it. A new algorithm is one
- * class implementing the interface of its use and one line in the wiring; nothing anywhere matches on
- * which algorithm it is.
- */
 interface JoseKeyAlgorithmInterface extends KeyAlgorithmInterface
 {
     /**
-     * A fresh private key for this algorithm, carrying its "alg" and "use"; the "kid" is the RFC 7638
-     * thumbprint the generator computes.
+     * A fresh private key carrying its "alg" and "use"; the generator computes its "kid".
      */
     public function generateKey(): JWK;
 }

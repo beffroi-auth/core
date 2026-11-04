@@ -9,11 +9,6 @@ use RuntimeException;
 use Throwable;
 use function sprintf;
 
-/**
- * Another user of the tenant is already that identity at that provider. A row (provider, subject) names one
- * user and one only (decision 0002): whoever presents that subject is that user, so moving it would hand one
- * account the sign-ins of another.
- */
 final class IdentityAlreadyLinkedException extends RuntimeException implements ExceptionInterface
 {
     public static function toAnotherUser(string $provider, string $subject, string $username): self
@@ -22,8 +17,7 @@ final class IdentityAlreadyLinkedException extends RuntimeException implements E
     }
 
     /**
-     * The store refused the identity at its unique constraint, another request having linked it between the lookup
-     * and the write; it names neither the subject nor the person, which a log would keep.
+     * Names neither the subject nor the person, which a log would keep.
      */
     public static function linkedMeanwhile(Throwable $previous): self
     {

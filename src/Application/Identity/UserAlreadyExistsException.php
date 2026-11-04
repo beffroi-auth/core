@@ -9,9 +9,6 @@ use RuntimeException;
 use Throwable;
 use function sprintf;
 
-/**
- * The tenant already has a user with that username or that subject.
- */
 final class UserAlreadyExistsException extends RuntimeException implements ExceptionInterface
 {
     public static function username(string $username): self
@@ -25,8 +22,7 @@ final class UserAlreadyExistsException extends RuntimeException implements Excep
     }
 
     /**
-     * The store refused the user at its unique constraints, another request having written its name or its subject
-     * between the checks of a use case and its write; it names neither, which a log would keep.
+     * Names neither the username nor the subject, which a log would keep.
      */
     public static function writtenMeanwhile(Throwable $previous): self
     {

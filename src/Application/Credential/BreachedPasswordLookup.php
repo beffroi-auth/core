@@ -13,20 +13,7 @@ use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 
 /**
- * The password already posed, looked up and marked: a password that passed every rule the day it was
- * written turns up in a corpus published a month later, and without this nothing would ever look at it
- * again.
- *
- * **It is not BreachedPasswordRefusal.** That one refuses a password nobody holds yet and answers the
- * person posing it; this one is handed a password somebody already signs in with, so there is nothing to
- * refuse and the answer is a mark on the credential, read later on the pages of their account.
- *
- * **It is not on the login path.** A login keeps no third party on it, which is what "castor login-cost"
- * measures; this runs from a lane, handed the digest the request computed while the password was in
- * memory, and the mark it writes outlives that request.
- *
- * **An unknown leaves the credential alone.** A list that could not be asked marks nothing, not even as
- * checked, because nothing was: the credential stays due and the next login past the delay asks again.
+ * A lookup that fails marks nothing, not even as checked: the next login past the delay asks again.
  */
 final readonly class BreachedPasswordLookup
 {
@@ -38,8 +25,7 @@ final readonly class BreachedPasswordLookup
     }
 
     /**
-     * @throws BreachLookupFailedException when the list could not be asked, which the lane tries again on
-     *                                     the patience of its transport
+     * @throws BreachLookupFailedException
      */
     public function lookUp(PasswordCredential $credential, #[SensitiveParameter] PasswordDigest $digest): void
     {

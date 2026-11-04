@@ -10,16 +10,14 @@ use function sprintf;
 use function strlen;
 
 /**
- * The shared secret of a TOTP (RFC 6238 §3, RFC 4226 §4), in clear, in memory only: what the enrolment
- * shows the user once and what a code is verified against. Stored sealed by the KMS of the tenant
- * (SecretSealerInterface), never as is. 160 bits, the length RFC 4226 §4 recommends for HMAC-SHA-1.
+ * RFC 6238 §3, RFC 4226 §4
  */
 final readonly class TotpSecret
 {
     public const int LENGTH = 20;
 
     /**
-     * RFC 4226 §4, R6: the shared secret is at least 128 bits long.
+     * RFC 4226 §4, R6
      */
     private const int MIN_LENGTH = 16;
 

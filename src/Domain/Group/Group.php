@@ -20,9 +20,6 @@ use Symfony\Component\Uid\Uuid;
 
 final class Group implements ClassifiedFieldsInterface
 {
-    /**
-     * The length of the column, in characters.
-     */
     public const int NAME_MAX_LENGTH = 255;
 
     /**
@@ -41,10 +38,7 @@ final class Group implements ClassifiedFieldsInterface
     }
 
     /**
-     * A name is compared exactly, case included, by the unique constraint of its tenant and by the mapping of
-     * an upstream provider, so it is held to one spelling of what it says: in Unicode Normalization Form C,
-     * without whitespace at either end, so that "admins" and "admins" followed by a no-break space are not two
-     * groups, and no longer than its column.
+     * Held to NFC with no edge whitespace: the unique constraint and an upstream mapping compare names exactly.
      *
      * @throws InvalidArgumentException when the name is empty, too long, not in NFC, or begins or ends with whitespace
      */
@@ -66,8 +60,6 @@ final class Group implements ClassifiedFieldsInterface
     }
 
     /**
-     * A group names an organisational unit of its tenant, and nothing of it says who is in it.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

@@ -18,37 +18,17 @@ use function strlen;
 use Symfony\Component\Uid\Uuid;
 use function trim;
 
-/**
- * An identity of a tenant, which names the source that created it; credentials, linked identities and group
- * memberships hang off it (decision 0002).
- */
 final class User implements ClassifiedFieldsInterface
 {
     public private(set) ?DateTimeImmutable $disabledAt = null;
 
     /**
-     * The blind index of the username, which is what a lookup matches on once the column is sealed:
-     * encryption is randomized by design, so two encryptions of one username differ and `WHERE username =
-     * ?` matches nothing. The search moves to a keyed tag of the value, held in a sibling column and
-     * matched exactly, and the unique constraint of the tenant moves with it (decision 0011).
-     *
-     * It sits on an entity that knows nothing of a database for one reason: a column is written by the
-     * mapping of a property, and the tag has to be written in the same statement as the value it indexes.
-     * A row that exists with a tag that does not match what it holds is a row no search returns, and that
-     * is the failure the whole arrangement exists to avoid.
-     *
-     * Nothing of the domain derives it, and nothing can: the key a tag is derived under belongs to the
-     * tenant and is unwrapped by its KMS. What fills it is the storage, on every write.
+     * A blind index the storage fills on every write: a sealed column can be neither unique nor looked up.
      */
     public private(set) string $usernameIndex = '';
 
     /**
-     * The blind index of the email address, filled the same way, and null for a user who gave none.
-     *
-     * What looks an address up is the first sign-in through an upstream provider, which refuses to create a
-     * person whose address another person of the tenant holds (`JustInTimeProvisioning`). No unique
-     * constraint says two users of a tenant may not share one: two local persons may, and nothing links
-     * either of them to a provider on its own. Decision 0011 names it for the console of a tenant too.
+     * Filled the same way, and not unique: two local persons of a tenant may share an address.
      */
     public private(set) ?string $emailIndex = null;
 
@@ -137,11 +117,6 @@ final class User implements ClassifiedFieldsInterface
     }
 
     /**
-     * What the source that created the person holds now, which its provider says again at every sign-in
-     * through it (issue #781): a claim it no longer fills or no longer sends is released, and a manual
-     * description may say it again, no source holding a claim for ever. The provider is not what changes:
-     * the person stays the one it created.
-     *
      * @throws InvalidArgumentException when the source names another provider than the one that created the person
      */
     public function heldBy(UserSource $source, DateTimeImmutable $now): void
@@ -181,20 +156,12 @@ final class User implements ClassifiedFieldsInterface
         return $this->tenant->equals($tenant);
     }
 
-    /**
-     * Whether this person may say this claim of themselves: their tenant opens it (issue #452), and the
-     * source that created them does not hold it (decision 0002). What a page offers and what the use case
-     * that writes it accepts are read here, so that the two cannot disagree.
-     */
     public function maySayOfThemselves(string $claim): bool
     {
         return $this->tenant->selfServedClaims->opens($claim) && ! $this->source->holds($claim);
     }
 
     /**
-     * A contact detail nobody gave cannot have been verified; the same rule when the user is created and
-     * when it changes, for the address as for the number.
-     *
      * @throws InvalidArgumentException
      */
     private static function assertVerifiable(EmailAddress|string|null $value, bool $verified, string $what): void
@@ -215,12 +182,6 @@ final class User implements ClassifiedFieldsInterface
     }
 
     /**
-     * What this provider holds of a person, sealed under the data key of its tenant: the username, the two
-     * verifiable contacts, the postal address, the thirteen claims of the profile, and the source that created
-     * the person, whose provider says which organisation that person is of, as the column of a linked identity
-     * that names it does. Beside two of them are the tags a search matches on, the values themselves being
-     * sealed, and the subject stays in the clear.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

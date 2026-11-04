@@ -10,18 +10,10 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use DateTimeImmutable;
 
 /**
- * An upstream provider created a person, at the first sign-in through it (`JustInTimeProvisioning`): an act
- * of their account, the first one, which they read in their own journal beside the sign-in that follows it.
- *
- * It carries the subject of the person and the name of the provider, which is what the act names, and
- * **never what the provider said of them**: the address and the claims live in the row of that person and in
- * the snapshot of their linked identity, sealed, and not in a copy a broker holds.
+ * Never carries what the provider said of the person, which stays sealed in their row.
  */
 final readonly class PersonProvisioned implements ConcernsAPersonInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'person.provisioned';
 
     public function __construct(

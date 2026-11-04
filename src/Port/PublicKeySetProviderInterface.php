@@ -8,8 +8,7 @@ use Beffroi\Core\Domain\Key\PublicKeySet;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
- * What the tenant publishes: the JWK Set endpoint serves it whole, a verifier asks it for the keys that
- * sign. No private material is opened here, so nothing of this depends on the KMS.
+ * Opens no private material, so nothing of it depends on the KMS.
  */
 interface PublicKeySetProviderInterface
 {

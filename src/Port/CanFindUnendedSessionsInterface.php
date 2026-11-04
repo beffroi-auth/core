@@ -8,15 +8,12 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
 
 /**
- * A companion of AuthenticationSessionRepositoryInterface: the sessions of one person that nothing has ended, those
- * past their expiry included, for what ends every session of a person but the one it keeps (OtherSessionsTermination).
- * Reaching its expiry ends no session (decision 0031): a session that expired signs nobody in, and what it issued
- * lives on until something ends it.
+ * Sessions past their expiry included: reaching its expiry ends no session.
  */
 interface CanFindUnendedSessionsInterface
 {
     /**
-     * @return list<AuthenticationSession> in the order they were opened
+     * @return list<AuthenticationSession>
      */
     public function findUnendedByUser(User $user): array;
 }

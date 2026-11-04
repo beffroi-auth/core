@@ -14,18 +14,6 @@ use function is_array;
 use function is_int;
 use function is_string;
 
-/**
- * The document a hash is kept as: the algorithm it was made with, by the name it carries (decision 0002),
- * the encoded form, and the parameters an import keeps apart from the digest.
- *
- * **It is the one place that document is written**, because three things keep a hash and all three keep it
- * this way: the password of a credential, each backup code of a TOTP, and the secret of a client that
- * presents it. Two places that must agree are one place.
- *
- * The algorithm is read back as the class the wiring holds for that name, which is why this is a use case
- * and not a method of the hash: a name nothing wired accounts for is a row this deployment cannot read,
- * and it says so where the document is read rather than handing back an algorithm nobody chose.
- */
 final readonly class StoredPasswordHash
 {
     private const string ALGORITHM = 'algorithm';
@@ -54,9 +42,7 @@ final readonly class StoredPasswordHash
     /**
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when the document names no algorithm or carries no digest, when
-     *                                 the parameters are not named strings or numbers, or when nothing
-     *                                 wired carries the algorithm it names
+     * @throws InvalidArgumentException
      */
     public function of(array $document): PasswordHash
     {
@@ -71,7 +57,7 @@ final readonly class StoredPasswordHash
     }
 
     /**
-     * @throws InvalidArgumentException when nothing wired carries that name
+     * @throws InvalidArgumentException
      */
     private function algorithm(string $name): PasswordAlgorithmInterface
     {

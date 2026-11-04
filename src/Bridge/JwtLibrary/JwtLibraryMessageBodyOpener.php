@@ -17,16 +17,7 @@ use function sprintf;
 use Throwable;
 
 /**
- * Opens a message body sealed by JwtLibraryMessageBodySealer (decision 0020).
- *
- * The key is the one the protected header names, among the keys the tenant seals to: a message key is
- * never guessed and the key that opens a client's JWE never opens one of these. What the header says the
- * body was sealed under is asserted against what that key is for, so a body sealed under something else,
- * or for another tenant, is refused rather than tried.
- *
- * **The KMS is paid once per key and per process.** The provider of the key keeps what it opened, which is
- * what decision 0018 asks of a worker: it lives long enough for one opening to carry every message of that
- * vintage.
+ * The key is the one the protected header names among the keys the tenant seals to, never guessed nor tried.
  */
 final readonly class JwtLibraryMessageBodyOpener implements MessageBodyOpenerInterface
 {
@@ -76,9 +67,7 @@ final readonly class JwtLibraryMessageBodyOpener implements MessageBodyOpenerInt
                 $kid,
             ));
         }
-        // the key is handed over under the name it was sealed under, as the sealer hands over the public
-        // half: the library refuses a key whose "alg" is not the one of the JWE, and what the tenant calls
-        // the pair is not what JOSE calls what seals with it (MessageSeal)
+        // Under the JWE's "alg": the library refuses any other, and the stored pair carries the tenant's name.
         $jwk = new JWK([
             ...$unsealed->privateJwk,
             'alg' => $algorithm->keyEncryption()->name(),

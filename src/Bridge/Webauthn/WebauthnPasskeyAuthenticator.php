@@ -19,14 +19,10 @@ use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialRequestOptions;
 
 /**
- * The authentication ceremony (WebAuthn Level 3 §7.2) on webauthn-lib: the passkey is the one of the
- * tenant the response names, revoked or not (the core tells it apart after the signature, so that a
- * refusal costs the same); user verification is asked for and not required, the flags say what was done.
- * The BE flag the assertion claims is compared with the one of the enrolment by the core
- * (PasskeyCredential::backupEligibilityChanged()), after the signature, as the sign count is
- * (PasskeyCredential::signCountRegresses()), so that either refusal names the passkey and its holder:
- * the library is handed the record without that flag, a record it compares no BE flag with
- * (CheckBackupEligibilityIsUnchanged).
+ * WebAuthn Level 3 §7.2
+ *
+ * A revoked passkey is verified too, and the library is handed the record without its BE flag: the core
+ * refuses either after the signature, so that a refusal costs the same and names the passkey.
  */
 final readonly class WebauthnPasskeyAuthenticator implements PasskeyAuthenticatorInterface
 {

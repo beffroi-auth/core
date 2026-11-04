@@ -28,10 +28,6 @@ use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 use function trim;
 
-/**
- * Creates the users of a tenant and gives them a password, from a console, a fixture or an import.
- * Synchronous writes, no session, no event.
- */
 final readonly class UserProvisioner
 {
     public function __construct(
@@ -48,9 +44,6 @@ final readonly class UserProvisioner
     }
 
     /**
-     * The subject is generated unless an import brings one (decision 0002); it never changes afterwards. The
-     * person is local unless the caller names the upstream provider that creates it and what it holds.
-     *
      * @throws UserAlreadyExistsException
      */
     public function create(
@@ -76,21 +69,10 @@ final readonly class UserProvisioner
     }
 
     /**
-     * The claims of OIDC Core §5.1. A replacement, not a merge: what the caller does not say is cleared,
-     * except what the source of the person holds, which stays what that source wrote (decision 0002).
+     * A replacement, not a merge: what the caller does not say is cleared, save the claims the source holds.
      *
-     * **A claim the source holds is not the caller's to change.** One the caller says otherwise is refused,
-     * naming the provider, before anything is written; one it says as it already is, it may say, which is
-     * what a script played again does.
-     *
-     * **A claim of the profile the caller says is held to the claim that answers its name** (issue #846): a
-     * value outside the closed set of that claim, a zone or a language this deployment does not hold, is
-     * refused before anything is written, as the page of the account refuses it (`ProfileClaim::describe()`),
-     * the set being the claim's and not a page's (issue #479).
-     *
-     * @throws InvalidArgumentException when the source holds a claim the caller says otherwise, a claim of the
-     *                                  profile is said with a value its claim does not hold, or a phone
-     *                                  number is absent but said to be verified
+     * @throws InvalidArgumentException when a claim the source holds is said otherwise, a claim has a value it does
+     *                                  not hold, or a phone number is absent but said to be verified
      */
     public function setProfile(User $user, Profile $profile, ?string $phoneNumber = null, bool $phoneNumberVerified = false, ?Address $address = null): User
     {
@@ -101,7 +83,7 @@ final readonly class UserProvisioner
             $this->claims->named($name)?->field()->assertHolds($value);
         }
         $now = $this->clock->now();
-        // first: the one change the user can refuse
+        // The one change the user can refuse comes first.
         if (! $source->holds('phone_number')) {
             $user->changePhoneNumber($phoneNumber, $phoneNumberVerified, $now);
         }
@@ -121,9 +103,6 @@ final readonly class UserProvisioner
     }
 
     /**
-     * The claims a description says otherwise than the person holds them: what it does not say is not
-     * among them, a claim the source holds being kept rather than cleared.
-     *
      * @return list<string>
      */
     private static function changedBy(User $user, Profile $profile, ?string $phoneNumber, bool $phoneNumberVerified, ?Address $address): array
@@ -146,21 +125,12 @@ final readonly class UserProvisioner
     }
 
     /**
-     * What a password has to be on its own is the PlainPassword's, checked where one is built; what a list
-     * of compromised passwords says of it is asked here, before anything is hashed, because a lookup is
-     * input and output and a value object does none.
-     *
-     * The answer is written on the credential when there was one, so that the first login does not ask
-     * again what was just asked.
-     *
      * @throws PasswordRefusedException when a list counts this password, or could not be asked
-     * @throws CredentialEnrolmentFailedException when the floor of the tenant admits no password (issue #327), or
-     *                                             the person is of a federated domain (decision 0029)
+     * @throws CredentialEnrolmentFailedException when the tenant's floor admits no password, or the person's
+     *                                             domain is federated
      */
     public function setPassword(User $user, #[SensitiveParameter] PlainPassword $password): PasswordCredential
     {
-        // before the list is asked and before anything is hashed: a tenant that holds no password has
-        // nobody to ask about this one
         $this->enrolments->assertTheFloorAdmits($user->tenant, 'password', [PasswordCredential::method()]);
         $this->enrolments->assertTheirDomainAdmits($user, 'password');
         $count = $this->breaches->count($password);

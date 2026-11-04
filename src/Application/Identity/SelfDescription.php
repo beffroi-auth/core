@@ -17,26 +17,8 @@ use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
- * A person says something of themselves (issue #452), when the tenant lets them.
- *
- * **The policy is read here and not by the page.** A page that only hides a field it must not offer is a
- * page whose form can be sent anyway, so what refuses is the use case, on the server, for every caller:
- * the browser, a command, whatever comes next. What the page does with the policy is show a person why a
- * field is not theirs to change.
- *
- * **A claim the source of the person holds is not theirs to say** (decision 0002): the provider that
- * created them writes it, and a person who said it otherwise would be read so by a client until their next
- * sign-in through it. Refused before anything is written, whatever the value, the person saying one claim
- * at a time and never needing to say that one.
- *
- * It announces the act and not the value (PersonDescribedThemselves), the value living in the row of that
- * person and nowhere else.
- *
- * **What the claim used to say is written here and not on the lane** (issue #482, ClaimChange). The row of
- * the person and the history of its change commit together or the record changed and its history did not,
- * which is a hole in the one thing a history is for; so this writes both, in the unit of work it already
- * has. Nothing is written when nothing changed: saying again what a claim already said is an act, which
- * the journal has, and not a change.
+ * A person says one claim of themselves. What the tenant does not open, or the source of the person holds, is
+ * refused here and not by the page, for every caller.
  */
 final readonly class SelfDescription
 {
@@ -49,8 +31,7 @@ final readonly class SelfDescription
     }
 
     /**
-     * @throws InvalidArgumentException when this tenant does not open that claim, the source of the person
-     *                                  holds it, or the value is not one the claim holds
+     * @throws InvalidArgumentException when the claim is not the person's to say, or the value is not one it holds
      */
     public function describe(User $user, ClaimInterface $claim, ?string $value, RequestContext $context): void
     {
@@ -61,8 +42,7 @@ final readonly class SelfDescription
         $claim->describe($user, $value, $now);
         $became = $claim->of($user);
         $this->users->save($user);
-        // nothing is written when nothing changed: saying again what a claim already said is an act and
-        // not a change, so the journal has it and the history does not
+        // Saying a claim again is an act the journal keeps, not a change the history keeps.
         if ($was !== $became) {
             $this->history->record(new ClaimChange(Uuid::v7(), $user, $claim->name(), $was, $became, $now, $context));
         }

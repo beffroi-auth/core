@@ -7,12 +7,6 @@ namespace Beffroi\Core\Domain\Credential;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use SensitiveParameter;
 
-/**
- * A password hash with the algorithm it was made with; "parameters" carries what an imported format
- * keeps apart from the digest. The algorithm is the class the wiring holds for that name
- * (PasswordAlgorithmInterface), so a hash read back from a store says which of them it belongs to and
- * never a word nothing accounts for.
- */
 final readonly class PasswordHash
 {
     /**

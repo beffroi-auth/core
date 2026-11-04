@@ -8,11 +8,6 @@ use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\ApplicationServerAlgorithmsInterface;
 
-/**
- * The algorithms of the keys the tenant hands out itself, as the wiring gave them. A deployment that
- * reaches nobody by push wires none, and then there is no such key to draw and no page that hands one
- * out: unlike the signature registry, an empty one is a deployment and not a mistake.
- */
 final readonly class JoseApplicationServerAlgorithms implements ApplicationServerAlgorithmsInterface, JoseAlgorithmRegistryInterface
 {
     /**
@@ -21,7 +16,7 @@ final readonly class JoseApplicationServerAlgorithms implements ApplicationServe
     private WiredAlgorithms $wired;
 
     /**
-     * @param iterable<JoseApplicationServerAlgorithmInterface> $algorithms in the order they are wired
+     * @param iterable<JoseApplicationServerAlgorithmInterface> $algorithms
      */
     public function __construct(iterable $algorithms)
     {

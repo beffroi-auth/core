@@ -11,8 +11,7 @@ use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 
 /**
- * The key JwtLibraryJwsSigner opened, kept here with its private half and signing under it: what leaves the bridge
- * is a way to sign, never the key.
+ * Signs under the private half it holds, which never leaves the bridge.
  */
 final readonly class JwtLibraryOpenedSigningKey implements OpenedSigningKeyInterface
 {

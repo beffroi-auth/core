@@ -11,18 +11,9 @@ use Beffroi\Core\Domain\Identity\UserSource;
 use Beffroi\Core\Port\ArchiveChapterInterface;
 
 /**
- * The record itself, in the archive a person asks for (issue #453): the account this provider keeps for
- * them and everything they have said about themselves.
+ * OIDC Core §5.1, RGPD article 20
  *
- * **The names are those of OIDC Core §5.1**, which is what RGPD article 20 means by a commonly used
- * format: a person who takes this file to another provider hands it a document that provider already
- * reads. What is not a claim of the specification keeps the name this provider gives it: the username they
- * sign in with, the dates of the record, the day the account was disabled if it was, and the source that
- * created it (decision 0002), the upstream provider and the claims it holds, which this provider keeps
- * sealed as the personal datum it is and article 15 asks for as such.
- *
- * **It reads the record and not what is wired.** A claim a deployment does not offer on any page is a
- * claim this provider holds all the same, and article 15 asks for what is held.
+ * Reads the record and not the wired claims: a claim no page offers is held all the same.
  */
 final readonly class ProfileChapter implements ArchiveChapterInterface
 {
@@ -66,9 +57,6 @@ final readonly class ProfileChapter implements ArchiveChapterInterface
     }
 
     /**
-     * The provider that created the record and the claims it holds, member by member; a record a console,
-     * a fixture or an import created names no provider, and no provider holds anything of it.
-     *
      * @return array{provider: string|null, claims: list<string>}
      */
     private static function source(UserSource $source): array
@@ -80,7 +68,7 @@ final readonly class ProfileChapter implements ArchiveChapterInterface
     }
 
     /**
-     * OIDC Core §5.1.1, member by member, an address this provider holds none of being none.
+     * OIDC Core §5.1.1
      *
      * @return array<string, string|null>|null
      */

@@ -11,14 +11,6 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Port\PasswordAlgorithmsInterface;
 use DateTimeImmutable;
 
-/**
- * The document the codes of a TOTP are kept as: a list, in their order, each entry the hash of the code
- * written exactly as the hash of a password is (StoredPasswordHash) and the Unix timestamp the code was
- * spent at.
- *
- * A list and not an object, because what it holds is a set of codes in the order they were drawn and
- * nothing is keyed by them; a credential that holds none writes an empty list.
- */
 final readonly class StoredBackupCodes
 {
     private const string USED_AT = 'used_at';
@@ -46,7 +38,7 @@ final readonly class StoredBackupCodes
     /**
      * @param list<mixed> $documents
      *
-     * @throws InvalidArgumentException when an entry is not a typed hash and the moment it was spent at
+     * @throws InvalidArgumentException
      *
      * @return list<BackupCode>
      */
@@ -56,7 +48,7 @@ final readonly class StoredBackupCodes
     }
 
     /**
-     * @throws InvalidArgumentException when the entry is not a typed hash and the moment it was spent at
+     * @throws InvalidArgumentException
      */
     private function code(mixed $document): BackupCode
     {

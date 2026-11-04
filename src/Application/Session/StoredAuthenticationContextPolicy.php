@@ -12,16 +12,10 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Port\AuthenticationPredicatesInterface;
 
 /**
- * The document the "acr" policy of a tenant is kept as (decision 0010): its classes in order, each a name
- * on a predicate of the provider.
+ * The document a tenant's "acr" policy is stored as: its classes in order, each a name on a wired predicate.
  *
- * A list rather than an object keyed by name, because "1" and "2" are names and a JSON object key that
- * looks like a number comes back as an integer.
- *
- * A predicate is written under the name it gives itself and read back as the class the wiring holds for
- * that name, which is why this is a use case and not a method of the policy: a policy naming a predicate
- * this deployment is not wired with is refused rather than guessed, as a stored password hash naming an
- * algorithm nothing carries is (decision 0002).
+ * A list rather than an object keyed by name: "1" is a name, and a JSON object key that looks like a number
+ * comes back as an integer.
  */
 final readonly class StoredAuthenticationContextPolicy
 {
@@ -52,9 +46,7 @@ final readonly class StoredAuthenticationContextPolicy
     /**
      * @param array<array-key, mixed> $document
      *
-     * @throws InvalidArgumentException when a class of the document is not a name on a predicate, when
-     *                                 nothing wired carries the predicate it names, or when what the
-     *                                 document holds is not a policy this provider would have accepted
+     * @throws InvalidArgumentException when the document is not a policy, or names a predicate nothing wired carries
      */
     public function of(array $document): AuthenticationContextPolicy
     {

@@ -22,21 +22,15 @@ use function password_verify;
 use SensitiveParameter;
 use function sprintf;
 
-/**
- * password_hash() and password_verify(): argon2id for new hashes, argon2i and bcrypt verified then re-hashed.
- */
 final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInterface
 {
-    /**
-     * What password_verify() reads. A hasher knows what it handles; nothing else enumerates algorithms.
-     */
     private const array SUPPORTED = [Argon2id::NAME, Argon2i::NAME, Bcrypt::NAME];
 
     /**
-     * The memory-constrained parameter set of RFC 9106 §4: 64 MiB of memory, three passes, four lanes. The memory and
-     * the passes are the defaults of PHP, which holds that memory and spends a pass more than the RFC asks; the four
-     * lanes are this hasher's, PHP defaulting to one. A lane is the "threads" option of password_hash(), and the lanes
-     * of a set divide its memory instead of adding to it, so four of them ask a deployment for the same work.
+     * RFC 9106 §4
+     *
+     * The memory-constrained set is 64 MiB, three passes and four lanes. PHP's defaults hold that memory and spend
+     * a pass more; the lanes, the "threads" of password_hash(), divide the memory instead of adding to it.
      */
     public const int MEMORY_COST = PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
 
@@ -44,9 +38,6 @@ final readonly class NativePasswordHasher implements AlgorithmPasswordHasherInte
 
     public const int THREADS = 4;
 
-    /**
-     * A deployment raises these parameters, never lowers them.
-     */
     public function __construct(
         private int $memoryCost = self::MEMORY_COST,
         private int $timeCost = self::TIME_COST,

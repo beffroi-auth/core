@@ -10,19 +10,8 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * A person had this provider drop the archive they asked for (issue #453). The last act of a file that
- * holds everything this provider knows of somebody: they asked for it, and they asked that none of it be
- * kept until the date it would have gone away on by itself, whether or not it had been built by then.
- *
- * The identifier is all that is left of the archive once this is written, the row being gone, and that is
- * the point: what a reader of the journal needs is that the file of that request exists nowhere any more.
- */
 final readonly class PersonDroppedTheirArchive implements ConcernsAPersonInterface
 {
-    /**
-     * The name of the act, which is what the journal writes down (issue #454).
-     */
     public const string NAME = 'archive.dropped';
 
     public function __construct(

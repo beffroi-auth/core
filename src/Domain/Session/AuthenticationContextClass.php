@@ -10,17 +10,6 @@ use function preg_match;
 use function sprintf;
 use Stringable;
 
-/**
- * One class of the policy of a tenant (decision 0010): a name, the value of the "acr" claim (OIDC Core §2),
- * on one of the predicates of the provider (AuthenticationPredicateInterface). Never stored on a session:
- * a session satisfies every class whose predicate holds on its proofs (architecture §3.2). The constants
- * are the names of the default policy, the Keycloak levels and the two names of OpenID Connect EAP ACR
- * Values 1.0.
- *
- * What a name may mean is refused here, wherever a class is built and not only where a policy holds one
- * (decision 0006): a name that is not printable ASCII without space, and "phr" or "phrh" on a predicate
- * that is not their meaning (OIDC Core §2 forbids a registered name in another sense).
- */
 final readonly class AuthenticationContextClass implements Stringable
 {
     public const string SINGLE_FACTOR = '1';
@@ -32,7 +21,7 @@ final readonly class AuthenticationContextClass implements Stringable
     public const string PHISHING_RESISTANT_HARDWARE = 'phrh';
 
     /**
-     * OIDC Core §2: printable ASCII without space.
+     * OIDC Core §2
      */
     private const string PATTERN = '/^[\x21-\x7E]{1,255}$/D';
 
@@ -72,7 +61,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * @param list<AuthenticationMethod> $methods what was proven, or what a login would prove
+     * @param list<AuthenticationMethod> $methods
      */
     public function isSatisfiedBy(array $methods): bool
     {
@@ -80,7 +69,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * Two classes are the same when they carry the same name: a policy names each once.
+     * By name only: a policy names each class once.
      */
     public function equals(self $other): bool
     {
@@ -93,8 +82,7 @@ final readonly class AuthenticationContextClass implements Stringable
     }
 
     /**
-     * OIDC Core §2: a registered name keeps its meaning. "phr" is any phishing-resistant proof, in
-     * hardware or not; "phrh" is the hardware one only.
+     * OIDC Core §2
      */
     private static function assertRegisteredMeaning(string $value, AuthenticationPredicateInterface $predicate): void
     {

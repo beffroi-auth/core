@@ -7,21 +7,15 @@ namespace Beffroi\Core\Port;
 use Beffroi\Core\Domain\Key\KeyEncryptionAlgorithmInterface;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 
-/**
- * The JWE key management algorithms the wiring gives the provider, the one source of truth over them: the
- * encryption keys it generates, the JWE it opens and what the discovery document announces all read this
- * one. A deployment that is encrypted to by nobody wires none, and the document announces nothing rather
- * than an empty list.
- */
 interface KeyEncryptionAlgorithmsInterface extends KeyAlgorithmsInterface
 {
     /**
-     * @return list<KeyEncryptionAlgorithmInterface> in the order they are wired
+     * @return list<KeyEncryptionAlgorithmInterface>
      */
     public function all(): array;
 
     /**
-     * @throws UnsupportedAlgorithmException when nothing wired is encrypted to under that name
+     * @throws UnsupportedAlgorithmException
      */
     public function named(string $name): KeyEncryptionAlgorithmInterface;
 }

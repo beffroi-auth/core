@@ -21,51 +21,25 @@ use function trim;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * One browser of a user that this provider may push to (RFC 8030 §2, Push API §3.4): where the push
- * service takes a message for it (§8), the two keys it gave to encrypt one (RFC 8291 §3.1), and the
- * application server key of the tenant it was made under, by its "kid".
+ * RFC 8030 §2, Push API §3.4
  *
- * It is the user's and not a client's, so it lives with the rest of what a tenant knows about somebody
- * (decision 0002): several per user, because a user has several browsers, restated with the tenant of
- * that user, and taken out of use rather than deleted, so that a row says a browser was reachable and is
- * not any more. It proves nothing and is not a credential: nobody signs in with it.
- *
- * It is bound to the key it was made under. A browser subscribes with the public half of the application
- * server key it is handed (RFC 8292 §3.2), and the push service refuses a request signed by any other,
- * so a rotation of that key does not move a subscription: it goes on being pushed to until the key it
- * names retires, and the browser subscribes again under the new one (architecture §3.3).
+ * Bound to the application server key it was made under: the push service refuses any other (RFC 8292 §3.2).
  */
 final class PushSubscription implements ClassifiedFieldsInterface
 {
-    /**
-     * Push API §8: what a browser hands over as the endpoint of its subscription is a URL of its push
-     * service, and nothing this provider chose. It is taken as it was given, and only what could not be a
-     * push endpoint is refused.
-     */
     private const string ENDPOINT_SCHEME = 'https://';
 
     /**
-     * RFC 8291 §3.1, §4: the two keys arrive base64url, the public key of the browser and the secret both
-     * sides derive from. Their lengths are the push service's business and not this provider's; their
-     * alphabet is.
+     * The alphabet only: the lengths of the keys are the push service's business.
      */
     private const string BASE64URL_PATTERN = '/^[A-Za-z0-9_-]+$/D';
 
-    /**
-     * What a user may call one of their browsers, the length of the column that holds it. The rule is
-     * here, where the label is held, and not where a form is read: a label this object would refuse is
-     * refused whoever hands it over.
-     */
     public const int LABEL_MAX_LENGTH = 255;
 
-    /**
-     * Restated from the user (decision 0002).
-     */
     public readonly Tenant $tenant;
 
     /**
-     * The hex SHA-256 of the endpoint: what a browser is recognised by, an endpoint being as long as its
-     * push service decided and longer than a key may be.
+     * A browser is recognised by this hash, its endpoint being longer than a key may be.
      */
     public readonly string $endpointHash;
 
@@ -74,13 +48,10 @@ final class PushSubscription implements ClassifiedFieldsInterface
     public private(set) ?DateTimeImmutable $revokedAt = null;
 
     /**
-     * @param string $endpoint where the push service takes a message for this browser (RFC 8030 §2)
-     * @param string $publicKey the "p256dh" key the browser gave, base64url (RFC 8291 §3.1)
-     * @param string $authSecret the "auth" secret the browser gave, base64url (RFC 8291 §3.2)
-     * @param string $applicationServerKid the key of the tenant this subscription is bound to
-     * @param string|null $label what the user is shown to tell one of their browsers from another
+     * @param string $publicKey the "p256dh" key, base64url (RFC 8291 §3.1)
+     * @param string $authSecret the "auth" secret, base64url (RFC 8291 §3.2)
      *
-     * @throws InvalidArgumentException when it is not something a push service could be asked to deliver to
+     * @throws InvalidArgumentException
      */
     public function __construct(
         public private(set) Uuid $id,
@@ -101,17 +72,7 @@ final class PushSubscription implements ClassifiedFieldsInterface
     }
 
     /**
-     * The same browser, subscribing again (Push API §3.4). It hands back the endpoint it already had
-     * (§8), which is what says it is this browser, so this row is what changes rather than a second row
-     * beside it.
-     *
-     * What changes is what it handed with it: a browser draws its two keys afresh at every subscription
-     * (RFC 8291 §3.1), the application server key is the one it was just handed, which a rotation may have
-     * moved since it last subscribed (architecture §3.3), and the name is what its user typed this time. A
-     * browser the user had taken out is reachable again, having just said so; when it was pushed to last is
-     * a fact about this browser and this provider, and stays.
-     *
-     * @throws InvalidArgumentException when it is not what a browser hands over
+     * @throws InvalidArgumentException
      */
     public function resubscribedWith(string $publicKey, string $authSecret, string $applicationServerKid, ?string $label): void
     {
@@ -124,17 +85,7 @@ final class PushSubscription implements ClassifiedFieldsInterface
     }
 
     /**
-     * The user names this browser, and names it again (architecture §5.2): what tells one of their
-     * browsers from another is a name they wrote, so correcting it is their own act. Nothing of the
-     * subscription moves, the endpoint, the two keys and the key it is bound to being what the browser
-     * handed over, and nothing of it is read by a push.
-     *
-     * **A label that is not one is refused here and dropped at a subscription**, where the same rule reads
-     * the same constant. The two answers are the two acts: a browser subscribing has just proven it can be
-     * reached, which is worth recording under no name at all, and a person typing a name into the line
-     * they read it in is doing nothing else.
-     *
-     * @throws InvalidArgumentException when the label is empty or longer than the column holds
+     * @throws InvalidArgumentException
      */
     public function rename(string $label): void
     {
@@ -146,9 +97,6 @@ final class PushSubscription implements ClassifiedFieldsInterface
     }
 
     /**
-     * What a browser hands over, whether it is subscribing for the first time or again: written once, so
-     * that the second way in cannot record what the first refuses.
-     *
      * @throws InvalidArgumentException
      */
     private static function assertWhatABrowserHandsOver(string $publicKey, string $authSecret, string $applicationServerKid): void
@@ -166,28 +114,16 @@ final class PushSubscription implements ClassifiedFieldsInterface
         }
     }
 
-    /**
-     * What an endpoint is looked up by, written once so that a caller with an endpoint in hand and a row
-     * already stored are compared the same way.
-     */
     public static function digestOf(string $endpoint): string
     {
         return hash('sha256', $endpoint);
     }
 
-    /**
-     * The message left this provider for the push service. What became of it afterwards is between the
-     * push service and the browser, and this provider never learns it.
-     */
     public function markPushed(DateTimeImmutable $now): void
     {
         $this->lastPushedAt = $now;
     }
 
-    /**
-     * The user took this browser out, or the push service answered that the subscription is gone (RFC
-     * 8030 §7.3: 404 and 410 are the same fact). The first one wins, and the row stays.
-     */
     public function revoke(DateTimeImmutable $now): void
     {
         if ($this->revokedAt !== null) {
@@ -201,20 +137,12 @@ final class PushSubscription implements ClassifiedFieldsInterface
         return $this->revokedAt !== null;
     }
 
-    /**
-     * Whether it is a subscription of that key: a subscription the key it names has outlived is pushed
-     * to by nobody, the push service refusing a request signed by any other key (RFC 8292 §4.2).
-     */
     public function isBoundTo(string $kid): bool
     {
         return $this->applicationServerKid === $kid;
     }
 
     /**
-     * The endpoint designates a browser on a device, and by it a person, and the label is what that person typed
-     * for that device: both are sealed. The keys of the subscription are the browser's own, and the digest of the
-     * endpoint is the sibling a search matches on.
-     *
      * @return array<string, FieldClassificationInterface>
      */
     public static function classifiedFields(): array

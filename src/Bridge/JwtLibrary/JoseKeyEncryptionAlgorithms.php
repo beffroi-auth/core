@@ -8,12 +8,6 @@ use Beffroi\Core\Bridge\Algorithm\WiredAlgorithms;
 use Beffroi\Core\Exception\UnsupportedAlgorithmException;
 use Beffroi\Core\Port\KeyEncryptionAlgorithmsInterface;
 
-/**
- * The JWE key management algorithms the wiring gave the provider: the encryption keys it generates, the
- * JWE it opens and what the discovery document announces all read this one, so the document cannot
- * announce an algorithm the decrypter refuses. A deployment nobody encrypts to wires none, and this list
- * is empty.
- */
 final readonly class JoseKeyEncryptionAlgorithms implements JoseAlgorithmRegistryInterface, KeyEncryptionAlgorithmsInterface
 {
     /**
@@ -22,7 +16,7 @@ final readonly class JoseKeyEncryptionAlgorithms implements JoseAlgorithmRegistr
     private WiredAlgorithms $wired;
 
     /**
-     * @param iterable<JoseKeyEncryptionAlgorithmInterface> $algorithms in the order they are wired, none of them twice
+     * @param iterable<JoseKeyEncryptionAlgorithmInterface> $algorithms
      */
     public function __construct(iterable $algorithms)
     {

@@ -11,28 +11,13 @@ use function sprintf;
 use function strlen;
 
 /**
- * The passphrase a person chose to have their archive leave under it (issue #483), in memory only, on its
- * way to the container that wraps the file. It is never a row, never a log and never a session: the
- * request that reads it is the request that uses it.
- *
- * **It is longer than a password of this provider, and the reason is not that it matters more.** A
- * password of an account is guessed against a provider that counts the attempts and shuts the door after
- * five (§3.4); this one is guessed against a file somebody holds, for as long as they hold it, at whatever
- * rate their own hardware allows. And the container fixes its own derivation: the AES entry of a zip
- * derives its key with PBKDF2-HMAC-SHA1 over 1000 iterations, a count the format writes down and no
- * caller chooses, so what stands between that file and whoever took it is the length of what was typed
- * and nothing else.
- *
- * So the floor is refused and not warned about (decision 0006), and the page that asks for one asks for
- * several words rather than a password.
- *
- * The upper bound bounds a field of a request and nothing cryptographic: a derivation swallows any length,
- * and a megabyte pasted into that field is not a passphrase.
+ * Never a row, a log or a session: the request that reads it is the request that uses it.
  */
 final readonly class ArchivePassword
 {
     /**
-     * Counted in characters, because that is what a person typed.
+     * Counted in characters. Longer than a password: it is guessed offline against a zip, whose AES entry derives
+     * its key with PBKDF2-HMAC-SHA1 over 1000 iterations no caller chooses.
      */
     public const int MINIMUM_LENGTH = 16;
 

@@ -14,20 +14,6 @@ use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * What a ticket presented opens, and the whole order of reading it (issue #613): the ticket is found by
- * the identifier the URL carries, the value is verified against the hash the row holds, and what the
- * ticket still is comes after, as a disabled account comes after the password (`PasswordVerification`,
- * decision 0024).
- *
- * **Every refusal costs one hash and says the same thing** (decision 0006): an identifier nothing answers
- * pays a decoy, so the time does not say whether a ticket exists; a spent ticket, one out of time and one
- * of a person who cannot sign in are refused once the value was verified, so the time does not say which.
- *
- * **It opens an enrolment and nothing else.** What the caller does with the person it names is pose a
- * credential for them (`PasskeyEnrolment`); the ticket is spent once that credential is in the rows, so a
- * ceremony that failed leaves the ticket usable.
- */
 final readonly class EnrolmentTicketRedemption
 {
     private const string REFUSED = 'This enrolment ticket opens nothing.';
@@ -54,7 +40,7 @@ final readonly class EnrolmentTicketRedemption
         if (! $this->hasher->verify($ticket->secret, $value)) {
             throw new EnrolmentTicketRefusedException(self::REFUSED);
         }
-        // after the value on purpose: a ticket that was spent answers like a wrong value
+        // After the value on purpose: a ticket that was spent answers like a wrong value.
         if (! $ticket->opensAnEnrolment($this->clock->now())) {
             throw new EnrolmentTicketRefusedException(self::REFUSED);
         }
@@ -62,10 +48,6 @@ final readonly class EnrolmentTicketRedemption
         return $ticket;
     }
 
-    /**
-     * Spent once what it opened is in the rows, and never before: a ceremony that failed leaves the person
-     * their link.
-     */
     public function spend(EnrolmentTicket $ticket): void
     {
         $ticket->spend($this->clock->now());

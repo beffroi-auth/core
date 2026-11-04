@@ -15,27 +15,8 @@ use Beffroi\Core\Port\UuidGeneratorInterface;
 use Psr\Clock\ClockInterface;
 
 /**
- * The groups an upstream provider asserts at a sign-in, mapped to the groups of the tenant by the declaration
- * of that provider (decision 0002, issue #782).
- *
- * The memberships of source `upstream_claims` are what the provider said at the last sign-in, so they are
- * replaced by what it says at this one: a membership whose group is no longer asserted goes, one whose group
- * still is stays as it was, with its date, and a group newly asserted gets one. A value the mapping does not
- * name is ignored, so nothing is created from what a provider sends.
- *
- * A membership of another source, `local` or `scim`, is left as it is: a group asserted that the person
- * already holds through one of them gives no second membership, the table holding one per group and person,
- * and the value gone does not take it away.
- *
- * The mapping is an argument, which the caller holds from the declaration of the provider: nothing here reads
- * a configuration.
- *
- * **It runs inside one atomic unit with the sign-in that calls it**, the provisioning of the person included
- * (AtomicWritesInterface::atomically()): the store writes a row at a time, and the unit is what makes the
- * removals and the additions one write, or none. **The write is synchronous**, because a membership taken
- * away must be written before the session that sign-in opens serves anything: queued, it would leave the
- * person in a group the provider no longer asserts for as long as the queue takes. The removals come before
- * the additions. No event.
+ * Synchronous, never queued: a membership taken away must be gone before the session of the sign-in serves
+ * anything. Called inside the atomic unit of that sign-in, which makes the removals and additions one write.
  */
 final readonly class UpstreamMemberships
 {
@@ -48,10 +29,7 @@ final readonly class UpstreamMemberships
     }
 
     /**
-     * Nothing is written when a membership cannot be made, so a mapping wired with a group of another tenant
-     * leaves the person as they were.
-     *
-     * @param list<mixed> $asserted the values of the attribute the declaration names for groups, as the provider sent them; what is not a string is ignored
+     * @param list<mixed> $asserted
      *
      * @throws InvalidArgumentException when the mapping leads to a group of another tenant than the person's
      */

@@ -33,16 +33,10 @@ final class InMemoryAuthenticationSessionRepository implements
     private array $sessions = [];
 
     /**
-     * The subject of the person each session names, kept beside the session as a database keeps it, in a column of
-     * its own and in the clear, so that it is read without the session (decision 0011).
-     *
-     * @var array<string, Subject>
+     * @var array<string, Subject> by session id
      */
     private array $subjects = [];
 
-    /**
-     * For tests that must see a write happen on an object they already hold.
-     */
     public private(set) int $saves = 0;
 
     public function find(Uuid $id): ?AuthenticationSession
