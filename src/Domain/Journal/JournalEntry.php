@@ -32,6 +32,7 @@ final class JournalEntry implements ClassifiedFieldsInterface
         public readonly RequestContext $context,
         public readonly ?Subject $subject = null,
         public readonly ?string $client = null,
+        public readonly ?Subject $author = null,
     ) {
         if ($act === '') {
             throw new InvalidArgumentException('An act of the journal has a name.');
@@ -52,6 +53,7 @@ final class JournalEntry implements ClassifiedFieldsInterface
             'context' => new Sealed('journal'),
             'subject' => new NoPersonalDatum(Reason::THE_SUBJECT),
             'client' => new NoPersonalDatum('the client the act concerned, by the identifier it was registered under'),
+            'author' => new NoPersonalDatum(Reason::THE_SUBJECT),
             'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
             'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
         ];
