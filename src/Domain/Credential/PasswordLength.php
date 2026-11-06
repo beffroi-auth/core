@@ -15,7 +15,7 @@ final readonly class PasswordLength
 {
     public const int ALONE = 15;
 
-    public const int WITH_A_SECOND_FACTOR = 8;
+    public const int WITH_A_SECOND_FACTOR = 12;
 
     private function __construct(
         public int $minimum,
