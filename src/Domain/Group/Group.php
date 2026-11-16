@@ -14,6 +14,7 @@ use Beffroi\Core\Exception\InvalidArgumentException;
 use function mb_check_encoding;
 use function mb_strlen;
 use Normalizer;
+use function normalizer_is_normalized;
 use function preg_match;
 use function sprintf;
 use Symfony\Component\Uid\Uuid;
@@ -47,7 +48,7 @@ final class Group implements ClassifiedFieldsInterface
         if ($name === '') {
             throw new InvalidArgumentException('A group name must not be empty.');
         }
-        if (! mb_check_encoding($name, 'UTF-8') || ! Normalizer::isNormalized($name, Normalizer::FORM_C)) {
+        if (! mb_check_encoding($name, 'UTF-8') || ! normalizer_is_normalized($name, Normalizer::FORM_C)) {
             throw new InvalidArgumentException('A group name must be UTF-8 in Unicode Normalization Form C.');
         }
         if (mb_strlen($name) > self::NAME_MAX_LENGTH) {
