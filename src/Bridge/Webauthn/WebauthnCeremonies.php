@@ -19,13 +19,16 @@ use Webauthn\AttestationStatement\AttestationStatementSupportManager;
 use Webauthn\AttestationStatement\FidoU2FAttestationStatementSupport;
 use Webauthn\AttestationStatement\PackedAttestationStatementSupport;
 use Webauthn\AuthenticatorAssertionResponseValidator;
+use Webauthn\AuthenticatorAttestationResponse;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\CeremonyStep\CeremonyStepManagerFactory;
+use Webauthn\CredentialRecord;
 use Webauthn\Denormalizer\WebauthnSerializerFactory;
 use Webauthn\MetadataService\CertificateChain\CertificateChainValidator;
 use Webauthn\MetadataService\MetadataStatementRepository;
 use Webauthn\MetadataService\StatusReportRepository;
 use Webauthn\PublicKeyCredential;
+use Webauthn\PublicKeyCredentialCreationOptions;
 use Webauthn\PublicKeyCredentialOptions;
 use Webauthn\PublicKeyCredentialParameters;
 
@@ -67,6 +70,18 @@ final readonly class WebauthnCeremonies
     public function attestationValidator(Tenant $tenant): AuthenticatorAttestationResponseValidator
     {
         return AuthenticatorAttestationResponseValidator::create($this->factory($tenant)->creationCeremony());
+    }
+
+    /**
+     * WebAuthn Level 3 §7.1 steps 19 to 22
+     */
+    public function attestation(
+        Tenant $tenant,
+        AuthenticatorAttestationResponse $response,
+        CredentialRecord $record,
+        PublicKeyCredentialCreationOptions $options,
+    ): WebauthnAttestation {
+        return new WebauthnAttestation($response, $record, $options, self::relyingPartyId($tenant), $this->statements, $this->statusReports, $this->chains);
     }
 
     public function assertionValidator(Tenant $tenant): AuthenticatorAssertionResponseValidator

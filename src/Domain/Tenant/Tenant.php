@@ -30,6 +30,8 @@ final class Tenant implements ClassifiedFieldsInterface
 
     public private(set) AuthenticationPredicateInterface $loginFloor;
 
+    public private(set) PasskeyAttestation $passkeyAttestation;
+
     public function __construct(
         public private(set) Uuid $id,
         public readonly string $slug,
@@ -40,6 +42,7 @@ final class Tenant implements ClassifiedFieldsInterface
         ?TenantLook $look = null,
         ?SelfServedClaims $selfServedClaims = null,
         ?AuthenticationPredicateInterface $loginFloor = null,
+        ?PasskeyAttestation $passkeyAttestation = null,
     ) {
         if (preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $slug) !== 1) {
             throw new InvalidArgumentException(sprintf(
@@ -52,6 +55,7 @@ final class Tenant implements ClassifiedFieldsInterface
         $this->look = $look ?? TenantLook::none();
         $this->selfServedClaims = $selfServedClaims ?? SelfServedClaims::none();
         $this->loginFloor = $loginFloor ?? new SingleFactor();
+        $this->passkeyAttestation = $passkeyAttestation ?? PasskeyAttestation::none();
     }
 
     public function adoptAuthenticationContextPolicy(AuthenticationContextPolicy $policy): void
@@ -72,6 +76,11 @@ final class Tenant implements ClassifiedFieldsInterface
     public function adoptLoginFloor(AuthenticationPredicateInterface $floor): void
     {
         $this->loginFloor = $floor;
+    }
+
+    public function adoptPasskeyAttestation(PasskeyAttestation $attestation): void
+    {
+        $this->passkeyAttestation = $attestation;
     }
 
     public function rename(string $name): void
@@ -100,6 +109,8 @@ final class Tenant implements ClassifiedFieldsInterface
             'loginFloor' =>
                 new NoPersonalDatum('the predicate every login of this tenant satisfies at the least (issue #327): one of the four names this provider defines, and nothing of anybody who signs in'),
             'look' => new NoPersonalDatum('the logo and the two colours a tenant gives its pages (issue #449), beside the name it is already named by: what every page hands to every visitor before anybody has signed in'),
+            'passkeyAttestation' =>
+                new NoPersonalDatum('what the enrolment of a passkey asks of its authenticator in this tenant: the name of a policy, certificates of authorities and AAGUIDs of models, nothing of anybody'),
             'selfServedClaims' =>
                 new NoPersonalDatum('the names of the claims the people of this tenant may change of themselves (issue #452): names of claims, never a value and never a person'),
             'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),

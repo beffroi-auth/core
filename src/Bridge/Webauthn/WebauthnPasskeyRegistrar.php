@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\Webauthn;
 
 use function array_map;
+use Beffroi\Core\Domain\Credential\Attestation\VerifiedRegistration;
 use Beffroi\Core\Domain\Credential\PasskeyCredential;
 use Beffroi\Core\Domain\Credential\PasskeyUserHandle;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
 use Beffroi\Core\Port\PasskeyRegistrarInterface;
+use Psr\Clock\ClockInterface;
 use function random_bytes;
 use function sprintf;
 use Throwable;
 use Webauthn\AuthenticatorAttestationResponse;
 use Webauthn\AuthenticatorSelectionCriteria;
-use Webauthn\CredentialRecord;
 use Webauthn\PublicKeyCredentialCreationOptions;
 use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialRpEntity;
@@ -31,6 +32,7 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
 {
     public function __construct(
         private WebauthnCeremonies $ceremonies,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -48,23 +50,31 @@ final readonly class WebauthnPasskeyRegistrar implements PasskeyRegistrarInterfa
                 userVerification: AuthenticatorSelectionCriteria::USER_VERIFICATION_REQUIREMENT_PREFERRED,
                 residentKey: AuthenticatorSelectionCriteria::RESIDENT_KEY_REQUIREMENT_REQUIRED,
             ),
-            PublicKeyCredentialCreationOptions::ATTESTATION_CONVEYANCE_PREFERENCE_NONE,
+            $tenant->passkeyAttestation->policy->conveyancePreference(),
             array_map(static fn (PasskeyCredential $passkey): PublicKeyCredentialDescriptor => $passkey
                 ->record()
                 ->getPublicKeyCredentialDescriptor(), $existing),
         );
     }
 
-    public function verifyAttestation(Tenant $tenant, PublicKeyCredentialCreationOptions $options, string $response): CredentialRecord
+    public function verifyAttestation(Tenant $tenant, PublicKeyCredentialCreationOptions $options, string $response): VerifiedRegistration
     {
         $credential = $this->ceremonies->credentialFromJson($response);
-        if (! $credential->response instanceof AuthenticatorAttestationResponse) {
+        $attestation = $credential->response;
+        if (! $attestation instanceof AuthenticatorAttestationResponse) {
             throw new PasskeyCeremonyFailedException('The response of the browser is not the attestation of a new passkey.');
         }
+        // The library would read the FIDO metadata for options that ask for an attestation and refuse an AAGUID they do
+        // not know (web-auth/webauthn-framework#1002): the policy of the tenant reads them instead.
+        $withoutMetadata = clone $options;
+        $withoutMetadata->attestation = PublicKeyCredentialCreationOptions::ATTESTATION_CONVEYANCE_PREFERENCE_NONE;
         try {
-            return $this->ceremonies->attestationValidator($tenant)->check($credential->response, $options, WebauthnCeremonies::relyingPartyId($tenant));
+            $record = $this->ceremonies->attestationValidator($tenant)->check($attestation, $withoutMetadata, WebauthnCeremonies::relyingPartyId($tenant));
         } catch (Throwable $exception) {
             throw new PasskeyCeremonyFailedException(sprintf('The attestation was refused: %s', $exception->getMessage()), previous: $exception);
         }
+        $seen = $this->ceremonies->attestation($tenant, $attestation, $record, $options);
+
+        return new VerifiedRegistration($record, $tenant->passkeyAttestation->judge($seen, $this->clock->now()));
     }
 }

@@ -12,6 +12,7 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\PasskeyAttestationRefusedException;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\RandomnessInterface;
@@ -51,6 +52,7 @@ final readonly class PasskeyEnrolment
      * @param string $answer the attestation response, as the integration received it
      *
      * @throws CredentialEnrolmentFailedException
+     * @throws PasskeyAttestationRefusedException
      */
     public function complete(
         User $user,
@@ -60,10 +62,11 @@ final readonly class PasskeyEnrolment
         RequestContext $context,
     ): PasskeyCredential {
         try {
-            $record = $this->registrar->verifyAttestation($user->tenant, $challenge, $answer);
+            $registration = $this->registrar->verifyAttestation($user->tenant, $challenge, $answer);
         } catch (PasskeyCeremonyFailedException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
+        $record = $registration->record;
         $passkeys = $this->credentials->findByUser($user, PasskeyCredential::class);
         try {
             $handle = new PasskeyUserHandle($record->userHandle);
@@ -78,7 +81,7 @@ final readonly class PasskeyEnrolment
         }
         $now = $this->clock->now();
         try {
-            $credential = PasskeyCredential::fromRecord($this->uuids->timeOrdered(), $user, $name, $record, $now);
+            $credential = PasskeyCredential::fromRecord($this->uuids->timeOrdered(), $user, $name, $registration, $now);
         } catch (InvalidArgumentException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }

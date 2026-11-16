@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\Credential\Attestation\AttestationEvidence;
+use Beffroi\Core\Domain\Credential\Attestation\ModelProof;
+use Beffroi\Core\Domain\Credential\Attestation\VerifiedRegistration;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
 use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
 use Beffroi\Core\Domain\PersonalData\Reason;
@@ -45,6 +48,18 @@ final class PasskeyCredential extends RevocableCredential implements
 
     public readonly string $externalId;
 
+    public readonly ModelProof $modelProof;
+
+    /**
+     * WebAuthn Level 3 §8.2.2, in lowercase hexadecimal
+     */
+    public readonly ?string $serialNumber;
+
+    /**
+     * FIDO Metadata Service v3.1.1 §3.1.4.2, at the enrolment
+     */
+    public readonly bool $underSecurityAlert;
+
     public string $credentialId {
         get => $this->externalId;
     }
@@ -74,6 +89,7 @@ final class PasskeyCredential extends RevocableCredential implements
         public readonly Uuid $aaguid,
         public readonly PasskeyUserHandle $userHandle,
         DateTimeImmutable $createdAt,
+        AttestationEvidence $evidence = new AttestationEvidence(ModelProof::Declared),
     ) {
         parent::__construct($id, $user, $createdAt);
         $this->name = self::normalizeName($name);
@@ -93,13 +109,17 @@ final class PasskeyCredential extends RevocableCredential implements
         $this->signCount = $signCount;
         $this->backupEligible = $backupEligible;
         $this->backedUp = $backedUp;
+        $this->modelProof = $evidence->model;
+        $this->serialNumber = $evidence->serialNumber;
+        $this->underSecurityAlert = $evidence->underSecurityAlert;
     }
 
     /**
      * WebAuthn Level 3 §7.1, step 26
      */
-    public static function fromRecord(Uuid $id, User $user, string $name, CredentialRecord $record, DateTimeImmutable $createdAt): self
+    public static function fromRecord(Uuid $id, User $user, string $name, VerifiedRegistration $registration, DateTimeImmutable $createdAt): self
     {
+        $record = $registration->record;
         if ($record->backupEligible === null || $record->backupStatus === null) {
             throw new InvalidArgumentException('A passkey is enrolled with the backup flags of its authenticator data (WebAuthn Level 3 §6.1.3).');
         }
@@ -120,11 +140,12 @@ final class PasskeyCredential extends RevocableCredential implements
             $record->aaguid,
             new PasskeyUserHandle($record->userHandle),
             $createdAt,
+            $registration->evidence,
         );
     }
 
     /**
-     * The attestation is not kept, hence "none": verified at enrolment when present, nothing reads it later.
+     * The attestation statement is not kept, hence "none": what it proved at the enrolment is the model proof.
      */
     public function record(): CredentialRecord
     {
@@ -252,6 +273,11 @@ final class PasskeyCredential extends RevocableCredential implements
             'backupEligible' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
             'backedUp' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
             'aaguid' => new NoPersonalDatum(Reason::PUBLIC_BY_CONSTRUCTION),
+            'modelProof' =>
+                new NoPersonalDatum('what the enrolment proved of the model of the authenticator, declared, verified or attested for the organisation, which every authenticator of that model would prove alike'),
+            'serialNumber' => new Sealed('passkey_credential'),
+            'underSecurityAlert' =>
+                new NoPersonalDatum('whether the model of the authenticator was under a security alert of the FIDO metadata, which the tenant admitted, when the passkey was enrolled'),
             'userHandle' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
         ];
     }
