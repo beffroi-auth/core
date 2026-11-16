@@ -11,16 +11,20 @@ use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
-final readonly class CredentialRevoked implements ConcernsAPersonInterface
+final readonly class CredentialRevoked implements ConcernsAPersonInterface, NamesItsAuthorInterface
 {
     public const string NAME = 'credential.revoked';
 
     public Tenant $tenant;
 
+    /**
+     * @param Subject|null $administrator the administrator of the tenant who revoked it, by the subject of their account
+     */
     public function __construct(
         public Credential&RevocableCredentialInterface $credential,
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
+        public ?Subject $administrator = null,
     ) {
         $this->tenant = $credential->tenant;
     }
@@ -33,5 +37,10 @@ final readonly class CredentialRevoked implements ConcernsAPersonInterface
     public function subject(): Subject
     {
         return $this->credential->user->subject;
+    }
+
+    public function author(): ?Subject
+    {
+        return $this->administrator;
     }
 }

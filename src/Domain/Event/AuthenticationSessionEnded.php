@@ -12,7 +12,7 @@ use Beffroi\Core\Domain\Session\SessionEnd;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\LogicException;
 
-final readonly class AuthenticationSessionEnded implements ConcernsAPersonInterface
+final readonly class AuthenticationSessionEnded implements ConcernsAPersonInterface, NamesItsAuthorInterface
 {
     public const string NAME = 'session.ended';
 
@@ -20,10 +20,14 @@ final readonly class AuthenticationSessionEnded implements ConcernsAPersonInterf
 
     public SessionEnd $endedBy;
 
+    /**
+     * @param Subject|null $administrator the administrator of the tenant who ended it, by the subject of their account
+     */
     public function __construct(
         public AuthenticationSession $session,
         public DateTimeImmutable $occurredAt,
         public RequestContext $context,
+        public ?Subject $administrator = null,
     ) {
         $this->tenant = $session->tenant;
         $this->endedBy = $session->endedBy ?? throw new LogicException('The session has not ended.');
@@ -37,5 +41,10 @@ final readonly class AuthenticationSessionEnded implements ConcernsAPersonInterf
     public function subject(): Subject
     {
         return $this->session->user->subject;
+    }
+
+    public function author(): ?Subject
+    {
+        return $this->administrator;
     }
 }
