@@ -21,6 +21,8 @@ use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Event\PersonAskedForTheirArchive;
 use Beffroi\Core\Domain\Event\PersonDescribed;
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
+use Beffroi\Core\Domain\Event\PersonDisabled;
+use Beffroi\Core\Domain\Event\PersonEnabled;
 use Beffroi\Core\Domain\Event\PersonDroppedTheirArchive;
 use Beffroi\Core\Domain\Event\PersonCreated;
 use Beffroi\Core\Domain\Event\PersonProvisioned;
@@ -36,6 +38,8 @@ final class ActsOfAnAccount
     public const array NAMES = [
         PersonCreated::NAME,
         PersonProvisioned::NAME,
+        PersonDisabled::NAME,
+        PersonEnabled::NAME,
         UserAuthenticated::NAME,
         AuthenticationFailed::NAME,
         PasswordUsed::NAME,

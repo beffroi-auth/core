@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Authentication;
 
+use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Session\SessionEnd;
 use Beffroi\Core\Port\CanFindUnendedSessionsInterface;
+use Closure;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -26,22 +28,39 @@ final readonly class OtherSessionsTermination
 
     public function endEveryOther(AuthenticationSession $kept, RequestContext $context): int
     {
-        return $this->endEach($kept->user, $kept->id, $context);
+        return $this->endEach($kept->user, $kept->id, function (AuthenticationSession $session) use ($context): void {
+            $this->terminator->end($session, SessionEnd::User, $context);
+        });
     }
 
     public function endEvery(User $user, RequestContext $context): int
     {
-        return $this->endEach($user, null, $context);
+        return $this->endEach($user, null, function (AuthenticationSession $session) use ($context): void {
+            $this->terminator->end($session, SessionEnd::User, $context);
+        });
     }
 
-    private function endEach(User $user, ?Uuid $kept, RequestContext $context): int
+    /**
+     * Each session ends as an administrator ending it ends it: its act names them (decision 0038).
+     */
+    public function endEveryByAnAdministrator(User $user, Subject $administrator, RequestContext $context): int
+    {
+        return $this->endEach($user, null, function (AuthenticationSession $session) use ($administrator, $context): void {
+            $this->terminator->endByAnAdministrator($session, $administrator, $context);
+        });
+    }
+
+    /**
+     * @param Closure(AuthenticationSession): void $end
+     */
+    private function endEach(User $user, ?Uuid $kept, Closure $end): int
     {
         $ended = 0;
         foreach ($this->sessions->findUnendedByUser($user) as $session) {
             if ($kept !== null && $session->id->equals($kept)) {
                 continue;
             }
-            $this->terminator->end($session, SessionEnd::User, $context);
+            $end($session);
             ++$ended;
         }
 
