@@ -8,8 +8,9 @@ use Beffroi\Core\Domain\Identity\Subject;
 
 /**
  * An act that names who did it when an administrator of the tenant did it through the administration API (decision
- * 0038): read a person, changed what they hold, or created a group of the tenant. The journal writes the author beside
- * the person, both by the subject their accounts carry, which names them without saying anything about them.
+ * 0038): read a person, changed what they hold, or changed what the tenant holds, a group, an initial access token or a
+ * client. The journal writes the author beside the person when there is one, both by the subject their accounts carry,
+ * which names them without saying anything about them.
  *
  * An act the person did, or nobody this provider knows, names no author: a command run on the host names its operator
  * in its provenance (architecture §5.5), and an act of the person is theirs already.
