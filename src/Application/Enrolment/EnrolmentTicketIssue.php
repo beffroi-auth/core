@@ -4,82 +4,75 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Enrolment;
 
-use Beffroi\Core\Domain\Encoding\Base64Url;
+use Beffroi\Core\Application\Ticket\TicketIssuing;
+use Beffroi\Core\Domain\Credential\PasswordHash;
 use Beffroi\Core\Domain\Enrolment\EnrolmentTicket;
-use Beffroi\Core\Domain\Enrolment\IssuedEnrolmentTicket;
 use Beffroi\Core\Domain\Event\EnrolmentTicketIssued;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
-use Beffroi\Core\Exception\EnrolmentTicketRefusedException;
+use Beffroi\Core\Domain\Ticket\IssuedTicket;
+use Beffroi\Core\Exception\TicketRefusedException;
 use Beffroi\Core\Port\EnrolmentTicketRepositoryInterface;
-use Beffroi\Core\Port\PasswordHasherInterface;
-use Beffroi\Core\Port\RandomnessInterface;
-use Beffroi\Core\Port\UuidGeneratorInterface;
-use DateInterval;
-use Psr\Clock\ClockInterface;
+use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use function sprintf;
+use Symfony\Component\Uid\Uuid;
 
 final readonly class EnrolmentTicketIssue
 {
-    public const int LENGTH = 32;
-
-    /**
-     * Covers a weekend between the day a ticket is issued and the day somebody starts.
-     */
-    public const string LIFETIME = 'PT72H';
-
     public function __construct(
         private EnrolmentTicketRepositoryInterface $tickets,
-        private UuidGeneratorInterface $uuids,
-        private RandomnessInterface $randomness,
-        private PasswordHasherInterface $hasher,
-        private ClockInterface $clock,
+        private TicketIssuing $issuing,
         private EventDispatcherInterface $events,
-        private DateInterval $lifetime = new DateInterval(self::LIFETIME),
     ) {
     }
 
     /**
-     * @throws EnrolmentTicketRefusedException when the person cannot sign in at all
+     * @return IssuedTicket<EnrolmentTicket>
+     *
+     * @throws TicketRefusedException when the person cannot sign in at all
      */
-    public function issue(User $user, RequestContext $context): IssuedEnrolmentTicket
+    public function issue(User $user, RequestContext $context): IssuedTicket
     {
         return $this->issueOnce($user, $context, null);
     }
 
     /**
-     * @throws EnrolmentTicketRefusedException when the person cannot sign in at all
+     * @return IssuedTicket<EnrolmentTicket>
+     *
+     * @throws TicketRefusedException when the person cannot sign in at all
      */
-    public function issueByAnAdministrator(User $user, Subject $administrator, RequestContext $context): IssuedEnrolmentTicket
+    public function issueByAnAdministrator(User $user, Subject $administrator, RequestContext $context): IssuedTicket
     {
         return $this->issueOnce($user, $context, $administrator);
     }
 
     /**
-     * @throws EnrolmentTicketRefusedException
+     * @return IssuedTicket<EnrolmentTicket>
+     *
+     * @throws TicketRefusedException
      */
-    private function issueOnce(User $user, RequestContext $context, ?Subject $administrator): IssuedEnrolmentTicket
+    private function issueOnce(User $user, RequestContext $context, ?Subject $administrator): IssuedTicket
     {
-        if (! $user->isEnabled()) {
-            throw new EnrolmentTicketRefusedException(sprintf('The account of "%s" is disabled; a ticket would open nothing.', $user->username));
-        }
-        foreach ($this->tickets->unspentOf($user) as $unspent) {
-            $this->tickets->forget($unspent);
-        }
-        $now = $this->clock->now();
-        $value = Base64Url::encode($this->randomness->bytes(self::LENGTH));
-        $ticket = new EnrolmentTicket(
-            $this->uuids->timeOrdered(),
+        $issued = $this->issuing->issue(
+            $this->tickets,
             $user,
-            $this->hasher->hash($value),
-            $now,
-            $now->add($this->lifetime),
+            static fn (
+                Uuid $id,
+                User $user,
+                PasswordHash $secret,
+                DateTimeImmutable $issuedAt,
+                DateTimeImmutable $expiresAt,
+            ): EnrolmentTicket => new EnrolmentTicket(
+                $id,
+                $user,
+                $secret,
+                $issuedAt,
+                $expiresAt,
+            ),
         );
-        $this->tickets->save($ticket);
-        $this->events->dispatch(new EnrolmentTicketIssued($ticket, $now, $context, $administrator));
+        $this->events->dispatch(new EnrolmentTicketIssued($issued->ticket, $issued->ticket->createdAt, $context, $administrator));
 
-        return new IssuedEnrolmentTicket($ticket, $value);
+        return $issued;
     }
 }
