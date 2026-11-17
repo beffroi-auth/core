@@ -8,6 +8,7 @@ use Beffroi\Core\Domain\Encoding\Base64Url;
 use Beffroi\Core\Domain\Enrolment\EnrolmentTicket;
 use Beffroi\Core\Domain\Enrolment\IssuedEnrolmentTicket;
 use Beffroi\Core\Domain\Event\EnrolmentTicketIssued;
+use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\EnrolmentTicketRefusedException;
@@ -45,6 +46,22 @@ final readonly class EnrolmentTicketIssue
      */
     public function issue(User $user, RequestContext $context): IssuedEnrolmentTicket
     {
+        return $this->issueOnce($user, $context, null);
+    }
+
+    /**
+     * @throws EnrolmentTicketRefusedException when the person cannot sign in at all
+     */
+    public function issueByAnAdministrator(User $user, Subject $administrator, RequestContext $context): IssuedEnrolmentTicket
+    {
+        return $this->issueOnce($user, $context, $administrator);
+    }
+
+    /**
+     * @throws EnrolmentTicketRefusedException
+     */
+    private function issueOnce(User $user, RequestContext $context, ?Subject $administrator): IssuedEnrolmentTicket
+    {
         if (! $user->isEnabled()) {
             throw new EnrolmentTicketRefusedException(sprintf('The account of "%s" is disabled; a ticket would open nothing.', $user->username));
         }
@@ -61,7 +78,7 @@ final readonly class EnrolmentTicketIssue
             $now->add($this->lifetime),
         );
         $this->tickets->save($ticket);
-        $this->events->dispatch(new EnrolmentTicketIssued($ticket, $now, $context));
+        $this->events->dispatch(new EnrolmentTicketIssued($ticket, $now, $context, $administrator));
 
         return new IssuedEnrolmentTicket($ticket, $value);
     }
