@@ -22,6 +22,9 @@ final class ClaimChange implements ClassifiedFieldsInterface
 {
     public readonly Tenant $tenant;
 
+    /**
+     * @param Subject|null $author the administrator of the tenant who made the change, by the subject of their account; null when the person made it
+     */
     public function __construct(
         public private(set) Uuid $id,
         public readonly User $user,
@@ -30,6 +33,7 @@ final class ClaimChange implements ClassifiedFieldsInterface
         public readonly ?string $became,
         public readonly DateTimeImmutable $changedAt,
         public readonly RequestContext $context,
+        public readonly ?Subject $author = null,
     ) {
         if ($claim === '') {
             throw new InvalidArgumentException('A change of a claim names the claim.');
@@ -49,7 +53,8 @@ final class ClaimChange implements ClassifiedFieldsInterface
     public static function classifiedFields(): array
     {
         return [
-            'claim' => new NoPersonalDatum('the name of the claim that changed, which is a name of OIDC Core §5.1 and never a value'),
+            'claim' => new NoPersonalDatum('the name of what changed, a claim of OIDC Core §5.1 or the username of the account, and never a value'),
+            'author' => new NoPersonalDatum(Reason::THE_SUBJECT),
             'was' => new Sealed('claim_change'),
             'became' => new Sealed('claim_change'),
             'changedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),

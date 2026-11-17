@@ -10,6 +10,10 @@ use Beffroi\Core\Port\ArchiveChapterInterface;
 use Beffroi\Core\Port\ChangesOfAPersonInterface;
 use function count;
 
+/**
+ * A change an administrator of the tenant made says so, and neither who they are nor where they made it from (decision
+ * 0038), as an act of theirs does.
+ */
 final readonly class ChangesChapter implements ArchiveChapterInterface
 {
     public const int READ_AT_ONCE = 500;
@@ -36,7 +40,8 @@ final readonly class ChangesChapter implements ArchiveChapterInterface
                     'was' => $change->was,
                     'became' => $change->became,
                     'changed_at' => ArchivedFacts::moment($change->changedAt),
-                    'from' => ArchivedFacts::context($change->context),
+                    'from' => $change->author === null ? ArchivedFacts::context($change->context) : null,
+                    'author' => $change->author === null ? null : ArchivedFacts::AN_ADMINISTRATOR,
                 ];
                 $after = $change->id;
             }

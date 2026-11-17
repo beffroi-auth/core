@@ -19,6 +19,7 @@ use Beffroi\Core\Domain\Event\PasswordTicketIssued;
 use Beffroi\Core\Domain\Event\TotpTicketIssued;
 use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Event\PersonAskedForTheirArchive;
+use Beffroi\Core\Domain\Event\PersonDescribed;
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
 use Beffroi\Core\Domain\Event\PersonDroppedTheirArchive;
 use Beffroi\Core\Domain\Event\PersonCreated;
@@ -52,6 +53,7 @@ final class ActsOfAnAccount
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,
         PersonDescribedThemselves::NAME,
+        PersonDescribed::NAME,
         PersonAskedForTheirArchive::NAME,
         PersonTookTheirArchive::NAME,
         PersonDroppedTheirArchive::NAME,
