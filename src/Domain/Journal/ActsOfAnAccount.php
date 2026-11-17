@@ -16,6 +16,7 @@ use Beffroi\Core\Domain\Event\EnrolmentTicketIssued;
 use Beffroi\Core\Domain\Event\PasskeyUsed;
 use Beffroi\Core\Domain\Event\PasswordChanged;
 use Beffroi\Core\Domain\Event\PasswordTicketIssued;
+use Beffroi\Core\Domain\Event\TotpTicketIssued;
 use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Event\PersonAskedForTheirArchive;
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
@@ -46,6 +47,7 @@ final class ActsOfAnAccount
         CredentialForgotten::NAME,
         EnrolmentTicketIssued::NAME,
         PasswordTicketIssued::NAME,
+        TotpTicketIssued::NAME,
         CredentialRenamed::NAME,
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,

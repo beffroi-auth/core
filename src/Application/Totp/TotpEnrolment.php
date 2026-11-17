@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Totp;
 
+use Beffroi\Core\Application\Credential\CredentialRevocation;
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Credential\TotpProvisioning;
@@ -37,6 +38,7 @@ final readonly class TotpEnrolment
         private TotpAlgorithmInterface $algorithm,
         private TotpCodeMatcher $matcher,
         private SecretSealerInterface $sealer,
+        private CredentialRevocation $revocation,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
     ) {
@@ -48,9 +50,20 @@ final readonly class TotpEnrolment
     public function begin(User $user): TotpProvisioning
     {
         $this->refuseASecondOne($user);
-        $secret = new TotpSecret($this->randomness->bytes(TotpSecret::LENGTH));
 
-        return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $this->backupCodes->draw());
+        return $this->provisioningFor($user);
+    }
+
+    /**
+     * Decision 0026: a ticket enrols an app in place of the one the person holds.
+     *
+     * @throws CredentialEnrolmentFailedException
+     */
+    public function beginInPlaceOfTheOneHeld(User $user): TotpProvisioning
+    {
+        $this->refuseWhatTheTenantRefuses($user);
+
+        return $this->provisioningFor($user);
     }
 
     /**
@@ -60,6 +73,36 @@ final readonly class TotpEnrolment
     public function complete(User $user, TotpProvisioning $challenge, string $code, RequestContext $context): TotpCredential
     {
         $this->refuseASecondOne($user);
+
+        return $this->enrol($user, $challenge, $code, $context, null);
+    }
+
+    /**
+     * The TOTP the person holds is revoked once the code matches and the new secret is sealed, never before.
+     *
+     * @throws CredentialEnrolmentFailedException
+     * @throws KmsUnavailableException
+     */
+    public function completeInPlaceOfTheOneHeld(User $user, TotpProvisioning $challenge, string $code, RequestContext $context): TotpCredential
+    {
+        $this->refuseWhatTheTenantRefuses($user);
+
+        return $this->enrol($user, $challenge, $code, $context, $this->activeTotp->of($user));
+    }
+
+    private function provisioningFor(User $user): TotpProvisioning
+    {
+        $secret = new TotpSecret($this->randomness->bytes(TotpSecret::LENGTH));
+
+        return new TotpProvisioning($secret, $this->algorithm->provisioningUri($secret, $user->tenant->name, $user->username), $this->backupCodes->draw());
+    }
+
+    /**
+     * @throws CredentialEnrolmentFailedException
+     * @throws KmsUnavailableException
+     */
+    private function enrol(User $user, TotpProvisioning $challenge, string $code, RequestContext $context, ?TotpCredential $held): TotpCredential
+    {
         $now = $this->clock->now();
         $step = $this->matcher->matchingStep($challenge->secret, $code, $now);
         if ($step === null) {
@@ -78,6 +121,9 @@ final readonly class TotpEnrolment
         } catch (InvalidArgumentException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
+        if ($held !== null) {
+            $this->revocation->revoke($held, $context);
+        }
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
 
@@ -89,10 +135,18 @@ final readonly class TotpEnrolment
      */
     private function refuseASecondOne(User $user): void
     {
-        $this->enrolments->assertTheFloorAdmits($user->tenant, 'one-time code', [TotpCredential::method()]);
-        $this->enrolments->assertTheirDomainAdmits($user, 'one-time code');
+        $this->refuseWhatTheTenantRefuses($user);
         if ($this->activeTotp->of($user) !== null) {
             throw new CredentialEnrolmentFailedException('The user has a TOTP already; it is revoked before another is enrolled.');
         }
+    }
+
+    /**
+     * @throws CredentialEnrolmentFailedException
+     */
+    private function refuseWhatTheTenantRefuses(User $user): void
+    {
+        $this->enrolments->assertTheFloorAdmits($user->tenant, 'one-time code', [TotpCredential::method()]);
+        $this->enrolments->assertTheirDomainAdmits($user, 'one-time code');
     }
 }

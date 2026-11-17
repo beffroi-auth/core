@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Application\Ticket;
 
-use Beffroi\Core\Application\Identity\FederatedDomains;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Credential\PasswordHash;
 use Beffroi\Core\Domain\Event\PasswordTicketIssued;
@@ -17,7 +16,6 @@ use Beffroi\Core\Exception\TicketRefusedException;
 use Beffroi\Core\Port\PasswordTicketRepositoryInterface;
 use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use function sprintf;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -29,7 +27,7 @@ final readonly class PasswordTicketIssue
     public function __construct(
         private PasswordTicketRepositoryInterface $tickets,
         private TicketIssuing $issuing,
-        private FederatedDomains $federated,
+        private CredentialTicketRefusal $refusal,
         private EventDispatcherInterface $events,
     ) {
     }
@@ -61,12 +59,7 @@ final readonly class PasswordTicketIssue
      */
     private function issueOnce(User $user, RequestContext $context, ?Subject $administrator): IssuedTicket
     {
-        if (! $user->tenant->loginFloor->admits([PasswordCredential::method()])) {
-            throw new TicketRefusedException('The tenant signs its users in without a password; a password ticket would open nothing.');
-        }
-        if (! $this->federated->admitsLocalCredentials($user)) {
-            throw new TicketRefusedException(sprintf('"%s" is of an e-mail domain the tenant federates, which holds no password of theirs.', $user->username));
-        }
+        $this->refusal->assertItWouldOpen($user, 'password', [PasswordCredential::method()]);
         $issued = $this->issuing->issue(
             $this->tickets,
             $user,
