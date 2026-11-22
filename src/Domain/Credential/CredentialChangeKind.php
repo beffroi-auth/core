@@ -9,7 +9,7 @@ use Beffroi\Core\Domain\Notification\NotificationKindInterface;
 /**
  * NIST SP 800-63B-4 §4.6
  *
- * A change of the credentials of the account reaches every channel, whatever the person chose.
+ * No choice of the person narrows a change of the credentials of the account: every channel that carries it tells them.
  */
 final readonly class CredentialChangeKind implements NotificationKindInterface
 {

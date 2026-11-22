@@ -20,7 +20,8 @@ use function sprintf;
 
 /**
  * The channels a person chose to be told by: the ones of a kind they set apart, else the ones they chose for every
- * kind, else every channel the deployment turns on. A kind no choice narrows reaches them by every channel.
+ * kind, else every channel the deployment turns on. A choice holds the channels it names, and none turned on later.
+ * A kind no choice narrows reaches them by every channel that carries it.
  */
 final readonly class ChosenChannels
 {
