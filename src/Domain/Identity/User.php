@@ -13,6 +13,7 @@ use Beffroi\Core\Domain\PersonalData\Sealed;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use Beffroi\Core\Exception\MailEncryptionRefusedException;
 use function sprintf;
 use function strlen;
 use Symfony\Component\Uid\Uuid;
@@ -31,6 +32,12 @@ final class User implements ClassifiedFieldsInterface
      * Filled the same way, and not unique: two local persons of a tenant may share an address.
      */
     public private(set) ?string $emailIndex = null;
+
+    /**
+     * What the mail of the provider is encrypted to once the person asked for it; a new address takes it back as it
+     * takes back the verification.
+     */
+    public private(set) ?MailEncryptionKey $mailEncryption = null;
 
     public function __construct(
         public private(set) Uuid $id,
@@ -86,11 +93,14 @@ final class User implements ClassifiedFieldsInterface
     }
 
     /**
-     * Verification never carries over to a new address.
+     * Verification never carries over to a new address, nor does the key mail to it was encrypted to.
      */
     public function changeEmail(?EmailAddress $email, bool $verified, DateTimeImmutable $now): void
     {
         self::assertVerifiable($email, $verified, 'email address');
+        if ($email?->value !== $this->email?->value) {
+            $this->mailEncryption = null;
+        }
         $this->email = $email;
         $this->emailVerified = $verified;
         $this->updatedAt = $now;
@@ -107,6 +117,41 @@ final class User implements ClassifiedFieldsInterface
     public function verifiedEmail(): ?EmailAddress
     {
         return $this->emailVerified ? $this->email : null;
+    }
+
+    /**
+     * @throws MailEncryptionRefusedException when no address is verified, the key names another one, or it is not
+     *                                        valid at that moment
+     */
+    public function encryptMailTo(MailEncryptionKey $key, DateTimeImmutable $now): void
+    {
+        $verified = $this->verifiedEmail();
+        if ($verified === null) {
+            throw new MailEncryptionRefusedException(
+                MailEncryptionRefusal::NoVerifiedAddress,
+                'Mail is encrypted to a verified address, and this person has none.',
+            );
+        }
+        if (! $key->binds($verified)) {
+            throw new MailEncryptionRefusedException(
+                MailEncryptionRefusal::AnotherAddress,
+                'The certificate or the key does not name the verified address of this person.',
+            );
+        }
+        if (! $key->isValidAt($now)) {
+            throw new MailEncryptionRefusedException(MailEncryptionRefusal::NotValidNow, 'The certificate or the key is not valid at this moment.');
+        }
+        $this->mailEncryption = $key;
+        $this->updatedAt = $now;
+    }
+
+    public function writeMailInClear(DateTimeImmutable $now): void
+    {
+        if ($this->mailEncryption === null) {
+            return;
+        }
+        $this->mailEncryption = null;
+        $this->updatedAt = $now;
     }
 
     public function verifiedPhoneNumber(): ?string
@@ -208,6 +253,7 @@ final class User implements ClassifiedFieldsInterface
             'phoneNumberVerified' => new NoPersonalDatum('whether an address or a number was verified, which says nothing of either'),
             'address' => new Sealed('user'),
             'source' => new Sealed('user'),
+            'mailEncryption' => new Sealed('user'),
             'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'updatedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'disabledAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),

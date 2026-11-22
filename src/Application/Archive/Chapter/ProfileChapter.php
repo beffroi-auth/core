@@ -6,6 +6,7 @@ namespace Beffroi\Core\Application\Archive\Chapter;
 
 use Beffroi\Core\Domain\Archive\ArchivedFacts;
 use Beffroi\Core\Domain\Identity\Address;
+use Beffroi\Core\Domain\Identity\MailEncryptionKey;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Identity\UserSource;
 use Beffroi\Core\Port\ArchiveChapterInterface;
@@ -52,7 +53,26 @@ final readonly class ProfileChapter implements ArchiveChapterInterface
                 'updated_at' => ArchivedFacts::moment($user->updatedAt),
                 'disabled_at' => ArchivedFacts::moment($user->disabledAt),
                 'source' => self::source($user->source),
+                'mail_encryption' => self::mailEncryption($user->mailEncryption),
             ],
+        ];
+    }
+
+    /**
+     * @return array{format: string, fingerprint: string, material: string, not_before: string|null, not_after: string|null}|null
+     */
+    private static function mailEncryption(?MailEncryptionKey $key): ?array
+    {
+        if ($key === null) {
+            return null;
+        }
+
+        return [
+            'format' => $key->kind,
+            'fingerprint' => $key->fingerprint,
+            'material' => $key->material,
+            'not_before' => ArchivedFacts::moment($key->notBefore),
+            'not_after' => ArchivedFacts::moment($key->notAfter),
         ];
     }
 
