@@ -34,7 +34,6 @@ final readonly class OtphpTotpAlgorithm implements TotpAlgorithmInterface
         if ($timeStep < 0 || $timeStep > intdiv(PHP_INT_MAX, TotpCredential::PERIOD)) {
             throw new InvalidArgumentException('A time step is never negative (RFC 6238 §4.2), nor beyond what a Unix time counts.');
         }
-        /** @var int<0, max> $unixTime */
         $unixTime = $timeStep * TotpCredential::PERIOD;
 
         return $this->totp($secret)->at($unixTime);
