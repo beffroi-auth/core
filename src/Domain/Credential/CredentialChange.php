@@ -12,7 +12,7 @@ use Symfony\Component\Uid\Uuid;
 /**
  * NIST SP 800-63B-4 §4.1.2.1, §4.5, §4.6
  *
- * Carries no identifier of what changed and no link: the person reads the change, and undoes it, on their account.
+ * Carries no identifier of what changed and no link: the person reads the change on their account, signed in.
  */
 final readonly class CredentialChange
 {
