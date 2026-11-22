@@ -104,6 +104,16 @@ final class User implements ClassifiedFieldsInterface
         $this->updatedAt = $now;
     }
 
+    public function verifiedEmail(): ?EmailAddress
+    {
+        return $this->emailVerified ? $this->email : null;
+    }
+
+    public function verifiedPhoneNumber(): ?string
+    {
+        return $this->phoneNumberVerified ? $this->phoneNumber : null;
+    }
+
     public function updateProfile(Profile $profile, DateTimeImmutable $now): void
     {
         $this->profile = $profile;
