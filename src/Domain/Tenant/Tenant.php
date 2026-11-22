@@ -32,6 +32,8 @@ final class Tenant implements ClassifiedFieldsInterface
 
     public private(set) PasskeyAttestation $passkeyAttestation;
 
+    public private(set) ?TenantContact $contact = null;
+
     public function __construct(
         public private(set) Uuid $id,
         public readonly string $slug,
@@ -83,6 +85,11 @@ final class Tenant implements ClassifiedFieldsInterface
         $this->passkeyAttestation = $attestation;
     }
 
+    public function adoptContact(?TenantContact $contact): void
+    {
+        $this->contact = $contact;
+    }
+
     public function rename(string $name): void
     {
         if ($name === '') {
@@ -113,6 +120,8 @@ final class Tenant implements ClassifiedFieldsInterface
                 new NoPersonalDatum('what the enrolment of a passkey asks of its authenticator in this tenant: the name of a policy, certificates of authorities and AAGUIDs of models, nothing of anybody'),
             'selfServedClaims' =>
                 new NoPersonalDatum('the names of the claims the people of this tenant may change of themselves (issue #452): names of claims, never a value and never a person'),
+            'contact' =>
+                new NoPersonalDatum('how the tenant asks its people to reach it about a change to their account they did not make (NIST SP 800-63B-4 §4.6): what it writes to every one of them, as it writes its name'),
             'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'id' => new NoPersonalDatum(Reason::DRAWN_AT_RANDOM),
         ];
