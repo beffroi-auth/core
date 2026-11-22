@@ -54,6 +54,7 @@ final readonly class ProfileChapter implements ArchiveChapterInterface
                 'disabled_at' => ArchivedFacts::moment($user->disabledAt),
                 'source' => self::source($user->source),
                 'mail_encryption' => self::mailEncryption($user->mailEncryption),
+                'notification_channels' => $user->notificationChannels->toDocument(),
             ],
         ];
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\Notification\ChosenChannels;
 use Beffroi\Core\Domain\PersonalData\BlindIndex;
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
@@ -38,6 +39,7 @@ final class User implements ClassifiedFieldsInterface
      * takes back the verification.
      */
     public private(set) ?MailEncryptionKey $mailEncryption = null;
+    public private(set) ChosenChannels $notificationChannels;
 
     public function __construct(
         public private(set) Uuid $id,
@@ -57,6 +59,7 @@ final class User implements ClassifiedFieldsInterface
         $this->username = self::normalizeUsername($username);
         self::assertVerifiable($email, $emailVerified, 'email address');
         self::assertVerifiable($phoneNumber, $phoneNumberVerified, 'phone number');
+        $this->notificationChannels = ChosenChannels::none();
     }
 
     public static function create(
@@ -183,6 +186,12 @@ final class User implements ClassifiedFieldsInterface
         $this->updatedAt = $now;
     }
 
+    public function chooseChannels(ChosenChannels $chosen, DateTimeImmutable $now): void
+    {
+        $this->notificationChannels = $chosen;
+        $this->updatedAt = $now;
+    }
+
     public function disable(DateTimeImmutable $now): void
     {
         if ($this->disabledAt !== null) {
@@ -254,6 +263,7 @@ final class User implements ClassifiedFieldsInterface
             'address' => new Sealed('user'),
             'source' => new Sealed('user'),
             'mailEncryption' => new Sealed('user'),
+            'notificationChannels' => new Sealed('user'),
             'createdAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'updatedAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'disabledAt' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),

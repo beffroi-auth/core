@@ -54,7 +54,7 @@ final class ClaimChange implements ClassifiedFieldsInterface
     {
         return [
             'claim' =>
-                new NoPersonalDatum('the name of what changed, a claim of OIDC Core §5.1, the username of the account or the key its mail is encrypted to, and never a value'),
+                new NoPersonalDatum('the name of what changed, a claim of OIDC Core §5.1, the username of the account, the key its mail is encrypted to or the channels a person chose, and never a value'),
             'author' => new NoPersonalDatum(Reason::THE_SUBJECT),
             'was' => new Sealed('claim_change'),
             'became' => new Sealed('claim_change'),

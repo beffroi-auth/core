@@ -20,6 +20,7 @@ use Beffroi\Core\Domain\Event\TotpTicketIssued;
 use Beffroi\Core\Domain\Event\PasswordUsed;
 use Beffroi\Core\Domain\Event\GroupMembershipAdded;
 use Beffroi\Core\Domain\Event\GroupMembershipRemoved;
+use Beffroi\Core\Domain\Event\NotificationChannelsChosen;
 use Beffroi\Core\Domain\Event\PersonAskedForTheirArchive;
 use Beffroi\Core\Domain\Event\PersonDescribed;
 use Beffroi\Core\Domain\Event\PersonDescribedThemselves;
@@ -62,6 +63,7 @@ final class ActsOfAnAccount
         BackupCodesRenewed::NAME,
         PersonDescribedThemselves::NAME,
         PersonDescribed::NAME,
+        NotificationChannelsChosen::NAME,
         PersonAskedForTheirArchive::NAME,
         PersonTookTheirArchive::NAME,
         PersonDroppedTheirArchive::NAME,
