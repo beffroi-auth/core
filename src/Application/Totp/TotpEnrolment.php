@@ -6,6 +6,7 @@ namespace Beffroi\Core\Application\Totp;
 
 use Beffroi\Core\Application\Credential\CredentialRevocation;
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Credential\TotpProvisioning;
 use Beffroi\Core\Domain\Credential\TotpSecret;
@@ -15,6 +16,7 @@ use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\KmsUnavailableException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\RandomnessInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
@@ -41,6 +43,7 @@ final readonly class TotpEnrolment
         private CredentialRevocation $revocation,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -126,6 +129,7 @@ final readonly class TotpEnrolment
         }
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
+        $this->notifier->tell(new CredentialChange($user, CredentialEnrolled::NAME, $now, $credential->kind()));
 
         return $credential;
     }

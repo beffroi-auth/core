@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Passkey;
 
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\PasskeyCredential;
 use Beffroi\Core\Domain\Credential\PasskeyUserHandle;
 use Beffroi\Core\Domain\Event\CredentialEnrolled;
@@ -14,6 +15,7 @@ use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\PasskeyAttestationRefusedException;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\RandomnessInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
@@ -32,6 +34,7 @@ final readonly class PasskeyEnrolment
         private PasskeyRegistrarInterface $registrar,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -90,6 +93,7 @@ final readonly class PasskeyEnrolment
         $this->enrolments->assertTheirDomainAdmits($user, 'passkey');
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialEnrolled($credential, $now, $context));
+        $this->notifier->tell(new CredentialChange($user, CredentialEnrolled::NAME, $now, $credential->kind()));
 
         return $credential;
     }

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Credential;
 
 use Beffroi\Core\Domain\Credential\Credential;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\RevocableCredentialInterface;
 use Beffroi\Core\Domain\Event\CredentialRevoked;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -22,6 +24,7 @@ final readonly class CredentialRevocation
         private CredentialRepositoryInterface $credentials,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -47,5 +50,6 @@ final readonly class CredentialRevocation
         $credential->revoke($now);
         $this->credentials->save($credential);
         $this->events->dispatch(new CredentialRevoked($credential, $now, $context, $administrator));
+        $this->notifier->tell(new CredentialChange($credential->user, CredentialRevoked::NAME, $now, $credential->kind()));
     }
 }

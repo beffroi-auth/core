@@ -7,6 +7,7 @@ namespace Beffroi\Core\Application\Ticket;
 use Beffroi\Core\Application\Authentication\OtherSessionsTermination;
 use Beffroi\Core\Application\Credential\ActivePassword;
 use Beffroi\Core\Application\Identity\UserProvisioner;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\PasswordChangeRefusal;
 use Beffroi\Core\Domain\Credential\PlainPassword;
 use Beffroi\Core\Domain\Event\CredentialEnrolled;
@@ -18,6 +19,7 @@ use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Exception\PasswordChangeRefusedException;
 use Beffroi\Core\Exception\PasswordRefusedException;
 use Beffroi\Core\Exception\TicketRefusedException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Beffroi\Core\Port\PasswordTicketRepositoryInterface;
 use Psr\Clock\ClockInterface;
@@ -41,6 +43,7 @@ final readonly class PasswordTicketRedemption
         private OtherSessionsTermination $sessions,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -68,7 +71,9 @@ final readonly class PasswordTicketRedemption
         }
         $credential = $this->provisioner->setPassword($ticket->user, $password);
         $now = $this->clock->now();
-        $this->events->dispatch($held === null ? new CredentialEnrolled($credential, $now, $context) : new PasswordChanged($credential, $now, $context));
+        $act = $held === null ? new CredentialEnrolled($credential, $now, $context) : new PasswordChanged($credential, $now, $context);
+        $this->events->dispatch($act);
+        $this->notifier->tell(new CredentialChange($ticket->user, $act->name(), $now, $credential->kind()));
         $this->redeeming->spend($this->tickets, $ticket);
         $this->sessions->endEvery($ticket->user, $context);
     }

@@ -6,11 +6,13 @@ namespace Beffroi\Core\Application\Totp;
 
 use Beffroi\Core\Exception\CredentialEnrolmentFailedException;
 use Beffroi\Core\Application\Credential\EnrolmentRefusal;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\TotpCredential;
 use Beffroi\Core\Domain\Event\BackupCodesRenewed;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\LogicException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -23,6 +25,7 @@ final readonly class BackupCodesRenewal
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
         private EnrolmentRefusal $enrolments,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -40,7 +43,9 @@ final readonly class BackupCodesRenewal
         $spelled = $this->codes->draw();
         $totp->renewBackupCodes($this->codes->hashed($spelled));
         $this->credentials->save($totp);
-        $this->events->dispatch(new BackupCodesRenewed($totp, $this->clock->now(), $context));
+        $now = $this->clock->now();
+        $this->events->dispatch(new BackupCodesRenewed($totp, $now, $context));
+        $this->notifier->tell(new CredentialChange($totp->user, BackupCodesRenewed::NAME, $now, $totp->kind()));
 
         return $spelled;
     }

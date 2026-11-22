@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Credential;
 
 use Beffroi\Core\Application\Identity\FederatedDomains;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\PasswordChangeRefusal;
 use Beffroi\Core\Domain\Credential\PasswordCredential;
 use Beffroi\Core\Domain\Credential\PlainPassword;
@@ -14,6 +15,7 @@ use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Exception\PasswordChangeRefusedException;
 use Beffroi\Core\Exception\PasswordRefusedException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Psr\Clock\ClockInterface;
@@ -34,6 +36,7 @@ final readonly class PasswordChange
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
         private FederatedDomains $federated,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -91,5 +94,6 @@ final readonly class PasswordChange
         }
         $this->credentials->save($credential);
         $this->events->dispatch(new PasswordChanged($credential, $now, $context));
+        $this->notifier->tell(new CredentialChange($user, PasswordChanged::NAME, $now, $credential->kind()));
     }
 }

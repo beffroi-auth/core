@@ -25,4 +25,9 @@ final readonly class RetentionWindow
     {
         return $now->modify(sprintf('-%d days', $this->days));
     }
+
+    public function keptUntil(DateTimeImmutable $writtenAt): DateTimeImmutable
+    {
+        return $writtenAt->modify(sprintf('+%d days', $this->days));
+    }
 }

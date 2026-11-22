@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Application\Enrolment;
 
 use Beffroi\Core\Application\Ticket\TicketIssuing;
+use Beffroi\Core\Domain\Credential\CredentialChange;
 use Beffroi\Core\Domain\Credential\PasswordHash;
 use Beffroi\Core\Domain\Enrolment\EnrolmentTicket;
 use Beffroi\Core\Domain\Event\EnrolmentTicketIssued;
@@ -13,6 +14,7 @@ use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Ticket\IssuedTicket;
 use Beffroi\Core\Exception\TicketRefusedException;
+use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\EnrolmentTicketRepositoryInterface;
 use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -24,6 +26,7 @@ final readonly class EnrolmentTicketIssue
         private EnrolmentTicketRepositoryInterface $tickets,
         private TicketIssuing $issuing,
         private EventDispatcherInterface $events,
+        private CredentialChangeNotifierInterface $notifier,
     ) {
     }
 
@@ -72,6 +75,7 @@ final readonly class EnrolmentTicketIssue
             ),
         );
         $this->events->dispatch(new EnrolmentTicketIssued($issued->ticket, $issued->ticket->createdAt, $context, $administrator));
+        $this->notifier->tell(new CredentialChange($user, EnrolmentTicketIssued::NAME, $issued->ticket->createdAt));
 
         return $issued;
     }
