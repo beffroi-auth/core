@@ -16,9 +16,9 @@ use Beffroi\Core\Port\ChainOfRowsInterface;
 use Psr\Clock\ClockInterface;
 
 /**
- * Only the rows that continue the last signature are signed: what was rewritten before it stays visible. The first
- * signature walks the whole chain, every later one carries how far and when the whole chain was last walked, and what
- * that walk found broken.
+ * Only the rows that continue the last signature are signed, while the row it names is still the one it signed: what
+ * was rewritten before it stays visible. The first signature walks the whole chain, every later one carries how far
+ * and when the whole chain was last walked, and what that walk found broken.
  */
 final readonly class ChainSignature
 {
@@ -42,6 +42,9 @@ final readonly class ChainSignature
         return $this->writes->atomically(function () use ($tenant, $chain): Checkpoint {
             $this->rows->lockedHead($tenant, $chain);
             $last = $this->checkpoints->last($tenant, $chain);
+            if ($last !== null) {
+                $this->walk->assertTheSignedRowHolds($tenant, $chain, $last);
+            }
             $keptAfter = $this->walk->start($tenant, $chain, $last);
             $now = $this->clock->now();
             $head = $this->walk->end($tenant, $chain, $last->head ?? $keptAfter);

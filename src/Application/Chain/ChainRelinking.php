@@ -38,7 +38,7 @@ final readonly class ChainRelinking
     /**
      * @throws KeyNotFoundException
      * @throws KmsUnavailableException
-     * @throws RuntimeException when the signature cannot be kept
+     * @throws RuntimeException when the links cannot be rewritten, or the signature cannot be kept
      */
     public function signAnew(Tenant $tenant, ChainInterface $chain, RequestContext $context): RelinkedChain
     {

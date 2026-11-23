@@ -110,6 +110,36 @@ final readonly class ChainWalk
     }
 
     /**
+     * The row a signature names, unless the retention forgot it, still the one signed, computed again from the link
+     * it names before it: the rows written since are computed from the link signed, never from that row.
+     *
+     * @throws BrokenChainException
+     */
+    public function assertTheSignedRowHolds(Tenant $tenant, ChainInterface $chain, Checkpoint $signed): void
+    {
+        $position = $signed->head->position;
+        if ($position <= $signed->keptAfter->position) {
+            return;
+        }
+        $row = $this->rows->linkedAfter($tenant, $chain, $position - 1, 1)[0] ?? null;
+        if ($row === null || $row->position !== $position) {
+            throw new BrokenChainException(
+                $chain->name(),
+                $position,
+                sprintf('The row at position %d of the chain "%s" is missing.', $position, $chain->name()),
+            );
+        }
+        $before = self::before($chain, $row);
+        if (! $row->follows($before, $before->then($row->row)) || $row->hash !== $signed->head->hash) {
+            throw new BrokenChainException(
+                $chain->name(),
+                $position,
+                sprintf('The rows up to position %d of the chain "%s" are not the ones signed.', $position, $chain->name()),
+            );
+        }
+    }
+
+    /**
      * @throws BrokenChainException
      */
     public static function before(ChainInterface $chain, LinkedRow $linked): Link

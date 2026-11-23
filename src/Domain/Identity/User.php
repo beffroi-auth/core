@@ -17,7 +17,7 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use Beffroi\Core\Exception\MailEncryptionRefusedException;
 use function sprintf;
-use function strlen;
+use function mb_strlen;
 use Symfony\Component\Uid\Uuid;
 use function trim;
 
@@ -248,7 +248,7 @@ final class User implements ClassifiedFieldsInterface
     private static function normalizeUsername(string $username): string
     {
         $username = trim($username);
-        if ($username === '' || strlen($username) > 255) {
+        if ($username === '' || mb_strlen($username) > PlainText::MAX_LENGTH) {
             throw new InvalidArgumentException('A username is 1 to 255 characters long.');
         }
         if (! PlainText::holds($username, PlainText::MAX_LENGTH)) {

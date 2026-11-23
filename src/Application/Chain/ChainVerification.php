@@ -120,9 +120,7 @@ final readonly class ChainVerification
                 sprintf('The row at position %d of the chain "%s" is missing.', $expected, $chain->name()),
             );
         }
-        if ($signed->head->position > $signed->keptAfter->position) {
-            $this->signedRowHolds($tenant, $chain, $signed);
-        }
+        $this->walk->assertTheSignedRowHolds($tenant, $chain, $signed);
         $end = $signed->head;
         foreach ($this->walk->from($tenant, $chain, $signed->head) as $linked) {
             $end = new Link($linked->position, $linked->hash);
@@ -137,30 +135,6 @@ final readonly class ChainVerification
         self::reaches($chain, $end, $signed, $head);
 
         return new VerifiedChain($chain->name(), $signed->keptAfter, $end, $signed, $first?->row->moment);
-    }
-
-    /**
-     * @throws BrokenChainException
-     */
-    private function signedRowHolds(Tenant $tenant, ChainInterface $chain, Checkpoint $signed): void
-    {
-        $position = $signed->head->position;
-        $row = $this->rows->linkedAfter($tenant, $chain, $position - 1, 1)[0] ?? null;
-        if ($row === null || $row->position !== $position) {
-            throw new BrokenChainException(
-                $chain->name(),
-                $position,
-                sprintf('The row at position %d of the chain "%s" is missing.', $position, $chain->name()),
-            );
-        }
-        $before = ChainWalk::before($chain, $row);
-        if (! $row->follows($before, $before->then($row->row)) || $row->hash !== $signed->head->hash) {
-            throw new BrokenChainException(
-                $chain->name(),
-                $position,
-                sprintf('The rows up to position %d of the chain "%s" are not the ones signed.', $position, $chain->name()),
-            );
-        }
     }
 
     /**
