@@ -29,8 +29,10 @@ final readonly class ActRecording
         ?Subject $subject = null,
         ?string $client = null,
         ?Subject $author = null,
+        ?string $reason = null,
+        ?string $method = null,
     ): void {
         $context = $context->withLocation($this->place->of($context));
-        $this->journal->record(new JournalEntry(Uuid::v7(), $tenant, $act, $occurredAt, $context, $subject, $client, $author));
+        $this->journal->record(new JournalEntry(Uuid::v7(), $tenant, $act, $occurredAt, $context, $subject, $client, $author, $reason, $method));
     }
 }
