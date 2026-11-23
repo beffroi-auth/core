@@ -14,6 +14,8 @@ use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Exception\LogicException;
 use Beffroi\Core\Exception\RetirementNotDueException;
+use Beffroi\Core\Exception\RuntimeException;
+use Beffroi\Core\Port\RetirementHoldInterface;
 use Beffroi\Core\Port\TenantKeyRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -21,23 +23,29 @@ use function sprintf;
 
 final readonly class KeyRetirement
 {
+    /**
+     * @param iterable<RetirementHoldInterface> $holds
+     */
     public function __construct(
         private TenantKeyRepositoryInterface $keys,
         private NamedKey $named,
         private ClockInterface $clock,
         private EventDispatcherInterface $events,
+        private iterable $holds = [],
     ) {
     }
 
     /**
      * @return list<TenantKey>
+     *
+     * @throws RuntimeException when what may hold a due key cannot be read
      */
     public function retireDue(Tenant $tenant, RequestContext $context): array
     {
         $now = $this->clock->now();
         $retired = [];
         foreach ($this->keys->findInService($tenant) as $key) {
-            if (! $key->isDue($now)) {
+            if (! $key->isDue($now) || $this->holdOf($key) !== null) {
                 continue;
             }
             $this->leave($key, RetirementReason::Due, $now, $context);
@@ -51,6 +59,7 @@ final readonly class KeyRetirement
      * @throws KeyNotFoundException
      * @throws LogicException when the key is the active one, or is not retiring
      * @throws RetirementNotDueException
+     * @throws RuntimeException when what may hold the key cannot be read
      */
     public function retire(Tenant $tenant, string $kid, RequestContext $context): TenantKey
     {
@@ -63,6 +72,14 @@ final readonly class KeyRetirement
                 $key->retirementDueAt?->format(DateTimeImmutable::RFC3339) ?? '?',
             ));
         }
+        $hold = $key->status === KeyStatus::Retiring ? $this->holdOf($key) : null;
+        if ($hold !== null) {
+            throw new RetirementNotDueException(sprintf(
+                'The key "%s" still opens %s: its retirement waits until nothing needs it any more.',
+                $kid,
+                $hold->name(),
+            ));
+        }
         $this->leave($key, RetirementReason::Due, $now, $context);
 
         return $key;
@@ -71,12 +88,14 @@ final readonly class KeyRetirement
     /**
      * @throws KeyNotFoundException
      * @throws LogicException when the key is the active one, or is not retiring
+     * @throws RuntimeException when what may hold the key cannot be read
      */
     public function retireBeforeItsDate(Tenant $tenant, string $kid, RequestContext $context): TenantKey
     {
         $key = $this->retiringKey($tenant, $kid);
         $now = $this->clock->now();
-        $this->leave($key, $key->isDue($now) ? RetirementReason::Due : RetirementReason::Forced, $now, $context);
+        $due = $key->isDue($now) && $this->holdOf($key) === null;
+        $this->leave($key, $due ? RetirementReason::Due : RetirementReason::Forced, $now, $context);
 
         return $key;
     }
@@ -87,6 +106,20 @@ final readonly class KeyRetirement
     public function retireAfterCompromise(TenantKey $compromised, RequestContext $context): void
     {
         $this->leave($compromised, RetirementReason::Compromised, $this->clock->now(), $context);
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    private function holdOf(TenantKey $key): ?RetirementHoldInterface
+    {
+        foreach ($this->holds as $hold) {
+            if ($hold->holds($key)) {
+                return $hold;
+            }
+        }
+
+        return null;
     }
 
     /**
