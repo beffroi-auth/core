@@ -17,8 +17,8 @@ use Beffroi\Core\Domain\Session\AuthenticationSession;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\PasskeyCeremonyFailedException;
-use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\PasskeyAuthenticatorInterface;
+use Beffroi\Core\Port\PasskeyUsesInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Webauthn\PublicKeyCredentialRequestOptions;
@@ -26,7 +26,7 @@ use Webauthn\PublicKeyCredentialRequestOptions;
 final readonly class PasskeyAuthentication
 {
     public function __construct(
-        private CredentialRepositoryInterface $credentials,
+        private PasskeyUsesInterface $uses,
         private ActiveCredentials $active,
         private PasskeyAuthenticatorInterface $authenticator,
         private SessionOpener $opener,
@@ -75,8 +75,9 @@ final readonly class PasskeyAuthentication
         }
 
         $now = $this->clock->now();
-        $credential->recordUse($assertion->authenticatorData, $now);
-        $this->credentials->save($credential);
+        if (! $this->uses->recordUse($credential, $assertion->authenticatorData, $now)) {
+            throw $this->refusals->refuse($tenant, $context, AuthenticationFailureReason::InvalidCredential, $methods[0], null, $credential->user);
+        }
         $this->events->dispatch(new PasskeyUsed($credential, $now, $context));
 
         return $this->opener->open($tenant, $credential->user, $methods, $context);
