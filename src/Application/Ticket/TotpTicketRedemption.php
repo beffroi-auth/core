@@ -55,11 +55,15 @@ final readonly class TotpTicketRedemption
      *
      * @throws CredentialEnrolmentFailedException when the code does not match, or the floor or the domain admits no app
      * @throws KmsUnavailableException
+     * @throws TicketRefusedException             when another redemption spent the ticket first
      */
     public function spend(TotpTicket $ticket, TotpProvisioning $provisioning, string $code, RequestContext $context): TotpCredential
     {
-        $credential = $this->enrolment->completeInPlaceOfTheOneHeld($ticket->user, $provisioning, $code, $context);
-        $this->redeeming->spend($this->tickets, $ticket);
+        $credential = $this->redeeming->spendOnceWritten(
+            $this->tickets,
+            $ticket,
+            fn (): TotpCredential => $this->enrolment->completeInPlaceOfTheOneHeld($ticket->user, $provisioning, $code, $context),
+        );
         $this->sessions->endEvery($ticket->user, $context);
 
         return $credential;

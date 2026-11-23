@@ -38,6 +38,11 @@ abstract class InMemoryTicketRepository implements TicketRepositoryInterface
         return $found;
     }
 
+    public function holdsSpent(Ticket $ticket): bool
+    {
+        return ($this->tickets[$ticket->id->toRfc4122()] ?? null)?->isSpent() ?? true;
+    }
+
     public function save(Ticket $ticket): void
     {
         $this->tickets[$ticket->id->toRfc4122()] = $ticket;

@@ -8,15 +8,17 @@ use Beffroi\Core\Application\Authentication\DecoyHash;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Domain\Ticket\Ticket;
 use Beffroi\Core\Exception\TicketRefusedException;
+use Beffroi\Core\Port\ExclusiveSectionsInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Beffroi\Core\Port\TicketRepositoryInterface;
+use Closure;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * How a ticket of any kind is presented and spent (decision 0026): every refusal costs a hash and says the same
- * sentence, and a ticket is spent once what it opened is written.
+ * sentence, and a ticket is spent once what it opened is written, alone among the redemptions of that ticket.
  */
 final readonly class TicketRedeeming
 {
@@ -26,6 +28,7 @@ final readonly class TicketRedeeming
         private PasswordHasherInterface $hasher,
         private DecoyHash $decoy,
         private ClockInterface $clock,
+        private ExclusiveSectionsInterface $sections,
     ) {
     }
 
@@ -57,14 +60,33 @@ final readonly class TicketRedeeming
     }
 
     /**
+     * Writes what the ticket opens, then spends it, while no other redemption of the ticket runs: of two at once, the
+     * second finds it spent and writes nothing. A write that fails leaves the ticket unspent.
+     *
      * @template T of Ticket
+     * @template W
      *
      * @param TicketRepositoryInterface<T> $tickets the tickets of the kind
      * @param T                            $ticket
+     * @param Closure(): W                 $writes  what the ticket opens
+     *
+     * @param-immediately-invoked-callable $writes
+     *
+     * @return W
+     *
+     * @throws TicketRefusedException when another redemption spent the ticket first
      */
-    public function spend(TicketRepositoryInterface $tickets, Ticket $ticket): void
+    public function spendOnceWritten(TicketRepositoryInterface $tickets, Ticket $ticket, Closure $writes): mixed
     {
-        $ticket->spend($this->clock->now());
-        $tickets->save($ticket);
+        return $this->sections->exclusively('beffroi.ticket.' . $ticket->id->toRfc4122(), function () use ($tickets, $ticket, $writes): mixed {
+            if ($tickets->holdsSpent($ticket)) {
+                throw new TicketRefusedException(self::REFUSED);
+            }
+            $written = $writes();
+            $ticket->spend($this->clock->now());
+            $tickets->save($ticket);
+
+            return $written;
+        });
     }
 }

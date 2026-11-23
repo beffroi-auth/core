@@ -28,6 +28,14 @@ interface TicketRepositoryInterface
     public function unspentOf(User $user): array;
 
     /**
+     * Read in the store, past the copy the caller holds: another process may have spent it since. A ticket the store
+     * no longer holds is spent.
+     *
+     * @param T $ticket
+     */
+    public function holdsSpent(Ticket $ticket): bool;
+
+    /**
      * @param T $ticket
      */
     public function save(Ticket $ticket): void;
