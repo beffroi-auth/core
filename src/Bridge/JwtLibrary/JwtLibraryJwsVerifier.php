@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\JwtLibrary;
 
+use Beffroi\Core\Domain\Encoding\JoseExtension;
 use Beffroi\Core\Domain\Key\KeyUse;
 use Beffroi\Core\Domain\Key\VerifiedJws;
 use Beffroi\Core\Domain\Tenant\Tenant;
@@ -18,7 +19,7 @@ use Jose\Component\Signature\Serializer\CompactSerializer;
 use Throwable;
 
 /**
- * RFC 7515 §4.1.1, RFC 7517 §4.2, RFC 8725 §3.1, §3.10
+ * RFC 7515 §4.1.1, §4.1.11, RFC 7517 §4.2, RFC 8725 §3.1, §3.10
  *
  * The key is chosen by "kid" alone; "jwk", "jku" and "x5c" are ignored.
  */
@@ -47,6 +48,9 @@ final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
             throw new InvalidJwsException('The token carries an unexpected number of signatures.');
         }
         $header = $jws->getSignature(0)->getProtectedHeader();
+        if (JoseExtension::isNamedIn($header)) {
+            throw new InvalidJwsException('The token uses an extension of JOSE this provider does not understand (RFC 7515 section 4.1.11).');
+        }
         $alg = $header['alg'] ?? null;
         if (! is_string($alg)) {
             throw new InvalidJwsException('The token does not name its algorithm.');
@@ -64,7 +68,13 @@ final readonly class JwtLibraryJwsVerifier implements JwsVerifierInterface
         if ($key === null || $key->algorithm->name() !== $alg) {
             throw new InvalidJwsException('The token names a key this tenant does not publish.');
         }
-        if (! $this->verifier->verifyWithKey($jws, new JWK($key->publicJwk), 0)) {
+        $publicKey = new JWK($key->publicJwk);
+        try {
+            $verified = $this->verifier->verifyWithKey($jws, $publicKey, 0);
+        } catch (Throwable $exception) {
+            throw new InvalidJwsException('The signature of the token cannot be checked.', 0, $exception);
+        }
+        if (! $verified) {
             throw new InvalidJwsException('The signature does not verify.');
         }
         $payload = $jws->getPayload();

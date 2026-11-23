@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\JwtLibrary;
 
+use Beffroi\Core\Domain\Encoding\JoseExtension;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\InvalidJweException;
 use Beffroi\Core\Exception\KeyNotFoundException;
@@ -41,6 +42,9 @@ final readonly class JwtLibraryMessageBodyOpener implements MessageBodyOpenerInt
             throw new InvalidJweException('The body of the message is not a compact JWE.', 0, $exception);
         }
         $header = $jwe->getSharedProtectedHeader();
+        if (JoseExtension::isNamedIn($header)) {
+            throw new InvalidJweException('The body of the message uses an extension of JOSE this provider does not understand (RFC 7516 section 4.1.13).');
+        }
         $scope = $header[SealedMessageBody::TENANT_HEADER] ?? null;
         if (! is_string($scope) || $scope !== $tenant->slug) {
             throw new InvalidJweException(sprintf(
@@ -72,7 +76,12 @@ final readonly class JwtLibraryMessageBodyOpener implements MessageBodyOpenerInt
             ...$unsealed->privateJwk,
             'alg' => $algorithm->keyEncryption()->name(),
         ]);
-        if (! $this->decrypter->decryptUsingKey($jwe, $jwk, 0)) {
+        try {
+            $opened = $this->decrypter->decryptUsingKey($jwe, $jwk, 0);
+        } catch (Throwable $exception) {
+            throw new InvalidJweException('The body of the message cannot be opened as a JWE (RFC 7516 section 5.2).', 0, $exception);
+        }
+        if (! $opened) {
             throw new InvalidJweException(sprintf('The body of the message does not open with the key "%s" it names.', $kid));
         }
 
