@@ -76,7 +76,7 @@ final readonly class PasskeyEnrolment
         } catch (InvalidArgumentException $exception) {
             throw new CredentialEnrolmentFailedException($exception->getMessage(), previous: $exception);
         }
-        if ($passkeys !== [] && ! $passkeys[0]->userHandle->equals($handle)) {
+        if ($challenge->user->name !== $user->username || $passkeys !== [] && ! $passkeys[0]->userHandle->equals($handle)) {
             throw new CredentialEnrolmentFailedException('The options were not drawn for this user.');
         }
         if ($this->credentials->findByExternalId($user->tenant, PasskeyCredential::class, $record->publicKeyCredentialId) !== null) {
