@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Group;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
 use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
@@ -41,7 +42,8 @@ final class Group implements ClassifiedFieldsInterface
     /**
      * Held to NFC with no edge whitespace: the unique constraint and an upstream mapping compare names exactly.
      *
-     * @throws InvalidArgumentException when the name is empty, too long, not in NFC, or begins or ends with whitespace
+     * @throws InvalidArgumentException when the name is empty, too long, not in NFC, begins or ends with whitespace, or is
+     *                                  not plain text
      */
     public function rename(string $name): void
     {
@@ -56,6 +58,9 @@ final class Group implements ClassifiedFieldsInterface
         }
         if (preg_match(self::EDGE_WHITESPACE, $name) !== 0) {
             throw new InvalidArgumentException('A group name must not begin or end with whitespace.');
+        }
+        if (! PlainText::holds($name, self::NAME_MAX_LENGTH)) {
+            throw new InvalidArgumentException('A group name must be plain text, with no control, format or line separator character.');
         }
         $this->name = $name;
     }

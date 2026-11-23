@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\Notification\ChosenChannels;
 use Beffroi\Core\Domain\PersonalData\BlindIndex;
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
@@ -249,6 +250,9 @@ final class User implements ClassifiedFieldsInterface
         $username = trim($username);
         if ($username === '' || strlen($username) > 255) {
             throw new InvalidArgumentException('A username is 1 to 255 characters long.');
+        }
+        if (! PlainText::holds($username, PlainText::MAX_LENGTH)) {
+            throw new InvalidArgumentException('A username is plain text, with no control, format or line separator character.');
         }
 
         return $username;
