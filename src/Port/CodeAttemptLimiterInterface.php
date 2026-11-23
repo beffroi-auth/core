@@ -6,6 +6,10 @@ namespace Beffroi\Core\Port;
 
 use Beffroi\Core\Domain\Identity\User;
 
+/**
+ * The count is atomic and shared by every process of a deployment: attempts made at once are counted one by one
+ * (RFC 4226 §7.3).
+ */
 interface CodeAttemptLimiterInterface
 {
     /**
