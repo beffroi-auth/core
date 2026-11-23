@@ -24,8 +24,8 @@
         "spomky-labs/pki-framework": "^1.2.1",
         "symfony/key-management": "8.2.*",
         "symfony/uid": "8.2.*",
-        "web-auth/webauthn-lib": "^5.3.12",
-        "web-token/jwt-library": "^4.2"
+        "web-auth/webauthn-lib": "^5.3.15",
+        "web-token/jwt-library": "^4.2.7"
     },
     "autoload": {
         "psr-4": {
