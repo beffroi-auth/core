@@ -12,18 +12,28 @@ use Beffroi\Core\Exception\KeyNotFoundException;
 use Beffroi\Core\Port\ApplicationServerKeyProviderInterface;
 use Beffroi\Core\Port\PushSubscriptionRepositoryInterface;
 use Beffroi\Core\Port\UuidGeneratorInterface;
+use function array_filter;
+use function array_slice;
 use Psr\Clock\ClockInterface;
+use function usort;
 
 /**
  * Push API §3.4, §8, RFC 8292 §3.2
  */
 final readonly class PushSubscriptionEnrolment
 {
+    /**
+     * Every browser of a person is pushed at each notice, one after another, each for as long as its push service
+     * takes: a person keeps the browsers they subscribed last, never so many that they hold the lane of notices.
+     */
+    public const int MOST_BROWSERS = 10;
+
     public function __construct(
         private PushSubscriptionRepositoryInterface $subscriptions,
         private ApplicationServerKeyProviderInterface $keys,
         private UuidGeneratorInterface $uuids,
         private ClockInterface $clock,
+        private PushSubscriptionRevocation $revocation,
     ) {
     }
 
@@ -48,6 +58,7 @@ final readonly class PushSubscriptionEnrolment
             // The row itself changes: a store that holds it refuses a second object over the same identity.
             $existing->resubscribedWith($publicKey, $authSecret, $kid, $label);
             $this->subscriptions->save($existing);
+            $this->takeOutTheOldestBeside($existing);
 
             return $existing;
         }
@@ -62,7 +73,20 @@ final readonly class PushSubscriptionEnrolment
             $this->clock->now(),
         );
         $this->subscriptions->save($subscription);
+        $this->takeOutTheOldestBeside($subscription);
 
         return $subscription;
+    }
+
+    private function takeOutTheOldestBeside(PushSubscription $enrolled): void
+    {
+        $others = array_filter(
+            $this->subscriptions->findActiveByUser($enrolled->user),
+            static fn (PushSubscription $other): bool => ! $other->id->equals($enrolled->id),
+        );
+        usort($others, static fn (PushSubscription $one, PushSubscription $other): int => $other->createdAt <=> $one->createdAt);
+        foreach (array_slice($others, self::MOST_BROWSERS - 1) as $oldest) {
+            $this->revocation->revoke($oldest);
+        }
     }
 }
