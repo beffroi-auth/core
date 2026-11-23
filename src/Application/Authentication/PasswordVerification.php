@@ -79,7 +79,11 @@ final readonly class PasswordVerification
             throw $this->refuseAtTheCostOfAPassword($tenant, $context, AuthenticationFailureReason::NoSuchCredential, $identifier, $password, $user);
         }
 
-        if (! $this->hasher->verify($credential->hash, $password)) {
+        $replaced = $this->hasher->needsRehash($credential->hash);
+        $verified = $replaced
+            ? $this->decoy->verifyNoFaster($credential->hash, $password)
+            : $this->hasher->verify($credential->hash, $password);
+        if (! $verified) {
             throw $this->refusals->refuse(
                 $tenant,
                 $context,
@@ -110,7 +114,7 @@ final readonly class PasswordVerification
         $this->attempts->reset($user);
         $now = $this->clock->now();
         $credential->recordUse($now);
-        if ($this->hasher->needsRehash($credential->hash)) {
+        if ($replaced) {
             $credential->rehash($this->hasher->hash($password), $now);
             $this->credentials->save($credential);
             $this->events->dispatch(new PasswordRehashed($credential, $now, $context));
