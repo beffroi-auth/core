@@ -7,6 +7,7 @@ namespace Beffroi\Core\Bridge\Key;
 use Beffroi\Core\Domain\Key\ApplicationServerAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeptEncryptionAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeptSigningAlgorithmInterface;
+use Beffroi\Core\Domain\Key\KeyAlgorithmInterface;
 use Beffroi\Core\Domain\Key\KeyUse;
 use Beffroi\Core\Domain\Key\MessageSealingAlgorithmInterface;
 use Beffroi\Core\Domain\Key\PublicKeySet;
@@ -91,6 +92,7 @@ final readonly class SealedKeyProvider implements
             ));
         }
         self::assertUse($key, KeyUse::Encryption);
+        $this->forgetWhatRetired($tenant, $key->algorithm);
 
         return $this->opened->open($tenant, $key);
     }
@@ -176,6 +178,7 @@ final readonly class SealedKeyProvider implements
                 $tenant->slug,
             ));
         }
+        $this->forgetWhatRetired($tenant, $key->algorithm);
 
         return $this->opened->open($tenant, $key);
     }
@@ -215,8 +218,23 @@ final readonly class SealedKeyProvider implements
                 $tenant->slug,
             ));
         }
+        $this->forgetWhatRetired($tenant, $key->algorithm);
 
         return $this->opened->open($tenant, $key);
+    }
+
+    /**
+     * A key that retired leaves the process at the next opening of its algorithm, even when nobody names it again.
+     */
+    private function forgetWhatRetired(Tenant $tenant, KeyAlgorithmInterface $algorithm): void
+    {
+        $inService = [];
+        foreach ($this->keys->findInService($tenant) as $key) {
+            if ($key->algorithm->name() === $algorithm->name()) {
+                $inService[] = $key->kid;
+            }
+        }
+        $this->opened->keepOnly($tenant, $algorithm, $inService);
     }
 
     /**
