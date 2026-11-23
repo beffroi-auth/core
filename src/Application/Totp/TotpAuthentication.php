@@ -89,14 +89,14 @@ final readonly class TotpAuthentication
     }
 
     /**
-     * Every unspent code is verified, so that the time a refusal takes does not say how many are left.
+     * Every code is verified, a spent one included, so that the time a refusal takes does not say how many are left.
      */
     private function matchingBackupCode(TotpCredential $credential, #[SensitiveParameter] string $typed): ?int
     {
         $typed = BackupCode::normalize($typed);
         $matched = null;
         foreach ($credential->backupCodes as $index => $backupCode) {
-            if (! $backupCode->isSpent() && $this->hasher->verify($backupCode->hash, $typed) && $matched === null) {
+            if ($this->hasher->verify($backupCode->hash, $typed) && ! $backupCode->isSpent() && $matched === null) {
                 $matched = $index;
             }
         }
