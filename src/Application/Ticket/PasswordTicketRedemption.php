@@ -62,19 +62,21 @@ final readonly class PasswordTicketRedemption
      * @throws PasswordChangeRefusedException     when the password posed is the one the person holds
      * @throws CredentialEnrolmentFailedException when the floor of the tenant or the domain of the person admits no password
      * @throws PasswordRefusedException           when a list of compromised passwords counts it or cannot be asked
+     * @throws TicketRefusedException             when another redemption spent the ticket first
      */
     public function spend(PasswordTicket $ticket, #[SensitiveParameter] PlainPassword $password, RequestContext $context): void
     {
-        $held = $this->activePassword->of($ticket->user);
-        if ($held !== null && $this->hasher->verify($held->hash, $password->value)) {
-            throw new PasswordChangeRefusedException(PasswordChangeRefusal::SameAsBefore, 'The password posed is the one already held.');
-        }
-        $credential = $this->provisioner->setPassword($ticket->user, $password);
-        $now = $this->clock->now();
-        $act = $held === null ? new CredentialEnrolled($credential, $now, $context) : new PasswordChanged($credential, $now, $context);
-        $this->events->dispatch($act);
-        $this->notifier->tell(new CredentialChange($ticket->user, $act->name(), $now, $credential->kind()));
-        $this->redeeming->spend($this->tickets, $ticket);
+        $this->redeeming->spendOnceWritten($this->tickets, $ticket, function () use ($ticket, $password, $context): void {
+            $held = $this->activePassword->of($ticket->user);
+            if ($held !== null && $this->hasher->verify($held->hash, $password->value)) {
+                throw new PasswordChangeRefusedException(PasswordChangeRefusal::SameAsBefore, 'The password posed is the one already held.');
+            }
+            $credential = $this->provisioner->setPassword($ticket->user, $password);
+            $now = $this->clock->now();
+            $act = $held === null ? new CredentialEnrolled($credential, $now, $context) : new PasswordChanged($credential, $now, $context);
+            $this->events->dispatch($act);
+            $this->notifier->tell(new CredentialChange($ticket->user, $act->name(), $now, $credential->kind()));
+        });
         $this->sessions->endEvery($ticket->user, $context);
     }
 }
