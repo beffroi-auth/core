@@ -59,8 +59,10 @@ final readonly class PersonDescription
      *
      * @throws InvalidArgumentException  when a member is not one an administrator says, a value is not one it holds, or it changes what the source of the person holds
      * @throws UserAlreadyExistsException when another person of the tenant has the username said
+     *
+     * @return list<string> the names of what changed, none when every value was said as it is
      */
-    public function describeByAnAdministrator(User $user, array $said, Subject $administrator, RequestContext $context): void
+    public function describeByAnAdministrator(User $user, array $said, Subject $administrator, RequestContext $context): array
     {
         $members = $this->membersSaid($said);
         $before = $this->read($user, $members);
@@ -85,6 +87,8 @@ final readonly class PersonDescription
         if ($changed !== []) {
             $this->events->dispatch(new PersonDescribed($user->tenant, $user->subject, $changed, $now, $context, $administrator));
         }
+
+        return $changed;
     }
 
     /**
