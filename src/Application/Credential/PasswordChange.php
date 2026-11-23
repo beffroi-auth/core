@@ -17,14 +17,15 @@ use Beffroi\Core\Exception\PasswordChangeRefusedException;
 use Beffroi\Core\Exception\PasswordRefusedException;
 use Beffroi\Core\Port\CredentialChangeNotifierInterface;
 use Beffroi\Core\Port\CredentialRepositoryInterface;
+use Beffroi\Core\Port\PasswordAttemptLimiterInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
 
 /**
- * A wrong password in use is not counted against the login, or a stolen session could lock its owner out.
- * What happens to the other sessions is the caller's policy.
+ * The password in use is guessed against a limit of its own and not the login's, or a stolen session could lock its
+ * owner out. What happens to the other sessions is the caller's policy.
  */
 final readonly class PasswordChange
 {
@@ -37,6 +38,7 @@ final readonly class PasswordChange
         private EventDispatcherInterface $events,
         private FederatedDomains $federated,
         private CredentialChangeNotifierInterface $notifier,
+        private PasswordAttemptLimiterInterface $attempts,
     ) {
     }
 
@@ -73,12 +75,19 @@ final readonly class PasswordChange
                 'The user holds no password; there is nothing to replace.',
             );
         }
+        if (! $this->attempts->attempt($user)) {
+            throw new PasswordChangeRefusedException(
+                PasswordChangeRefusal::TooManyAttempts,
+                'Too many attempts at the password in use; it is not verified until the limit lets one through.',
+            );
+        }
         if (! $this->hasher->verify($credential->hash, $inUse)) {
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::WrongPassword,
                 'What was typed is not the password in use.',
             );
         }
+        $this->attempts->reset($user);
         if ($this->hasher->verify($credential->hash, $posed->value)) {
             throw new PasswordChangeRefusedException(
                 PasswordChangeRefusal::SameAsBefore,
