@@ -20,6 +20,8 @@ final readonly class WrittenAct
         public ?string $client,
         public ?string $author,
         public string $sealedContext,
+        public ?string $reason = null,
+        public ?string $method = null,
     ) {
     }
 }

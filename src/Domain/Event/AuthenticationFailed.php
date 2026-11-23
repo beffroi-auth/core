@@ -11,7 +11,7 @@ use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
-final readonly class AuthenticationFailed implements ConcernsAPersonInterface
+final readonly class AuthenticationFailed implements ConcernsAPersonInterface, SaysWhyItWasRefusedInterface
 {
     public const string NAME = 'authentication.failed';
 
@@ -34,5 +34,15 @@ final readonly class AuthenticationFailed implements ConcernsAPersonInterface
     public function subject(): ?Subject
     {
         return $this->user?->subject;
+    }
+
+    public function refusalReason(): string
+    {
+        return $this->reason->value;
+    }
+
+    public function refusedMethod(): ?string
+    {
+        return $this->method?->value;
     }
 }

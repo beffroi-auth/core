@@ -43,13 +43,13 @@ final readonly class Link
     }
 
     /**
-     * Each field is prefixed with its length, so that no two acts write the same bytes.
+     * Each field is prefixed with its length, so that no two acts write the same bytes. The reason and the method of a
+     * refusal follow when it says either, so that an act that says neither reads as it did before they were written.
      */
     public function then(WrittenAct $act): self
     {
         $position = $this->position + 1;
-        $bytes = '';
-        foreach ([
+        $fields = [
             self::VERSION,
             $this->hash,
             (string) $position,
@@ -61,7 +61,13 @@ final readonly class Link
             $act->client,
             $act->author,
             $act->sealedContext,
-        ] as $field) {
+        ];
+        if ($act->reason !== null || $act->method !== null) {
+            $fields[] = $act->reason;
+            $fields[] = $act->method;
+        }
+        $bytes = '';
+        foreach ($fields as $field) {
             $bytes .= $field === null ? self::ABSENT : pack('N', strlen($field)) . $field;
         }
 
