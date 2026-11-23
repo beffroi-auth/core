@@ -123,6 +123,13 @@ final class TotpCredential extends RevocableCredential implements SecondFactorCr
         $this->backupCodes = $backupCodes;
     }
 
+    public function holdsUnspentBackupCode(int $index): bool
+    {
+        $code = $this->backupCodes[$index] ?? null;
+
+        return $code !== null && ! $code->isSpent();
+    }
+
     public function spendBackupCode(int $index, DateTimeImmutable $now): void
     {
         $this->refuseIfRevoked();
