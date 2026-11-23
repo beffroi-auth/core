@@ -6,6 +6,7 @@ namespace Beffroi\Core\Domain\Key;
 
 use Beffroi\Core\Domain\Encoding\Base64Url;
 use function decbin;
+use function is_string;
 use function ltrim;
 use function ord;
 use function strlen;
@@ -34,5 +35,12 @@ final readonly class RsaModulus
         }
 
         return ((strlen($octets) - 1) * 8) + strlen(decbin(ord($octets[0])));
+    }
+
+    public static function isLongEnough(mixed $n): bool
+    {
+        $bits = is_string($n) ? self::bitsOf($n) : null;
+
+        return $bits !== null && $bits >= self::MINIMUM_BITS;
     }
 }
