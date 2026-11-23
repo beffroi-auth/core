@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\Credential\Attestation\AttestationEvidence;
 use Beffroi\Core\Domain\Credential\Attestation\ModelProof;
 use Beffroi\Core\Domain\Credential\Attestation\VerifiedRegistration;
@@ -255,6 +256,9 @@ final class PasskeyCredential extends RevocableCredential implements
         $name = trim($name);
         if ($name === '' || mb_strlen($name) > self::NAME_MAX_LENGTH) {
             throw new InvalidArgumentException(sprintf('A passkey name is 1 to %d characters long.', self::NAME_MAX_LENGTH));
+        }
+        if (! PlainText::holds($name, self::NAME_MAX_LENGTH)) {
+            throw new InvalidArgumentException('A passkey name is plain text, with no control, format or line separator character.');
         }
 
         return $name;

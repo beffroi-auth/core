@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
 use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
@@ -67,6 +68,7 @@ final class PushSubscription implements ClassifiedFieldsInterface
             throw new InvalidArgumentException('A push subscription is delivered to over HTTPS (RFC 8030 section 2).');
         }
         self::assertWhatABrowserHandsOver($publicKey, $authSecret, $applicationServerKid);
+        self::assertLabel($label);
         $this->tenant = $user->tenant;
         $this->endpointHash = self::digestOf($endpoint);
     }
@@ -77,6 +79,7 @@ final class PushSubscription implements ClassifiedFieldsInterface
     public function resubscribedWith(string $publicKey, string $authSecret, string $applicationServerKid, ?string $label): void
     {
         self::assertWhatABrowserHandsOver($publicKey, $authSecret, $applicationServerKid);
+        self::assertLabel($label);
         $this->publicKey = $publicKey;
         $this->authSecret = $authSecret;
         $this->applicationServerKid = $applicationServerKid;
@@ -90,10 +93,27 @@ final class PushSubscription implements ClassifiedFieldsInterface
     public function rename(string $label): void
     {
         $label = trim($label);
-        if ($label === '' || mb_strlen($label) > self::LABEL_MAX_LENGTH) {
+        if ($label === '') {
             throw new InvalidArgumentException(sprintf('The name of a browser is 1 to %d characters long.', self::LABEL_MAX_LENGTH));
         }
+        self::assertLabel($label);
         $this->label = $label;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private static function assertLabel(?string $label): void
+    {
+        if ($label === null) {
+            return;
+        }
+        if (mb_strlen($label) > self::LABEL_MAX_LENGTH) {
+            throw new InvalidArgumentException(sprintf('The name of a browser is 1 to %d characters long.', self::LABEL_MAX_LENGTH));
+        }
+        if (! PlainText::holds($label, self::LABEL_MAX_LENGTH)) {
+            throw new InvalidArgumentException('The name of a browser is plain text, with no control, format or line separator character.');
+        }
     }
 
     /**

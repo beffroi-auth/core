@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Tenant;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
 use Beffroi\Core\Domain\PersonalData\NoPersonalDatum;
@@ -94,6 +95,12 @@ final class Tenant implements ClassifiedFieldsInterface
     {
         if ($name === '') {
             throw new InvalidArgumentException('The tenant name must not be empty.');
+        }
+        if (! PlainText::holds($name, PlainText::MAX_LENGTH)) {
+            throw new InvalidArgumentException(sprintf(
+                'The tenant name must be plain text of at most %d characters, with no control, format or line separator character.',
+                PlainText::MAX_LENGTH,
+            ));
         }
         $this->name = $name;
     }

@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Identity;
 
 use Beffroi\Core\Domain\Encoding\Document;
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Exception\InvalidArgumentException;
+use function sprintf;
 
 /**
  * OIDC Core §5.1.1
+ *
+ * "formatted" and "street_address" may hold several lines, which the specification separates by a line feed.
  */
 final readonly class Address
 {
+    /**
+     * @throws InvalidArgumentException when a member is not plain text, or too long
+     */
     public function __construct(
         public ?string $formatted = null,
         public ?string $streetAddress = null,
@@ -20,6 +27,32 @@ final readonly class Address
         public ?string $postalCode = null,
         public ?string $country = null,
     ) {
+        foreach ([
+            'formatted' => $formatted,
+            'street_address' => $streetAddress,
+        ] as $member => $lines) {
+            if ($lines !== null && ! PlainText::holdsLines($lines, PlainText::MAX_LINES_LENGTH)) {
+                throw new InvalidArgumentException(sprintf(
+                    'The %s of an address must be plain text of at most %d characters, its lines separated by line feeds, with no other control, format or separator character.',
+                    $member,
+                    PlainText::MAX_LINES_LENGTH,
+                ));
+            }
+        }
+        foreach ([
+            'locality' => $locality,
+            'region' => $region,
+            'postal_code' => $postalCode,
+            'country' => $country,
+        ] as $member => $line) {
+            if ($line !== null && ! PlainText::holds($line, PlainText::MAX_LENGTH)) {
+                throw new InvalidArgumentException(sprintf(
+                    'The %s of an address must be plain text of at most %d characters, with no control, format or line separator character.',
+                    $member,
+                    PlainText::MAX_LENGTH,
+                ));
+            }
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\Encoding\PlainText;
 use Beffroi\Core\Domain\Encoding\Host;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function array_key_exists;
