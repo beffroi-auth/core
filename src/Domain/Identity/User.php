@@ -109,9 +109,18 @@ final class User implements ClassifiedFieldsInterface
         $this->updatedAt = $now;
     }
 
+    /**
+     * @throws InvalidArgumentException when an absent number is said verified, or the number is not plain text
+     */
     public function changePhoneNumber(?string $phoneNumber, bool $verified, DateTimeImmutable $now): void
     {
         self::assertVerifiable($phoneNumber, $verified, 'phone number');
+        if ($phoneNumber !== null && ! PlainText::holds($phoneNumber, PlainText::MAX_PHONE_NUMBER_LENGTH)) {
+            throw new InvalidArgumentException(sprintf(
+                'A phone number is plain text of at most %d characters, with no control, format or line separator character.',
+                PlainText::MAX_PHONE_NUMBER_LENGTH,
+            ));
+        }
         $this->phoneNumber = $phoneNumber;
         $this->phoneNumberVerified = $verified;
         $this->updatedAt = $now;

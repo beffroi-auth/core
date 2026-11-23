@@ -61,6 +61,28 @@ final readonly class Profile
             if ($url !== null && ! self::isAWebAddress($url)) {
                 throw new InvalidArgumentException(sprintf('The %s "%s" must be an absolute https or http URL (OIDC Core section 5.1).', $claim, $url));
             }
+            if ($url !== null && ! PlainText::holds($url, PlainText::MAX_URL_LENGTH)) {
+                throw new InvalidArgumentException(sprintf('The %s must be at most %d characters long.', $claim, PlainText::MAX_URL_LENGTH));
+            }
+        }
+        foreach ([
+            'name' => $name,
+            'given_name' => $givenName,
+            'family_name' => $familyName,
+            'middle_name' => $middleName,
+            'nickname' => $nickname,
+            'preferred_username' => $preferredUsername,
+            'gender' => $gender,
+            'zoneinfo' => $zoneinfo,
+            'locale' => $locale,
+        ] as $claim => $text) {
+            if ($text !== null && ! PlainText::holds($text, PlainText::MAX_LENGTH)) {
+                throw new InvalidArgumentException(sprintf(
+                    'The %s must be plain text of at most %d characters, with no control, format or line separator character.',
+                    $claim,
+                    PlainText::MAX_LENGTH,
+                ));
+            }
         }
     }
 
