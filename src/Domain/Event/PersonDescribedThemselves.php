@@ -10,9 +10,6 @@ use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use DateTimeImmutable;
 
-/**
- * Carries the name of the claim, never its value: a personal datum stays in the row of its person.
- */
 final readonly class PersonDescribedThemselves implements ConcernsAPersonInterface
 {
     public const string NAME = 'person.described_themselves';
