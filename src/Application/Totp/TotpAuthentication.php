@@ -17,9 +17,9 @@ use Beffroi\Core\Domain\Session\AuthenticationMethod;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\KmsUnavailableException;
 use Beffroi\Core\Port\CodeAttemptLimiterInterface;
-use Beffroi\Core\Port\CredentialRepositoryInterface;
 use Beffroi\Core\Port\PasswordHasherInterface;
 use Beffroi\Core\Port\SecretSealerInterface;
+use Beffroi\Core\Port\TotpUsesInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SensitiveParameter;
@@ -33,7 +33,7 @@ use SensitiveParameter;
 final readonly class TotpAuthentication
 {
     public function __construct(
-        private CredentialRepositoryInterface $credentials,
+        private TotpUsesInterface $uses,
         private ActiveTotp $activeTotp,
         private TotpCodeMatcher $matcher,
         private SecretSealerInterface $sealer,
@@ -71,18 +71,19 @@ final readonly class TotpAuthentication
             if (! $credential->acceptsStep($step)) {
                 throw $this->refuse($user, $context, AuthenticationFailureReason::ReplayedCode);
             }
-            $record = static fn () => $credential->recordUse($step, $now);
+            $record = fn (): bool => $this->uses->acceptStep($credential, $step, $now);
             $announce = static fn (): TotpUsed => new TotpUsed($credential, $now, $context);
         } else {
             $index = $this->matchingBackupCode($credential, $code) ?? throw $this->refuse($user, $context, AuthenticationFailureReason::InvalidCredential);
-            $record = static fn () => $credential->spendBackupCode($index, $now);
+            $record = fn (): bool => $this->uses->spendBackupCode($credential, $index, $now);
             $announce = static fn (): BackupCodeUsed => new BackupCodeUsed($credential, $now, $context);
         }
         if (! $user->isEnabled()) {
             throw $this->refuse($user, $context, AuthenticationFailureReason::DisabledUser);
         }
-        $record();
-        $this->credentials->save($credential);
+        if (! $record()) {
+            throw $this->refuse($user, $context, AuthenticationFailureReason::ReplayedCode);
+        }
         $this->events->dispatch($announce());
 
         return TotpCredential::method();
