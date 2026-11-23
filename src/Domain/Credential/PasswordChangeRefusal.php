@@ -13,4 +13,6 @@ enum PasswordChangeRefusal: string
     case NoPasswordHeld = 'no_password_held';
 
     case FederatedDomain = 'federated_domain';
+
+    case TooManyAttempts = 'too_many_attempts';
 }
