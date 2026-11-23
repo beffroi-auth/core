@@ -32,12 +32,13 @@ final readonly class JournalCut
         private AtomicWritesInterface $writes,
         private ClockInterface $clock,
         private JournalRetention $retention,
+        private JournalVerification $verification,
     ) {
     }
 
     /**
-     * Nothing is forgotten from a chain that does not follow, neither the acts to forget nor the ones written since the
-     * last signature.
+     * Nothing is forgotten from a chain that does not follow: the whole of it is walked against its signature first,
+     * outside the lock, so that an act moved back with its links computed again is never cut.
      *
      * @throws BrokenJournalException
      * @throws KeyNotFoundException
@@ -46,6 +47,8 @@ final readonly class JournalCut
      */
     public function forgetPastTheWindow(Tenant $tenant): int
     {
+        $this->verification->verify($tenant);
+
         return $this->writes->atomically(function () use ($tenant): int {
             $this->chain->lockedHead($tenant);
             $last = $this->checkpoints->last($tenant);
