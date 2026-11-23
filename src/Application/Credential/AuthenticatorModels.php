@@ -9,6 +9,7 @@ use Beffroi\Core\Domain\Credential\ModelDeclaringCredentialInterface;
 use Beffroi\Core\Exception\RuntimeException;
 use Beffroi\Core\Port\AuthenticatorModelSourceInterface;
 use Symfony\Component\Uid\NilUuid;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Without attestation an AAGUID is not provably authentic (WebAuthn Level 3 §6): no login is decided on a model.
@@ -29,11 +30,19 @@ final readonly class AuthenticatorModels
      */
     public function of(ModelDeclaringCredentialInterface $credential): ?AuthenticatorModel
     {
-        if ($credential->aaguid->equals(new NilUuid())) {
+        return $this->named($credential->aaguid);
+    }
+
+    /**
+     * @throws RuntimeException when a source cannot be read
+     */
+    public function named(Uuid $aaguid): ?AuthenticatorModel
+    {
+        if ($aaguid->equals(new NilUuid())) {
             return null;
         }
         foreach ($this->sources as $source) {
-            $model = $source->model($credential->aaguid);
+            $model = $source->model($aaguid);
             if ($model !== null) {
                 return $model;
             }

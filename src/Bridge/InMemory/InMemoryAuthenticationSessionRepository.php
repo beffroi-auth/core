@@ -6,11 +6,11 @@ namespace Beffroi\Core\Bridge\InMemory;
 
 use function array_values;
 use function array_filter;
-use Beffroi\Core\Domain\Listing\Period;
 use DateTimeImmutable;
 use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\SessionQuestion;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Exception\RuntimeException;
@@ -52,15 +52,9 @@ final class InMemoryAuthenticationSessionRepository implements
     /**
      * @return Listing<AuthenticationSession>
      */
-    public function pageOfActiveSessions(User $user, DateTimeImmutable $now, Pagination $pagination, ?Period $period = null): Listing
+    public function pageOfActiveSessions(User $user, DateTimeImmutable $now, SessionQuestion $question, Pagination $pagination): Listing
     {
-        return Listing::of(
-            array_values(array_filter(
-                $this->findActiveByUser($user, $now),
-                static fn (AuthenticationSession $session): bool => $period?->holds($session->establishedAt) !== false,
-            )),
-            $pagination,
-        );
+        return Listing::of(array_values(array_filter($this->findActiveByUser($user, $now), $question->admits(...))), $pagination);
     }
 
     public function findActiveByUser(User $user, DateTimeImmutable $now): array

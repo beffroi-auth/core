@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\InMemory;
 
 use Beffroi\Core\Domain\Identity\ClaimChange;
+use Beffroi\Core\Domain\Identity\ClaimChangeQuestion;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
-use Beffroi\Core\Domain\Listing\Period;
 use Beffroi\Core\Port\CanPageChangesOfAPersonInterface;
 use Beffroi\Core\Port\ChangesOfAPersonInterface;
 use Beffroi\Core\Port\ClaimHistoryInterface;
 use function array_filter;
+use function array_map;
 use function array_slice;
+use function array_unique;
 use function array_values;
 use DateTimeImmutable;
+use function sort;
 use Symfony\Component\Uid\Uuid;
 use function usort;
 
@@ -30,15 +33,20 @@ final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, Ch
     /**
      * @return Listing<ClaimChange>
      */
-    public function pageOfChanges(User $user, Pagination $pagination, ?Period $period = null): Listing
+    public function pageOfChanges(User $user, ClaimChangeQuestion $question, Pagination $pagination): Listing
     {
-        $theirs = array_values(array_filter(
-            $this->ofTheirs($user),
-            static fn (ClaimChange $change): bool => $period?->holds($change->changedAt) !== false,
-        ));
+        $theirs = array_values(array_filter($this->ofTheirs($user), $question->admits(...)));
         usort($theirs, static fn (ClaimChange $a, ClaimChange $b): int => $b->id->compare($a->id));
 
         return Listing::of($theirs, $pagination);
+    }
+
+    public function claimsChangedOf(User $user): array
+    {
+        $claims = array_values(array_unique(array_map(static fn (ClaimChange $change): string => $change->claim, $this->ofTheirs($user))));
+        sort($claims);
+
+        return $claims;
     }
 
     public function record(ClaimChange $change): void

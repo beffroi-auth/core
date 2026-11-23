@@ -7,16 +7,14 @@ namespace Beffroi\Core\Port;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
-use Beffroi\Core\Domain\Listing\Period;
 use Beffroi\Core\Domain\Session\AuthenticationSession;
+use Beffroi\Core\Domain\Session\SessionQuestion;
 use DateTimeImmutable;
 
 interface CanPageActiveSessionsInterface
 {
     /**
-     * @param Period|null $period when the sessions were opened
-     *
-     * @return Listing<AuthenticationSession>
+     * @return Listing<AuthenticationSession> the first opened first
      */
-    public function pageOfActiveSessions(User $user, DateTimeImmutable $now, Pagination $pagination, ?Period $period = null): Listing;
+    public function pageOfActiveSessions(User $user, DateTimeImmutable $now, SessionQuestion $question, Pagination $pagination): Listing;
 }

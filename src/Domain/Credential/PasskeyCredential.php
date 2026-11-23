@@ -32,7 +32,9 @@ final class PasskeyCredential extends RevocableCredential implements
     ExternallyIdentifiedCredentialInterface,
     ModelDeclaringCredentialInterface,
     NameableCredentialInterface,
-    ProvingCredentialInterface
+    ProvingCredentialInterface,
+    ReachableCredentialInterface,
+    SyncableCredentialInterface
 {
     public const int NAME_MAX_LENGTH = 255;
 
