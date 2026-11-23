@@ -7,6 +7,7 @@ namespace Beffroi\Core\Bridge\Webauthn;
 use function array_is_list;
 use function array_slice;
 use function base64_decode;
+use Beffroi\Core\Domain\Encoding\JoseExtension;
 use Beffroi\Core\Exception\MetadataBlobRefusedException;
 use function count;
 use function is_array;
@@ -108,6 +109,9 @@ final readonly class MetadataBlobVerifier
         }
         if ($jws->countSignatures() !== 1) {
             throw new MetadataBlobRefusedException(sprintf('The blob carries %d signatures where one is expected.', $jws->countSignatures()));
+        }
+        if (JoseExtension::isNamedIn($jws->getSignature(0)->getProtectedHeader())) {
+            throw new MetadataBlobRefusedException('The blob uses an extension of JOSE this provider does not understand (RFC 7515 section 4.1.11).');
         }
 
         return $jws;
