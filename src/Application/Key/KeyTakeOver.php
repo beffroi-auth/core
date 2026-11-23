@@ -72,7 +72,7 @@ final readonly class KeyTakeOver
     public function rotateAfterCompromise(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
     {
         // Looked up before the new key is staged, or it would be among them.
-        $waiting = $this->staged($tenant, $algorithm);
+        $exposed = $this->exposed($tenant, $algorithm);
         $key = $this->staging->stageDueAtOnce($tenant, $algorithm, $context);
         $now = $this->clock->now();
         // Looked up before the activation, or the new key would be among the candidates.
@@ -82,10 +82,12 @@ final readonly class KeyTakeOver
         if ($previous !== null) {
             $this->retirement->retireAfterCompromise($previous, $context);
         }
-        // A key that waits was exposed with the active one, and has signed nothing a window would have to cover.
-        foreach ($waiting as $staged) {
-            $staged->startRetiring($now, $now);
-            $this->retirement->retireAfterCompromise($staged, $context);
+        // What exposed the active key exposed the keys that wait and the keys that retire: none keeps a window.
+        foreach ($exposed as $other) {
+            if ($other->isStaged()) {
+                $other->startRetiring($now, $now);
+            }
+            $this->retirement->retireAfterCompromise($other, $context);
         }
 
         return $key;
@@ -105,18 +107,18 @@ final readonly class KeyTakeOver
     }
 
     /**
-     * @return list<TenantKey>
+     * @return list<TenantKey> the keys of the algorithm in service besides the active one
      */
-    private function staged(Tenant $tenant, KeyAlgorithmInterface $algorithm): array
+    private function exposed(Tenant $tenant, KeyAlgorithmInterface $algorithm): array
     {
-        $staged = [];
+        $exposed = [];
         foreach ($this->keys->findInService($tenant) as $key) {
-            if ($key->isStaged() && $key->algorithm->name() === $algorithm->name()) {
-                $staged[] = $key;
+            if (! $key->isActive() && $key->algorithm->name() === $algorithm->name()) {
+                $exposed[] = $key;
             }
         }
 
-        return $staged;
+        return $exposed;
     }
 
     /**
