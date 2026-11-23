@@ -10,6 +10,7 @@ use Beffroi\Core\Domain\Event\AuthenticationFailed;
 use Beffroi\Core\Domain\Event\AuthenticationSessionEnded;
 use Beffroi\Core\Domain\Event\BackupCodeUsed;
 use Beffroi\Core\Domain\Event\BackupCodesRenewed;
+use Beffroi\Core\Domain\Event\CredentialChangeNotTold;
 use Beffroi\Core\Domain\Event\CredentialEnrolled;
 use Beffroi\Core\Domain\Event\CredentialRenamed;
 use Beffroi\Core\Domain\Event\CredentialForgotten;
@@ -63,6 +64,7 @@ final class ActsOfAnAccount
         CredentialRenamed::NAME,
         PasswordChanged::NAME,
         BackupCodesRenewed::NAME,
+        CredentialChangeNotTold::NAME,
         PersonDescribedThemselves::NAME,
         PersonDescribed::NAME,
         NotificationChannelsChosen::NAME,

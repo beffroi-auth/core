@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use Beffroi\Core\Domain\Identity\Subject;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use DateTimeImmutable;
@@ -20,6 +21,8 @@ final readonly class CredentialChange
 
     public Uuid $userId;
 
+    public Subject $subject;
+
     /**
      * @param string      $act  the name the journal writes the act down under
      * @param string|null $kind the kind of the credential it changed, null when it changed none of them
@@ -32,5 +35,6 @@ final readonly class CredentialChange
     ) {
         $this->tenant = $user->tenant;
         $this->userId = $user->id;
+        $this->subject = $user->subject;
     }
 }
