@@ -49,9 +49,16 @@ final readonly class KeyTakeOver
         $now = $this->clock->now();
         $activated = [];
         foreach ($this->keys->findInService($tenant) as $key) {
-            if ($key->isDueForActivation($now)) {
-                $activated[] = $this->takeOver($key, $context);
+            if (! $key->isDueForActivation($now)) {
+                continue;
             }
+            $active = $this->keys->findActive($tenant, $key->algorithm);
+            if ($active !== null && $key->wasCreatedBefore($active)) {
+                $this->leaveUnused($key, $now);
+
+                continue;
+            }
+            $activated[] = $this->takeOver($key, $context);
         }
 
         return $activated;
@@ -64,6 +71,8 @@ final readonly class KeyTakeOver
 
     public function rotateAfterCompromise(Tenant $tenant, KeyAlgorithmInterface $algorithm, RequestContext $context): TenantKey
     {
+        // Looked up before the new key is staged, or it would be among them.
+        $waiting = $this->staged($tenant, $algorithm);
         $key = $this->staging->stageDueAtOnce($tenant, $algorithm, $context);
         $now = $this->clock->now();
         // Looked up before the activation, or the new key would be among the candidates.
@@ -72,6 +81,11 @@ final readonly class KeyTakeOver
         $this->activateInPlaceOf($key, $previous, $now, $now, $context);
         if ($previous !== null) {
             $this->retirement->retireAfterCompromise($previous, $context);
+        }
+        // A key that waits was exposed with the active one, and has signed nothing a window would have to cover.
+        foreach ($waiting as $staged) {
+            $staged->startRetiring($now, $now);
+            $this->retirement->retireAfterCompromise($staged, $context);
         }
 
         return $key;
@@ -88,6 +102,31 @@ final readonly class KeyTakeOver
         $this->activateInPlaceOf($key, $previous, $now, $this->window->dueAt($key->tenant, $key->algorithm->keyUse(), $now), $context);
 
         return $key;
+    }
+
+    /**
+     * @return list<TenantKey>
+     */
+    private function staged(Tenant $tenant, KeyAlgorithmInterface $algorithm): array
+    {
+        $staged = [];
+        foreach ($this->keys->findInService($tenant) as $key) {
+            if ($key->isStaged() && $key->algorithm->name() === $algorithm->name()) {
+                $staged[] = $key;
+            }
+        }
+
+        return $staged;
+    }
+
+    /**
+     * A newer key took over while this one waited: it never signs, and stays published for what a client may
+     * have encrypted to it, as a key that was replaced does.
+     */
+    private function leaveUnused(TenantKey $key, DateTimeImmutable $now): void
+    {
+        $key->startRetiring($now, $this->window->dueAt($key->tenant, $key->algorithm->keyUse(), $now));
+        $this->keys->save($key);
     }
 
     /**
