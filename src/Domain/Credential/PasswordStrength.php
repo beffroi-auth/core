@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Credential;
 
+use function array_unique;
 use function count;
-use function count_chars;
 use function log;
+use function mb_str_split;
+use function ord;
 use SensitiveParameter;
-use function strlen;
 
 /**
- * Counted over bytes, as password-strength.js counts, so the page and the server agree.
+ * Counted over characters, the code points password-strength.js counts too, so the page and the server agree.
  * The rungs are those of symfony/validator's PasswordStrength.
  */
 final readonly class PasswordStrength
@@ -71,19 +72,23 @@ final readonly class PasswordStrength
     }
 
     /**
-     * A repeated byte pays only for the distinct bytes, so "aaaaaaaaaaaa" is not twelve characters of entropy.
+     * A repeated character pays only for the distinct characters, so "aaaaaaaaaaaa" is not twelve characters of
+     * entropy.
      */
     private static function bitsOf(#[SensitiveParameter] string $password): float
     {
-        $length = strlen($password);
+        $characters = mb_str_split($password, 1, 'UTF-8');
+        $length = count($characters);
         if ($length === 0) {
             return 0.0;
         }
-        $bytes = count_chars($password, 1);
-        $distinct = count($bytes);
+        $unique = array_unique($characters);
+        $distinct = count($unique);
 
         $control = $digits = $capitals = $letters = $symbols = $beyond = 0;
-        foreach ($bytes as $byte => $_count) {
+        foreach ($unique as $character) {
+            // The first byte of a character beyond ASCII, valid or not, is 128 or more.
+            $byte = ord($character[0]);
             match (true) {
                 $byte < 32 || $byte === 127 => $control = self::CONTROL,
                 $byte >= 48 && $byte <= 57 => $digits = self::DIGITS,
