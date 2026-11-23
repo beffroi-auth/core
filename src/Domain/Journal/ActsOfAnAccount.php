@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Beffroi\Core\Domain\Journal;
 
 use Beffroi\Core\Domain\Event\AddressConfirmationSent;
+use Beffroi\Core\Domain\Event\AddressConfirmationWithheld;
 use Beffroi\Core\Domain\Event\AddressEstablished;
 use Beffroi\Core\Domain\Event\AuthenticationFailed;
 use Beffroi\Core\Domain\Event\AuthenticationSessionEnded;
@@ -69,6 +70,7 @@ final class ActsOfAnAccount
         PersonDescribed::NAME,
         NotificationChannelsChosen::NAME,
         AddressConfirmationSent::NAME,
+        AddressConfirmationWithheld::NAME,
         AddressEstablished::NAME,
         PersonAskedForTheirArchive::NAME,
         PersonTookTheirArchive::NAME,

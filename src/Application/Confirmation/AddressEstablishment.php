@@ -8,15 +8,18 @@ use Beffroi\Core\Application\Identity\Member\Said;
 use Beffroi\Core\Domain\Confirmation\AddressConfirmation;
 use Beffroi\Core\Domain\Confirmation\ConfirmableAddressInterface;
 use Beffroi\Core\Domain\Event\AddressConfirmationSent;
+use Beffroi\Core\Domain\Event\AddressConfirmationWithheld;
 use Beffroi\Core\Domain\Event\AddressEstablished;
 use Beffroi\Core\Domain\Identity\ClaimChange;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\AddressConfirmationRefusedException;
+use Beffroi\Core\Exception\AddressConfirmationWithheldException;
 use Beffroi\Core\Port\AddressConfirmationRepositoryInterface;
 use Beffroi\Core\Port\AddressConfirmationSenderInterface;
 use Beffroi\Core\Port\AtomicWritesInterface;
 use Beffroi\Core\Port\ClaimHistoryInterface;
+use Beffroi\Core\Port\ConfirmationSendLimiterInterface;
 use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -35,6 +38,7 @@ final readonly class AddressEstablishment
         private ConfirmableAddressInterface $kind,
         private AddressConfirmationRepositoryInterface $confirmations,
         private AddressConfirmationSenderInterface $sender,
+        private ConfirmationSendLimiterInterface $sends,
         private AddressConfirmationIssuing $issuing,
         private AddressConfirmationRedeeming $redeeming,
         private UserRepositoryInterface $users,
@@ -65,11 +69,19 @@ final readonly class AddressEstablishment
     }
 
     /**
+     * Counted before anything is drawn, so that a confirmation withheld leaves the one sent before it open.
+     *
      * @throws AddressConfirmationRefusedException when no address of the kind awaits a confirmation
+     * @throws AddressConfirmationWithheldException when the person or the address has had every confirmation its budget allows
      */
     public function send(User $user, RequestContext $context): void
     {
         $address = $this->awaits($user) ?? throw new AddressConfirmationRefusedException('No address of this kind awaits a confirmation.');
+        if (! $this->sends->spend($user, $address)) {
+            $this->events->dispatch(new AddressConfirmationWithheld($user, $this->kind->claim(), $this->clock->now(), $context));
+
+            throw new AddressConfirmationWithheldException('The person or the address has had every confirmation its budget allows.');
+        }
         $issued = $this->issuing->issue($this->confirmations, $this->kind, $user, $address);
         $this->sender->send($issued);
         $this->events->dispatch(new AddressConfirmationSent($user, $this->kind->claim(), $issued->confirmation->createdAt, $context));
