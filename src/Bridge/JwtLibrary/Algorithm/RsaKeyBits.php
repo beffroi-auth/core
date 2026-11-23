@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Bridge\JwtLibrary\Algorithm;
 
+use Beffroi\Core\Domain\Key\RsaModulus;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function sprintf;
 
@@ -12,7 +13,7 @@ use function sprintf;
  */
 final readonly class RsaKeyBits
 {
-    public const int MINIMUM = 2048;
+    public const int MINIMUM = RsaModulus::MINIMUM_BITS;
 
     public const int DEFAULT = 3072;
 
