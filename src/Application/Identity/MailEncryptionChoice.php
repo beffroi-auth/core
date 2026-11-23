@@ -10,6 +10,7 @@ use Beffroi\Core\Domain\Identity\MailEncryptionKey;
 use Beffroi\Core\Domain\Identity\User;
 use Beffroi\Core\Domain\Session\RequestContext;
 use Beffroi\Core\Exception\MailEncryptionRefusedException;
+use Beffroi\Core\Port\AtomicWritesInterface;
 use Beffroi\Core\Port\ClaimHistoryInterface;
 use Beffroi\Core\Port\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
@@ -30,6 +31,7 @@ final readonly class MailEncryptionChoice
     public function __construct(
         private UserRepositoryInterface $users,
         private ClaimHistoryInterface $history,
+        private AtomicWritesInterface $writes,
         private EventDispatcherInterface $events,
         private ClockInterface $clock,
     ) {
@@ -50,10 +52,12 @@ final readonly class MailEncryptionChoice
             $user->encryptMailTo($key, $now);
         }
         $became = $user->mailEncryption?->described();
-        $this->users->save($user);
-        if ($was !== $became) {
-            $this->history->record(new ClaimChange(Uuid::v7(), $user, self::CHANGED, $was, $became, $now, $context));
-        }
+        $this->writes->atomically(function () use ($user, $was, $became, $now, $context): void {
+            $this->users->save($user);
+            if ($was !== $became) {
+                $this->history->record(new ClaimChange(Uuid::v7(), $user, self::CHANGED, $was, $became, $now, $context));
+            }
+        });
         $this->events->dispatch(new PersonDescribedThemselves($user, self::CHANGED, $became === null, $now, $context));
     }
 }
