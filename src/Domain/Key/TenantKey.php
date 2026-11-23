@@ -79,10 +79,13 @@ final class TenantKey
         $this->activatedAt = $now;
     }
 
+    /**
+     * A staged key starts retiring without ever signing when a newer key took over first, or a compromise ends it.
+     */
     public function startRetiring(DateTimeImmutable $now, DateTimeImmutable $retirementDueAt): void
     {
-        if ($this->status !== KeyStatus::Active) {
-            throw new LogicException(sprintf('Only an active key can start retiring; this one is %s.', $this->status->value));
+        if ($this->status !== KeyStatus::Active && $this->status !== KeyStatus::Staged) {
+            throw new LogicException(sprintf('Only an active or a staged key can start retiring; this one is %s.', $this->status->value));
         }
         if ($retirementDueAt < $now) {
             throw new InvalidArgumentException('The retirement of a key is due when it starts retiring at the earliest.');
@@ -124,6 +127,11 @@ final class TenantKey
     public function isDueForActivation(DateTimeImmutable $now): bool
     {
         return $this->status === KeyStatus::Staged && $this->activationDueAt <= $now;
+    }
+
+    public function wasCreatedBefore(self $other): bool
+    {
+        return $this->createdAt < $other->createdAt;
     }
 
     public function isDue(DateTimeImmutable $now): bool
