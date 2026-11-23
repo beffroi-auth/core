@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Port;
 
+use Beffroi\Core\Domain\Chain\ChainInterface;
 use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Exception\RuntimeException;
 
@@ -16,10 +17,10 @@ interface SignedCheckpointsInterface
     /**
      * @return non-empty-string|null the compact JWS kept last
      */
-    public function last(Tenant $tenant): ?string;
+    public function last(Tenant $tenant, ChainInterface $chain): ?string;
 
     /**
      * @throws RuntimeException
      */
-    public function keep(Tenant $tenant, string $compactJws): void;
+    public function keep(Tenant $tenant, ChainInterface $chain, string $compactJws): void;
 }

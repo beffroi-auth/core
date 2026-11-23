@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Beffroi\Core\Domain\Journal;
+namespace Beffroi\Core\Domain\Chain;
 
 use Beffroi\Core\Domain\PersonalData\ClassifiedFieldsInterface;
 use Beffroi\Core\Domain\PersonalData\FieldClassificationInterface;
@@ -11,13 +11,14 @@ use Beffroi\Core\Domain\PersonalData\Reason;
 use Beffroi\Core\Domain\Tenant\Tenant;
 
 /**
- * The last link of the chain of a tenant, which outlives the acts the retention forgets, and the row a write of the
- * journal locks so that two writers never take the same position.
+ * The last link of a chain of a tenant, which outlives the rows the retention forgets, and the row a write locks so
+ * that two writers never take the same position.
  */
-final class JournalHead implements ClassifiedFieldsInterface
+final class ChainHead implements ClassifiedFieldsInterface
 {
     public function __construct(
         public private(set) Tenant $tenant,
+        public private(set) string $chain,
         public private(set) int $position,
         public private(set) string $hash,
     ) {
@@ -30,6 +31,7 @@ final class JournalHead implements ClassifiedFieldsInterface
     {
         return [
             'tenant' => new NoPersonalDatum(Reason::THE_TENANT),
+            'chain' => new NoPersonalDatum('the name of a record of the provider, which names no person'),
             'position' => new NoPersonalDatum(Reason::NAMES_NO_PERSON),
             'hash' => new NoPersonalDatum(Reason::HASHED),
         ];

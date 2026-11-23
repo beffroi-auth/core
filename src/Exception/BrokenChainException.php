@@ -8,14 +8,15 @@ use RuntimeException;
 use Throwable;
 
 /**
- * The message names a position and never what the act there holds.
+ * The message names a position and never what the row there holds.
  */
-final class BrokenJournalException extends RuntimeException implements ExceptionInterface
+final class BrokenChainException extends RuntimeException implements ExceptionInterface
 {
     /**
      * @param int|null $position the first position that does not follow, null when the signature itself is at fault
      */
     public function __construct(
+        public readonly string $chain,
         public readonly ?int $position,
         string $message,
         ?Throwable $previous = null,

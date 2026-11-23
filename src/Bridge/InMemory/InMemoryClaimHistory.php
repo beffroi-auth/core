@@ -7,7 +7,6 @@ namespace Beffroi\Core\Bridge\InMemory;
 use Beffroi\Core\Domain\Identity\ClaimChange;
 use Beffroi\Core\Domain\Identity\ClaimChangeQuestion;
 use Beffroi\Core\Domain\Identity\User;
-use Beffroi\Core\Domain\Tenant\Tenant;
 use Beffroi\Core\Domain\Listing\Listing;
 use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Port\CanPageChangesOfAPersonInterface;
@@ -18,7 +17,6 @@ use function array_map;
 use function array_slice;
 use function array_unique;
 use function array_values;
-use DateTimeImmutable;
 use function sort;
 use Symfony\Component\Uid\Uuid;
 use function usort;
@@ -52,19 +50,6 @@ final class InMemoryClaimHistory implements CanPageChangesOfAPersonInterface, Ch
     public function record(ClaimChange $change): void
     {
         $this->changes[$change->id->toRfc4122()] = $change;
-    }
-
-    public function forgetBefore(Tenant $tenant, DateTimeImmutable $moment): int
-    {
-        $forgotten = 0;
-        foreach ($this->changes as $key => $change) {
-            if ($change->tenant->equals($tenant) && $change->changedAt < $moment) {
-                unset($this->changes[$key]);
-                ++$forgotten;
-            }
-        }
-
-        return $forgotten;
     }
 
     public function lastOf(User $user, int $howMany): array

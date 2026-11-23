@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Beffroi\Core\Domain\Journal;
+namespace Beffroi\Core\Domain\Chain;
 
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function hash;
@@ -13,12 +13,12 @@ use function str_repeat;
 use function strlen;
 
 /**
- * A place in the chain of the acts of a tenant: its position, and the SHA-256 of the link before it and of the act
- * written there, as the database holds it.
+ * A place in a chain of a tenant: its position, and the SHA-256 of the link before it and of the row written there, as
+ * the database holds it.
  */
 final readonly class Link
 {
-    public const string VERSION = 'beffroi-journal-link/1';
+    public const string VERSION = 'beffroi-chain-link/1';
 
     private const string ABSENT = "\xFF\xFF\xFF\xFF";
 
@@ -43,31 +43,21 @@ final readonly class Link
     }
 
     /**
-     * Each field is prefixed with its length, so that no two acts write the same bytes. The reason and the method of a
-     * refusal follow when it says either, so that an act that says neither reads as it did before they were written.
+     * Each field is prefixed with its length, so that no two rows write the same bytes.
      */
-    public function then(WrittenAct $act): self
+    public function then(WrittenRow $row): self
     {
         $position = $this->position + 1;
-        $fields = [
+        $bytes = '';
+        foreach ([
             self::VERSION,
             $this->hash,
             (string) $position,
-            $act->tenant,
-            $act->id,
-            $act->act,
-            $act->occurredAt->format('Y-m-d H:i:s'),
-            $act->subject,
-            $act->client,
-            $act->author,
-            $act->sealedContext,
-        ];
-        if ($act->reason !== null || $act->method !== null) {
-            $fields[] = $act->reason;
-            $fields[] = $act->method;
-        }
-        $bytes = '';
-        foreach ($fields as $field) {
+            $row->tenant,
+            $row->id,
+            $row->moment->format('Y-m-d H:i:s'),
+            ...$row->columns,
+        ] as $field) {
             $bytes .= $field === null ? self::ABSENT : pack('N', strlen($field)) . $field;
         }
 
