@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Beffroi\Core\Bridge\Webauthn;
 
 use Cose\Algorithm\Signature\RSA\RS1;
+use function is_float;
+use function is_int;
+use function is_string;
 use Webauthn\AttestationStatement\AttestationStatement;
 use Webauthn\AttestationStatement\AttestationStatementSupport;
 use Webauthn\AuthenticatorData;
@@ -34,9 +37,9 @@ final readonly class Rs1RefusingAttestationStatementSupport implements Attestati
 
     public function isValid(string $clientDataJSONHash, AttestationStatement $attestationStatement, AuthenticatorData $authenticatorData): bool
     {
-        // Both forms: the library reads the identifier as an integer, whether CBOR carried it as one or as text.
+        // Read as the library reads it, by a cast: a CBOR integer arrives as text, and a crafted text or float as well.
         $algorithm = $attestationStatement->has('alg') ? $attestationStatement->get('alg') : null;
-        if ($algorithm === RS1::ID || $algorithm === (string) RS1::ID) {
+        if ((is_int($algorithm) || is_float($algorithm) || is_string($algorithm)) && (int) $algorithm === RS1::ID) {
             return false;
         }
 
