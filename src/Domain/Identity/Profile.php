@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Beffroi\Core\Domain\Identity;
 
+use Beffroi\Core\Domain\Encoding\Host;
 use Beffroi\Core\Exception\InvalidArgumentException;
 use function array_key_exists;
 use function checkdate;
 use Error;
 use function get_object_vars;
+use function in_array;
 use function is_string;
+use function parse_url;
 use function preg_match;
 use function sprintf;
+use function strtolower;
 
 /**
  * OIDC Core §5.1
@@ -22,6 +26,11 @@ final readonly class Profile
      * A leap year, so that 0000-02-29 stays a valid birthdate.
      */
     private const int WITHHELD_YEAR_READ_AS = 2000;
+
+    /**
+     * A "javascript:" or "data:" URL would run in the page of the relying party that renders the claim as a link.
+     */
+    private const array WEB_SCHEMES = ['https', 'http'];
 
     public function __construct(
         public ?string $name = null,
@@ -44,11 +53,33 @@ final readonly class Profile
                 $birthdate,
             ));
         }
+        foreach ([
+            'profile' => $profileUrl,
+            'picture' => $pictureUrl,
+            'website' => $websiteUrl,
+        ] as $claim => $url) {
+            if ($url !== null && ! self::isAWebAddress($url)) {
+                throw new InvalidArgumentException(sprintf('The %s "%s" must be an absolute https or http URL (OIDC Core section 5.1).', $claim, $url));
+            }
+        }
     }
 
     public static function empty(): self
     {
         return new self();
+    }
+
+    /**
+     * RFC 3986 §3; a space or a control character is refused, a browser stripping some of them before it reads the scheme.
+     */
+    private static function isAWebAddress(string $url): bool
+    {
+        if (preg_match('/[\x00-\x20\x7F]/', $url) === 1) {
+            return false;
+        }
+        $parts = parse_url($url);
+
+        return $parts !== false && in_array(strtolower($parts['scheme'] ?? ''), self::WEB_SCHEMES, true) && Host::isHost($parts['host'] ?? '');
     }
 
     /**
