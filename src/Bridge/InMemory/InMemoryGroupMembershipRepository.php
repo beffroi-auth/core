@@ -10,6 +10,8 @@ use function count;
 use Beffroi\Core\Domain\Group\Group;
 use Beffroi\Core\Domain\Group\GroupMembership;
 use Beffroi\Core\Domain\Identity\User;
+use Beffroi\Core\Domain\Listing\Listing;
+use Beffroi\Core\Domain\Listing\Pagination;
 use Beffroi\Core\Port\GroupMembershipRepositoryInterface;
 use Beffroi\Core\Port\GroupsOfAPersonInterface;
 use Beffroi\Core\Port\MembersOfAGroupInterface;
@@ -32,7 +34,20 @@ final class InMemoryGroupMembershipRepository implements GroupMembershipReposito
         unset($this->memberships[$membership->id->toRfc4122()]);
     }
 
-    public function membersOf(Group $group): array
+    public function membersOf(Group $group, Pagination $pagination): Listing
+    {
+        return Listing::of($this->allMembersOf($group), $pagination);
+    }
+
+    public function countMembersOf(Group $group): int
+    {
+        return count($this->allMembersOf($group));
+    }
+
+    /**
+     * @return list<GroupMembership> in the order they were added
+     */
+    private function allMembersOf(Group $group): array
     {
         $members = array_values(array_filter(
             $this->memberships,
@@ -41,11 +56,6 @@ final class InMemoryGroupMembershipRepository implements GroupMembershipReposito
         usort($members, static fn (GroupMembership $a, GroupMembership $b): int => $a->addedAt <=> $b->addedAt);
 
         return $members;
-    }
-
-    public function countMembersOf(Group $group): int
-    {
-        return count($this->membersOf($group));
     }
 
     public function of(User $user): array
