@@ -25,15 +25,18 @@ final readonly class ArchiveRequest
     ) {
     }
 
+    /**
+     * A new archive replaces the one before, ready or not, because each one holds every sealed column in clear.
+     */
     public function askedBy(User $user, RequestContext $context): PersonalArchive
     {
         $now = $this->clock->now();
-        $pending = $this->archives->latestOf($user);
-        if ($pending !== null && ! $pending->isReady() && ! $pending->hasExpired($now)) {
-            if (! $pending->hasStalled($now)) {
-                return $pending;
-            }
-            $this->archives->forget($pending);
+        $previous = $this->archives->latestOf($user);
+        if ($previous !== null && ! $previous->isReady() && ! $previous->hasExpired($now) && ! $previous->hasStalled($now)) {
+            return $previous;
+        }
+        if ($previous !== null) {
+            $this->archives->forget($previous);
         }
         $archive = PersonalArchive::asked(Uuid::v7(), $user, $now);
         $this->archives->save($archive);
